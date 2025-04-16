@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { PrinterIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -20,12 +21,35 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // If already logged in, redirect to home
   React.useEffect(() => {
     if (session) {
-      navigate('/');
+      // Check user role after session is established
+      const checkUserRole = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          toast({
+            title: "Error checking user role",
+            description: error.message,
+            variant: "destructive"
+          });
+          return;
+        }
+
+        if (data?.role === 'admin') {
+          navigate('/');
+        } else if (data?.role) {
+          navigate('/printers');
+        }
+      };
+
+      checkUserRole();
     }
-  }, [session, navigate]);
+  }, [session, navigate, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +65,11 @@ export default function Auth() {
           variant: "destructive"
         });
       } else {
+        // Role-based redirection is handled in useEffect
         toast({
           title: "Login successful",
           description: "Welcome back!",
         });
-        navigate('/');
       }
     } catch (error: any) {
       toast({
@@ -67,7 +91,10 @@ export default function Auth() {
         email, 
         password, 
         options: {
-          data: { first_name: firstName, last_name: lastName }
+          data: { 
+            first_name: firstName, 
+            last_name: lastName 
+          }
         }
       });
       
