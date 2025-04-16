@@ -1,56 +1,25 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Edit, Share2, AlertTriangle, Info } from 'lucide-react';
+import { ChevronLeft, Edit, Share2, AlertTriangle, Info, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Printer, PrinterStatus } from '@/types';
-
-// Mock printers for demonstration
-const mockPrinters: Record<string, Printer & { department: string, location: string }> = {
-  '1': { 
-    id: '1', 
-    make: 'HP', 
-    series: 'LaserJet', 
-    model: 'Pro MFP M428fdn',
-    status: 'available',
-    ownedBy: 'system',
-    department: 'Marketing',
-    location: 'Floor 2, Room 201',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  '2': { 
-    id: '2', 
-    make: 'Brother', 
-    series: 'MFC', 
-    model: 'L8900CDW',
-    status: 'rented',
-    ownedBy: 'system',
-    assignedTo: 'Acme Corp',
-    department: 'Sales',
-    location: 'Floor 1, Room 105',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  '3': { 
-    id: '3', 
-    make: 'Canon', 
-    series: 'imageRUNNER', 
-    model: '1643i',
-    status: 'maintenance',
-    ownedBy: 'client',
-    assignedTo: 'TechSolutions Inc',
-    department: 'IT',
-    location: 'Floor 3, Room 302',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-};
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from '@/components/ui/dialog';
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
@@ -73,9 +42,162 @@ const getStatusEmoji = (status: PrinterStatus) => {
 export default function PrinterDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [printer, setPrinter] = useState<Printer | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
-  // In a real app, this would come from an API or state
-  const printer = id ? mockPrinters[id] : null;
+  useEffect(() => {
+    if (id) {
+      fetchPrinter(id);
+    }
+  }, [id]);
+  
+  const fetchPrinter = async (printerId: string) => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('printers')
+        .select('*')
+        .eq('id', printerId)
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setPrinter(data);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching printer details",
+        description: error.message,
+        variant: "destructive"
+      });
+      
+      // Fallback to mock data if database isn't set up
+      const mockPrinters: Record<string, Printer> = {
+        '1': { 
+          id: '1', 
+          make: 'HP', 
+          series: 'LaserJet', 
+          model: 'Pro MFP M428fdn',
+          status: 'available',
+          ownedBy: 'system',
+          department: 'Marketing',
+          location: 'Floor 2, Room 201',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        '2': { 
+          id: '2', 
+          make: 'Brother', 
+          series: 'MFC', 
+          model: 'L8900CDW',
+          status: 'rented',
+          ownedBy: 'system',
+          assignedTo: 'Acme Corp',
+          department: 'Sales',
+          location: 'Floor 1, Room 105',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        '3': { 
+          id: '3', 
+          make: 'Canon', 
+          series: 'imageRUNNER', 
+          model: '1643i',
+          status: 'maintenance',
+          ownedBy: 'client',
+          assignedTo: 'TechSolutions Inc',
+          department: 'IT',
+          location: 'Floor 3, Room 302',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      };
+      
+      if (printerId in mockPrinters) {
+        setPrinter(mockPrinters[printerId]);
+      } else {
+        setPrinter(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleChangeStatus = async (status: PrinterStatus) => {
+    if (!printer) return;
+    
+    try {
+      const { error } = await supabase
+        .from('printers')
+        .update({ status, updatedAt: new Date().toISOString() })
+        .eq('id', printer.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      setPrinter({
+        ...printer,
+        status,
+        updatedAt: new Date().toISOString()
+      });
+      
+      toast({
+        title: "Status updated",
+        description: `Printer status changed to ${status}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeletePrinter = async () => {
+    if (!printer) return;
+    
+    try {
+      const { error } = await supabase
+        .from('printers')
+        .delete()
+        .eq('id', printer.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Printer deleted",
+        description: "The printer has been removed from the inventory",
+      });
+      
+      navigate('/printers');
+    } catch (error: any) {
+      toast({
+        title: "Error deleting printer",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <MobileLayout>
+        <div className="container px-4 py-4 flex justify-center items-center min-h-[60vh]">
+          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        </div>
+      </MobileLayout>
+    );
+  }
   
   if (!printer) {
     return (
@@ -108,10 +230,16 @@ export default function PrinterDetail() {
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-bold">{printer.make} {printer.model}</h1>
           <div className="flex space-x-2">
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => {
+              // Share functionality would go here
+              toast({
+                title: "Share feature",
+                description: "This feature will be implemented soon",
+              });
+            }}>
               <Share2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={() => navigate(`/printers/${printer.id}/edit`)}>
               <Edit className="h-5 w-5" />
             </Button>
           </div>
@@ -190,11 +318,85 @@ export default function PrinterDetail() {
                 </div>
                 
                 <div className="flex space-x-2 pt-2">
-                  <Button className="flex-1">Change Status</Button>
+                  <div className="flex-1">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button className="w-full">Change Status</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Change Printer Status</DialogTitle>
+                          <DialogDescription>
+                            Select a new status for this printer
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-1 gap-4 py-4">
+                          <Button
+                            className={`justify-start ${printer.status === 'available' ? 'border-2 border-primary' : ''}`}
+                            variant={printer.status === 'available' ? 'default' : 'outline'}
+                            onClick={() => handleChangeStatus('available')}
+                          >
+                            <span className="mr-2">🟢</span> Available
+                          </Button>
+                          <Button
+                            className={`justify-start ${printer.status === 'rented' ? 'border-2 border-primary' : ''}`}
+                            variant={printer.status === 'rented' ? 'default' : 'outline'}
+                            onClick={() => handleChangeStatus('rented')}
+                          >
+                            <span className="mr-2">🟡</span> Rented
+                          </Button>
+                          <Button
+                            className={`justify-start ${printer.status === 'maintenance' ? 'border-2 border-primary' : ''}`}
+                            variant={printer.status === 'maintenance' ? 'default' : 'outline'}
+                            onClick={() => handleChangeStatus('maintenance')}
+                          >
+                            <span className="mr-2">🔴</span> Maintenance
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
                   {printer.status === 'available' && (
-                    <Button variant="outline" className="flex-1">Rent Out</Button>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => {
+                        toast({
+                          title: "Rent feature",
+                          description: "This feature will be implemented soon",
+                        });
+                      }}
+                    >
+                      Rent Out
+                    </Button>
                   )}
                 </div>
+                
+                <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" className="w-full mt-4">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Printer
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Confirm Deletion</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this printer? This action cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button variant="destructive" onClick={handleDeletePrinter}>
+                        Delete
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>
