@@ -9,6 +9,81 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      printer_wiki: {
+        Row: {
+          created_at: string
+          id: string
+          maintenance_tips: string | null
+          make: string
+          model: string
+          series: string
+          specs: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          maintenance_tips?: string | null
+          make: string
+          model: string
+          series: string
+          specs?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          maintenance_tips?: string | null
+          make?: string
+          model?: string
+          series?: string
+          specs?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      printers: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          department: string | null
+          id: string
+          location: string | null
+          make: string
+          model: string
+          owned_by: string
+          series: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          location?: string | null
+          make: string
+          model: string
+          owned_by: string
+          series: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          department?: string | null
+          id?: string
+          location?: string | null
+          make?: string
+          model?: string
+          owned_by?: string
+          series?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -35,6 +110,98 @@ export type Database = {
           id?: string
           last_name?: string | null
           role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rentals: {
+        Row: {
+          agreement_url: string | null
+          client: string
+          client_id: string | null
+          created_at: string
+          end_date: string
+          id: string
+          printer: string
+          printer_id: string | null
+          signature_url: string | null
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agreement_url?: string | null
+          client: string
+          client_id?: string | null
+          created_at?: string
+          end_date: string
+          id?: string
+          printer: string
+          printer_id?: string | null
+          signature_url?: string | null
+          start_date: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          agreement_url?: string | null
+          client?: string
+          client_id?: string | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          printer?: string
+          printer_id?: string | null
+          signature_url?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentals_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      toners: {
+        Row: {
+          brand: string
+          color: string
+          compatible_printers: Json | null
+          created_at: string
+          id: string
+          model: string
+          page_yield: number
+          stock: number
+          threshold: number
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          color: string
+          compatible_printers?: Json | null
+          created_at?: string
+          id?: string
+          model: string
+          page_yield: number
+          stock?: number
+          threshold?: number
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          color?: string
+          compatible_printers?: Json | null
+          created_at?: string
+          id?: string
+          model?: string
+          page_yield?: number
+          stock?: number
+          threshold?: number
           updated_at?: string
         }
         Relationships: []

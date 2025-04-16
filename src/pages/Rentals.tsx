@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -37,7 +36,6 @@ export default function Rentals() {
       if (activeTab === 'active') {
         query = query.eq('status', 'active');
       } else if (activeTab === 'upcoming') {
-        // Upcoming could be a custom status or based on date logic
         query = query.eq('status', 'upcoming');
       } else if (activeTab === 'completed') {
         query = query.eq('status', 'completed');
@@ -58,7 +56,7 @@ export default function Rentals() {
       });
       
       // Fallback to mock data if database isn't set up yet
-      const mockRentals = [
+      const mockRentals: Rental[] = [
         { 
           id: '1',
           printerId: '1',
@@ -68,6 +66,8 @@ export default function Rentals() {
           startDate: '2023-04-10',
           endDate: '2023-06-10',
           status: 'active',
+          signatureUrl: null,
+          agreementUrl: null,
         },
         { 
           id: '2',
@@ -78,6 +78,8 @@ export default function Rentals() {
           startDate: '2023-03-15',
           endDate: '2023-05-15',
           status: 'active',
+          signatureUrl: null,
+          agreementUrl: null,
         },
         { 
           id: '3',
@@ -88,15 +90,12 @@ export default function Rentals() {
           startDate: '2023-02-01',
           endDate: '2023-04-01',
           status: 'completed',
+          signatureUrl: null,
+          agreementUrl: null,
         },
       ];
       
-      // Filter mock data based on active tab
-      const filteredMockRentals = mockRentals.filter(rental => 
-        activeTab === 'all' || rental.status === activeTab
-      );
-      
-      setRentals(filteredMockRentals as Rental[]);
+      setRentals(mockRentals);
     } finally {
       setLoading(false);
     }

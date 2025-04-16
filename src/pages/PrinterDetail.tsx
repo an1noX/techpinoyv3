@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -20,24 +19,6 @@ import {
   DialogTitle,
   DialogTrigger 
 } from '@/components/ui/dialog';
-
-const getStatusColor = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return 'bg-status-available text-white';
-    case 'rented': return 'bg-status-rented text-black';
-    case 'maintenance': return 'bg-status-maintenance text-white';
-    default: return 'bg-gray-500 text-white';
-  }
-};
-
-const getStatusEmoji = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return '🟢';
-    case 'rented': return '🟡';
-    case 'maintenance': return '🔴';
-    default: return '⚪';
-  }
-};
 
 export default function PrinterDetail() {
   const { id } = useParams<{ id: string }>();
@@ -418,9 +399,7 @@ export default function PrinterDetail() {
                         <span className="font-medium">{color}</span>
                         <Badge variant="outline">In Stock: 12</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {printer.make} {color.charAt(0)}{color === 'Black' ? 'K' : color.charAt(1)}-120 Toner
-                      </p>
+                      <p className="text-sm text-muted-foreground mb-1">{printer.make} {color.charAt(0)}{color === 'Black' ? 'K' : color.charAt(1)}-120 Toner</p>
                       <p className="text-xs text-muted-foreground">
                         Page Yield: 2,000 pages
                       </p>

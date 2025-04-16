@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -32,7 +31,6 @@ export default function Wiki() {
     try {
       setLoading(true);
       
-      // Query wiki printers from Supabase
       const { data, error } = await supabase
         .from('printer_wiki')
         .select('*');
@@ -49,14 +47,13 @@ export default function Wiki() {
         variant: "destructive"
       });
       
-      // Fallback to mock data if database isn't set up yet
-      setPrinters([
+      const mockPrinters: WikiPrinter[] = [
         { id: '1', make: 'HP', series: 'LaserJet', model: 'Pro MFP M428fdn' },
         { id: '2', make: 'Brother', series: 'MFC', model: 'L8900CDW' },
         { id: '3', make: 'Canon', series: 'imageRUNNER', model: '1643i' },
-        { id: '4', make: 'Xerox', series: 'VersaLink', model: 'C505' },
-        { id: '5', make: 'Epson', series: 'WorkForce', model: 'Pro WF-C579R' },
-      ]);
+      ];
+      
+      setPrinters(mockPrinters);
     } finally {
       setLoading(false);
     }
@@ -73,7 +70,6 @@ export default function Wiki() {
   );
   
   const handleViewPrinterDetails = (printerId: string) => {
-    // Navigate to printer wiki details page
     navigate(`/wiki/${printerId}`);
   };
   

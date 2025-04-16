@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -45,12 +44,9 @@ export default function Printers() {
     try {
       setLoading(true);
       
-      // Query printers from Supabase
-      let query = supabase
+      const { data, error } = await supabase
         .from('printers')
         .select('*');
-      
-      const { data, error } = await query;
       
       if (error) {
         throw error;
@@ -64,8 +60,7 @@ export default function Printers() {
         variant: "destructive"
       });
       
-      // Fallback to mock data if database isn't set up yet
-      setPrinters([
+      const mockPrinters: Printer[] = [
         { 
           id: '1', 
           make: 'HP', 
@@ -104,7 +99,9 @@ export default function Printers() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
-      ]);
+      ];
+      
+      setPrinters(mockPrinters);
     } finally {
       setLoading(false);
     }
