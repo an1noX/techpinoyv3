@@ -17,7 +17,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';  // Corrected import path
 import { Toggle } from '@/components/ui/toggle';
 import { Switch } from '@/components/ui/switch';
 import { Rental, Printer, RentalOptions } from '@/types';
