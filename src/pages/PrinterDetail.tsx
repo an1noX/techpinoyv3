@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -6,7 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, Edit, Share2, AlertTriangle, Info, Trash2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  ChevronLeft, 
+  Edit, 
+  Share2, 
+  AlertTriangle, 
+  Info, 
+  Trash2,
+  Calendar as CalendarIcon
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Printer, PrinterStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +38,24 @@ import {
   DialogTitle,
   DialogTrigger 
 } from '@/components/ui/dialog';
+import { format } from 'date-fns';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+interface RentalOptions {
+  isForRent: boolean;
+  rentalRate: number;
+  rateUnit: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  minimumDuration: number;
+  durationUnit: 'hours' | 'days' | 'weeks' | 'months';
+  securityDeposit: number;
+  terms: string;
+  cancellationPolicy: string;
+  availability?: Date[];
+}
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
@@ -46,10 +82,27 @@ export default function PrinterDetail() {
   const [printer, setPrinter] = useState<Printer | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [confirmToggleDialogOpen, setConfirmToggleDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
+  const [isForRent, setIsForRent] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [rentalOptions, setRentalOptions] = useState<RentalOptions>({
+    isForRent: false,
+    rentalRate: 0,
+    rateUnit: 'daily',
+    minimumDuration: 1,
+    durationUnit: 'days',
+    securityDeposit: 0,
+    terms: '',
+    cancellationPolicy: 'Standard 24-hour cancellation policy applies. Cancellations made less than 24 hours before rental start time are subject to a 50% fee.',
+    availability: [],
+  });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
   useEffect(() => {
     if (id) {
       fetchPrinter(id);
+      fetchRentalOptions(id);
     }
   }, [id]);
   
@@ -67,7 +120,6 @@ export default function PrinterDetail() {
         throw error;
       }
       
-      // Transform the data to match our Printer type
       const transformedPrinter: Printer = {
         id: data.id,
         make: data.make,
@@ -90,7 +142,6 @@ export default function PrinterDetail() {
         variant: "destructive"
       });
       
-      // Fallback to mock data if database isn't set up
       const mockPrinters: Record<string, Printer> = {
         '1': { 
           id: '1', 
@@ -139,6 +190,37 @@ export default function PrinterDetail() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchRentalOptions = async (printerId: string) => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const mockRentalOptions: RentalOptions = {
+        isForRent: true,
+        rentalRate: 25,
+        rateUnit: 'daily',
+        minimumDuration: 3,
+        durationUnit: 'days',
+        securityDeposit: 200,
+        terms: 'Printer must be returned in the same condition. Any damage will be charged from the security deposit.',
+        cancellationPolicy: 'Free cancellation up to 48 hours before rental start time.',
+        availability: [
+          new Date(2025, 3, 20),
+          new Date(2025, 3, 21),
+          new Date(2025, 3, 22),
+        ],
+      };
+      
+      setRentalOptions(mockRentalOptions);
+      setIsForRent(mockRentalOptions.isForRent);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching rental options",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
   
@@ -207,6 +289,103 @@ export default function PrinterDetail() {
     }
   };
   
+  const handleToggleRental = (checked: boolean) => {
+    if (!checked && hasUnsavedChanges) {
+      setConfirmToggleDialogOpen(true);
+    } else {
+      saveRentalToggleState(checked);
+    }
+  };
+  
+  const saveRentalToggleState = async (state: boolean) => {
+    try {
+      setLoading(true);
+      
+      setIsForRent(state);
+      
+      if (!state && activeTab === 'rentOptions') {
+        setActiveTab('details');
+      }
+      
+      toast({
+        title: state ? "Rental enabled" : "Rental disabled",
+        description: state 
+          ? "This printer is now available for rent." 
+          : "This printer is no longer available for rent.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating rental status",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setConfirmToggleDialogOpen(false);
+    }
+  };
+  
+  const handleRentalOptionChange = (
+    field: keyof RentalOptions, 
+    value: string | number | boolean | Date[] | undefined
+  ) => {
+    setRentalOptions(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setHasUnsavedChanges(true);
+  };
+  
+  const handleSaveRentalOptions = async () => {
+    try {
+      setLoading(true);
+      
+      if (rentalOptions.rentalRate <= 0) {
+        throw new Error("Rental rate must be greater than 0");
+      }
+      
+      if (rentalOptions.minimumDuration <= 0) {
+        throw new Error("Minimum duration must be greater than 0");
+      }
+      
+      toast({
+        title: "Rental options saved",
+        description: "The rental options have been updated successfully.",
+      });
+      
+      setHasUnsavedChanges(false);
+    } catch (error: any) {
+      toast({
+        title: "Error saving rental options",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleAddAvailabilityDate = (date: Date | undefined) => {
+    if (date) {
+      setRentalOptions(prev => ({
+        ...prev,
+        availability: [...(prev.availability || []), date]
+      }));
+      setSelectedDate(undefined);
+      setHasUnsavedChanges(true);
+    }
+  };
+  
+  const handleRemoveAvailabilityDate = (dateToRemove: Date) => {
+    setRentalOptions(prev => ({
+      ...prev,
+      availability: (prev.availability || []).filter(date => 
+        date.getTime() !== dateToRemove.getTime()
+      )
+    }));
+    setHasUnsavedChanges(true);
+  };
+  
   if (loading) {
     return (
       <MobileLayout>
@@ -249,7 +428,6 @@ export default function PrinterDetail() {
           <h1 className="text-2xl font-bold">{printer.make} {printer.model}</h1>
           <div className="flex space-x-2">
             <Button variant="ghost" size="icon" onClick={() => {
-              // Share functionality would go here
               toast({
                 title: "Share feature",
                 description: "This feature will be implemented soon",
@@ -263,15 +441,32 @@ export default function PrinterDetail() {
           </div>
         </div>
         
-        <Badge className={`mb-4 ${getStatusColor(printer.status)}`}>
-          {getStatusEmoji(printer.status)} {printer.status}
-        </Badge>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
+          <Badge className={`${getStatusColor(printer.status)}`}>
+            {getStatusEmoji(printer.status)} {printer.status}
+          </Badge>
+          
+          <div className="flex items-center ml-0 sm:ml-4">
+            <Switch 
+              id="rental-toggle"
+              checked={isForRent} 
+              onCheckedChange={handleToggleRental}
+              className="mr-2"
+            />
+            <Label htmlFor="rental-toggle" className="text-sm font-medium">
+              For Rent
+            </Label>
+          </div>
+        </div>
         
-        <Tabs defaultValue="details" className="mb-6">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="toners">Toners</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
+            <TabsTrigger value="rentOptions" disabled={!isForRent}>
+              Rent Options
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="details" className="mt-4">
@@ -473,8 +668,221 @@ export default function PrinterDetail() {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          <TabsContent value="rentOptions" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Rental Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="rentalRate">Rental Rate</Label>
+                    <div className="flex">
+                      <Input 
+                        id="rentalRate"
+                        type="number" 
+                        value={rentalOptions.rentalRate} 
+                        onChange={(e) => handleRentalOptionChange('rentalRate', parseFloat(e.target.value) || 0)}
+                        className="rounded-r-none"
+                      />
+                      <Select 
+                        value={rentalOptions.rateUnit} 
+                        onValueChange={(value) => handleRentalOptionChange('rateUnit', value as any)}
+                      >
+                        <SelectTrigger className="w-[110px] rounded-l-none">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hourly">Per Hour</SelectItem>
+                          <SelectItem value="daily">Per Day</SelectItem>
+                          <SelectItem value="weekly">Per Week</SelectItem>
+                          <SelectItem value="monthly">Per Month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="securityDeposit">Security Deposit</Label>
+                    <Input 
+                      id="securityDeposit"
+                      type="number" 
+                      value={rentalOptions.securityDeposit} 
+                      onChange={(e) => handleRentalOptionChange('securityDeposit', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minimumDuration">Minimum Duration</Label>
+                    <div className="flex">
+                      <Input 
+                        id="minimumDuration"
+                        type="number" 
+                        value={rentalOptions.minimumDuration} 
+                        onChange={(e) => handleRentalOptionChange('minimumDuration', parseInt(e.target.value) || 1)}
+                        className="rounded-r-none"
+                      />
+                      <Select 
+                        value={rentalOptions.durationUnit} 
+                        onValueChange={(value) => handleRentalOptionChange('durationUnit', value as any)}
+                      >
+                        <SelectTrigger className="w-[110px] rounded-l-none">
+                          <SelectValue placeholder="Unit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
+                          <SelectItem value="weeks">Weeks</SelectItem>
+                          <SelectItem value="months">Months</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="terms">Terms & Conditions</Label>
+                  <textarea 
+                    id="terms"
+                    className="w-full p-2 border rounded-md h-24"
+                    value={rentalOptions.terms} 
+                    onChange={(e) => handleRentalOptionChange('terms', e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="cancellationPolicy">Cancellation Policy</Label>
+                  <textarea 
+                    id="cancellationPolicy"
+                    className="w-full p-2 border rounded-md h-24"
+                    value={rentalOptions.cancellationPolicy} 
+                    onChange={(e) => handleRentalOptionChange('cancellationPolicy', e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="block mb-2">Availability</Label>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="border rounded-md p-4">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {selectedDate ? format(selectedDate, 'PPP') : <span>Add available date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                          <div className="p-2 border-t">
+                            <Button 
+                              size="sm" 
+                              className="w-full"
+                              onClick={() => handleAddAvailabilityDate(selectedDate)}
+                              disabled={!selectedDate}
+                            >
+                              Add Date
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="flex-1 border rounded-md p-4">
+                      <p className="text-sm font-medium mb-2">Available Dates:</p>
+                      {rentalOptions.availability && rentalOptions.availability.length > 0 ? (
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {rentalOptions.availability.map((date, i) => (
+                            <div key={i} className="flex justify-between items-center text-sm border-b pb-1">
+                              <span>{format(date, 'PPP')}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveAvailabilityDate(date)}
+                              >
+                                &times;
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No available dates set</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      fetchRentalOptions(id!);
+                      setHasUnsavedChanges(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveRentalOptions}
+                    disabled={!hasUnsavedChanges}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
+      
+      <Dialog open={confirmToggleDialogOpen} onOpenChange={setConfirmToggleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disable Rental</DialogTitle>
+            <DialogDescription>
+              Disabling rental will hide Rent Options. Unsaved changes will be lost. Do you want to proceed?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmToggleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => saveRentalToggleState(false)}
+            >
+              Disable Rental
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this printer? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeletePrinter}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 }

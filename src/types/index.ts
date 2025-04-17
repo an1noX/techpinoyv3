@@ -26,7 +26,25 @@ export interface Printer {
   location?: string;
   createdAt: string;
   updatedAt: string;
+  isForRent?: boolean;
 }
 
 // Add PrinterStatus type
 export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+
+// Add RentalOptions type
+export interface RentalOptions {
+  id: string;
+  printerId: string;
+  isForRent: boolean;
+  rentalRate: number;
+  rateUnit: 'hourly' | 'daily' | 'weekly' | 'monthly';
+  minimumDuration: number;
+  durationUnit: 'hours' | 'days' | 'weeks' | 'months';
+  securityDeposit: number;
+  terms: string;
+  cancellationPolicy: string;
+  availability?: Date[];
+  createdAt: string;
+  updatedAt: string;
+}
