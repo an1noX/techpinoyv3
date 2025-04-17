@@ -140,8 +140,12 @@ export default function WikiCreateEdit() {
         }
       });
       
+      // Make sure make, model, and series are included
       const printerData = {
-        ...formData,
+        make: formData.make,
+        series: formData.series,
+        model: formData.model,
+        maintenance_tips: formData.maintenance_tips,
         specs: Object.keys(specsObject).length > 0 ? specsObject : null,
       };
       
