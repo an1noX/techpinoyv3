@@ -48,6 +48,7 @@ export type Database = {
           created_at: string
           department: string | null
           id: string
+          is_for_rent: boolean | null
           location: string | null
           make: string
           model: string
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           id?: string
+          is_for_rent?: boolean | null
           location?: string | null
           make: string
           model: string
@@ -74,6 +76,7 @@ export type Database = {
           created_at?: string
           department?: string | null
           id?: string
+          is_for_rent?: boolean | null
           location?: string | null
           make?: string
           model?: string
@@ -114,14 +117,73 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_options: {
+        Row: {
+          availability: Json | null
+          cancellation_policy: string | null
+          created_at: string
+          duration_unit: string
+          id: string
+          is_for_rent: boolean | null
+          minimum_duration: number
+          printer_id: string
+          rate_unit: string
+          rental_rate: number
+          security_deposit: number
+          terms: string | null
+          updated_at: string
+        }
+        Insert: {
+          availability?: Json | null
+          cancellation_policy?: string | null
+          created_at?: string
+          duration_unit: string
+          id?: string
+          is_for_rent?: boolean | null
+          minimum_duration: number
+          printer_id: string
+          rate_unit: string
+          rental_rate: number
+          security_deposit: number
+          terms?: string | null
+          updated_at?: string
+        }
+        Update: {
+          availability?: Json | null
+          cancellation_policy?: string | null
+          created_at?: string
+          duration_unit?: string
+          id?: string
+          is_for_rent?: boolean | null
+          minimum_duration?: number
+          printer_id?: string
+          rate_unit?: string
+          rental_rate?: number
+          security_deposit?: number
+          terms?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_options_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rentals: {
         Row: {
           agreement_url: string | null
+          booking_count: number | null
           client: string
           client_id: string | null
           created_at: string
           end_date: string
           id: string
+          inquiry_count: number | null
+          next_available_date: string | null
           printer: string
           printer_id: string | null
           signature_url: string | null
@@ -131,11 +193,14 @@ export type Database = {
         }
         Insert: {
           agreement_url?: string | null
+          booking_count?: number | null
           client: string
           client_id?: string | null
           created_at?: string
           end_date: string
           id?: string
+          inquiry_count?: number | null
+          next_available_date?: string | null
           printer: string
           printer_id?: string | null
           signature_url?: string | null
@@ -145,11 +210,14 @@ export type Database = {
         }
         Update: {
           agreement_url?: string | null
+          booking_count?: number | null
           client?: string
           client_id?: string | null
           created_at?: string
           end_date?: string
           id?: string
+          inquiry_count?: number | null
+          next_available_date?: string | null
           printer?: string
           printer_id?: string | null
           signature_url?: string | null

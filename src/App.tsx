@@ -36,6 +36,7 @@ const App = () => (
             <Route path="/wiki/edit/:id" element={<WikiCreateEdit />} />
             <Route path="/printers" element={<Printers />} />
             <Route path="/printers/:id" element={<PrinterDetail />} />
+            <Route path="/printers/import/confirmation" element={<Printers />} />
             <Route path="/rentals" element={<Rentals />} />
             <Route path="/rentals/:id" element={<RentalDetail />} />
             <Route path="/rentals/new" element={<RentalCreate />} />

@@ -51,3 +51,15 @@ export interface RentalOptions {
   createdAt: string;
   updatedAt: string;
 }
+
+// Add WikiPrinter type
+export interface WikiPrinter {
+  id: string;
+  make: string;
+  series: string;
+  model: string;
+  maintenanceTips?: string;
+  specs?: Record<string, string>;
+  createdAt: string;
+  updatedAt: string;
+}

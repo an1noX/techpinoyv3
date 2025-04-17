@@ -9,13 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface WikiPrinter {
-  id: string;
-  make: string;
-  series: string;
-  model: string;
-}
+import { WikiPrinter } from '@/types';
 
 export default function Wiki() {
   const navigate = useNavigate();
@@ -40,7 +34,18 @@ export default function Wiki() {
         throw error;
       }
       
-      setPrinters(data || []);
+      const transformedPrinters: WikiPrinter[] = (data || []).map(printer => ({
+        id: printer.id,
+        make: printer.make,
+        series: printer.series,
+        model: printer.model,
+        maintenanceTips: printer.maintenance_tips || undefined,
+        specs: printer.specs as Record<string, string> || {},
+        createdAt: printer.created_at,
+        updatedAt: printer.updated_at
+      }));
+      
+      setPrinters(transformedPrinters);
     } catch (error: any) {
       toast({
         title: "Error fetching printer wiki",
@@ -49,9 +54,9 @@ export default function Wiki() {
       });
       
       const mockPrinters: WikiPrinter[] = [
-        { id: '1', make: 'HP', series: 'LaserJet', model: 'Pro MFP M428fdn' },
-        { id: '2', make: 'Brother', series: 'MFC', model: 'L8900CDW' },
-        { id: '3', make: 'Canon', series: 'imageRUNNER', model: '1643i' },
+        { id: '1', make: 'HP', series: 'LaserJet', model: 'Pro MFP M428fdn', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '2', make: 'Brother', series: 'MFC', model: 'L8900CDW', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '3', make: 'Canon', series: 'imageRUNNER', model: '1643i', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
       ];
       
       setPrinters(mockPrinters);
@@ -91,7 +96,14 @@ export default function Wiki() {
       <div className="container px-4 py-4">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Printer Wiki</h1>
+          <div className="text-sm bg-blue-100 text-blue-800 rounded-md px-2 py-1">
+            Master List
+          </div>
         </div>
+        
+        <p className="text-sm text-muted-foreground mb-4">
+          This is the master list of all printer models. New printers can only be created here.
+        </p>
         
         <div className="flex items-center space-x-2 mb-6">
           <div className="relative flex-1">
