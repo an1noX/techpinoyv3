@@ -52,7 +52,21 @@ export default function Printers() {
         throw error;
       }
       
-      setPrinters(data || []);
+      const transformedPrinters: Printer[] = (data || []).map(printer => ({
+        id: printer.id,
+        make: printer.make,
+        series: printer.series,
+        model: printer.model,
+        status: printer.status as PrinterStatus,
+        ownedBy: printer.owned_by,
+        assignedTo: printer.assigned_to || undefined,
+        department: printer.department || undefined,
+        location: printer.location || undefined,
+        createdAt: printer.created_at,
+        updatedAt: printer.updated_at
+      }));
+      
+      setPrinters(transformedPrinters);
     } catch (error: any) {
       toast({
         title: "Error fetching printers",

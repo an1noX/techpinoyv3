@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -66,7 +67,22 @@ export default function PrinterDetail() {
         throw error;
       }
       
-      setPrinter(data);
+      // Transform the data to match our Printer type
+      const transformedPrinter: Printer = {
+        id: data.id,
+        make: data.make,
+        series: data.series,
+        model: data.model,
+        status: data.status as PrinterStatus,
+        ownedBy: data.owned_by,
+        assignedTo: data.assigned_to || undefined,
+        department: data.department || undefined,
+        location: data.location || undefined,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
+      
+      setPrinter(transformedPrinter);
     } catch (error: any) {
       toast({
         title: "Error fetching printer details",
@@ -132,7 +148,10 @@ export default function PrinterDetail() {
     try {
       const { error } = await supabase
         .from('printers')
-        .update({ status, updatedAt: new Date().toISOString() })
+        .update({ 
+          status, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', printer.id);
       
       if (error) {
