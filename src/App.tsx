@@ -12,6 +12,8 @@ import WikiCreateEdit from "./pages/WikiCreateEdit";
 import Printers from "./pages/Printers";
 import PrinterDetail from "./pages/PrinterDetail";
 import Rentals from "./pages/Rentals";
+import RentalDetail from "./pages/RentalDetail";
+import RentalCreate from "./pages/RentalCreate";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/printers" element={<Printers />} />
             <Route path="/printers/:id" element={<PrinterDetail />} />
             <Route path="/rentals" element={<Rentals />} />
+            <Route path="/rentals/:id" element={<RentalDetail />} />
+            <Route path="/rentals/new" element={<RentalCreate />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

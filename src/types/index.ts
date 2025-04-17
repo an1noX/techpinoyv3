@@ -11,6 +11,9 @@ export interface Rental {
   status: 'active' | 'completed' | 'cancelled' | 'upcoming';
   signatureUrl?: string | null;
   agreementUrl?: string | null;
+  inquiryCount?: number;
+  bookingCount?: number;
+  nextAvailableDate?: string;
 }
 
 // Add Printer type
