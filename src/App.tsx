@@ -14,6 +14,7 @@ import PrinterDetail from "./pages/PrinterDetail";
 import Rentals from "./pages/Rentals";
 import RentalDetail from "./pages/RentalDetail";
 import RentalCreate from "./pages/RentalCreate";
+import Clients from "./pages/Clients";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/rentals" element={<Rentals />} />
             <Route path="/rentals/:id" element={<RentalDetail />} />
             <Route path="/rentals/new" element={<RentalCreate />} />
+            <Route path="/clients" element={<Clients />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

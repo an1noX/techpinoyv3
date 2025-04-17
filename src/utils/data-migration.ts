@@ -6,6 +6,8 @@ import { Database } from '@/integrations/supabase/types';
 type DatabasePrinter = Database['public']['Tables']['printers']['Insert'];
 type DatabaseRental = Database['public']['Tables']['rentals']['Insert'];
 type DatabaseWikiPrinter = Database['public']['Tables']['printer_wiki']['Insert'];
+type DatabaseClient = Database['public']['Tables']['clients']['Insert'];
+type DatabasePrinterClientAssignment = Database['public']['Tables']['printer_client_assignments']['Insert'];
 
 // Migration script to push mock data to Supabase
 export const migrateMockData = async () => {
@@ -76,6 +78,49 @@ export const migrateMockData = async () => {
       throw new Error('Failed to retrieve wiki printers: ' + (wikiError?.message || 'No printers found'));
     }
 
+    // Add mock clients
+    const mockClients: DatabaseClient[] = [
+      {
+        name: 'Acme Corp',
+        company: 'Acme Corporation',
+        email: 'contact@acme.com',
+        phone: '555-123-4567',
+        address: '123 Acme Street, Acme City'
+      },
+      {
+        name: 'TechSolutions Inc',
+        company: 'TechSolutions',
+        email: 'info@techsolutions.com',
+        phone: '555-987-6543',
+        address: '456 Tech Blvd, Innovation Valley'
+      },
+      {
+        name: 'Global Enterprises',
+        company: 'Global Inc',
+        email: 'global@enterprises.com',
+        phone: '555-456-7890',
+        address: '789 Global Avenue, Metropolis'
+      }
+    ];
+
+    // Insert clients
+    const insertedClients = [];
+    for (const client of mockClients) {
+      const { data, error } = await supabase
+        .from('clients')
+        .upsert({
+          ...client,
+          updated_at: new Date().toISOString()
+        })
+        .select();
+
+      if (error) {
+        console.error('Error migrating client:', error);
+      } else if (data && data.length > 0) {
+        insertedClients.push(data[0]);
+      }
+    }
+
     // Then, add actual printer instances referencing wiki models
     const mockPrinters: DatabasePrinter[] = [
       { 
@@ -94,7 +139,8 @@ export const migrateMockData = async () => {
         model: wikiPrinters[1].model,
         status: 'rented',
         owned_by: 'system',
-        assigned_to: 'Acme Corp',
+        assigned_to: insertedClients.length > 0 ? insertedClients[0].name : 'Acme Corp',
+        client_id: insertedClients.length > 0 ? insertedClients[0].id : null,
         department: 'Sales',
         location: 'Floor 1, Room 105',
         is_for_rent: true
@@ -105,7 +151,8 @@ export const migrateMockData = async () => {
         model: wikiPrinters[2].model,
         status: 'maintenance',
         owned_by: 'client',
-        assigned_to: 'TechSolutions Inc',
+        assigned_to: insertedClients.length > 1 ? insertedClients[1].name : 'TechSolutions Inc',
+        client_id: insertedClients.length > 1 ? insertedClients[1].id : null,
         department: 'IT',
         location: 'Floor 3, Room 302',
         is_for_rent: false
@@ -117,18 +164,39 @@ export const migrateMockData = async () => {
     for (const printer of mockPrinters) {
       const { data, error } = await supabase
         .from('printers')
-        .upsert(
-          {
-            ...printer,
-            updated_at: new Date().toISOString()
-          }
-        )
+        .upsert({
+          ...printer,
+          updated_at: new Date().toISOString()
+        })
         .select();
 
       if (error) {
         console.error('Error migrating printer:', error);
       } else if (data && data.length > 0) {
         insertedPrinters.push(data[0]);
+      }
+    }
+
+    // Create printer-client assignments for assigned printers
+    if (insertedPrinters.length > 0 && insertedClients.length > 0) {
+      // Filter printers that are assigned to clients
+      const assignedPrinters = insertedPrinters.filter(p => p.client_id);
+      
+      for (const printer of assignedPrinters) {
+        const assignment: DatabasePrinterClientAssignment = {
+          printer_id: printer.id,
+          client_id: printer.client_id!,
+          created_by: 'system',
+          notes: 'Initial assignment from data migration.'
+        };
+
+        const { error } = await supabase
+          .from('printer_client_assignments')
+          .insert(assignment);
+
+        if (error) {
+          console.error('Error creating printer assignment:', error);
+        }
       }
     }
 
@@ -164,7 +232,8 @@ export const migrateMockData = async () => {
       const mockRentals: DatabaseRental[] = [
         { 
           printer_id: insertedPrinters[0].id,
-          client: 'Acme Corp',
+          client_id: insertedClients.length > 0 ? insertedClients[0].id : null,
+          client: insertedClients.length > 0 ? insertedClients[0].name : 'Acme Corp',
           printer: `${insertedPrinters[0].make} ${insertedPrinters[0].model}`,
           start_date: '2023-04-10',
           end_date: '2023-06-10',
@@ -175,7 +244,8 @@ export const migrateMockData = async () => {
         },
         { 
           printer_id: insertedPrinters[1].id,
-          client: 'TechSolutions Inc',
+          client_id: insertedClients.length > 1 ? insertedClients[1].id : null,
+          client: insertedClients.length > 1 ? insertedClients[1].name : 'TechSolutions Inc',
           printer: `${insertedPrinters[1].make} ${insertedPrinters[1].model}`,
           start_date: '2023-03-15',
           end_date: '2023-05-15',

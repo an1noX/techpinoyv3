@@ -9,6 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clients: {
+        Row: {
+          address: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      printer_client_assignments: {
+        Row: {
+          assigned_at: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          printer_id: string
+          unassigned_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          printer_id: string
+          unassigned_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          printer_id?: string
+          unassigned_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_client_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_client_assignments_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_wiki: {
         Row: {
           created_at: string
@@ -45,6 +132,7 @@ export type Database = {
       printers: {
         Row: {
           assigned_to: string | null
+          client_id: string | null
           created_at: string
           department: string | null
           id: string
@@ -59,6 +147,7 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          client_id?: string | null
           created_at?: string
           department?: string | null
           id?: string
@@ -73,6 +162,7 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          client_id?: string | null
           created_at?: string
           department?: string | null
           id?: string
@@ -85,7 +175,15 @@ export type Database = {
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "printers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
