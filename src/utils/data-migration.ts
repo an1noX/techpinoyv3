@@ -50,28 +50,30 @@ export const migrateMockData = async () => {
       },
     ];
 
-    // Insert wiki printers
-    const { error: wikiError, data: wikiData } = await supabase
-      .from('printer_wiki')
-      .upsert(
-        mockWikiPrinters.map(printer => ({
-          ...printer,
-          updated_at: new Date().toISOString()
-        })),
-        { onConflict: 'make,series,model', returning: 'minimal' }
-      );
+    // Insert wiki printers one by one to avoid array/object type conflicts
+    for (const printer of mockWikiPrinters) {
+      const { error } = await supabase
+        .from('printer_wiki')
+        .upsert(
+          { 
+            ...printer,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'make,series,model' }
+        );
 
-    if (wikiError) {
-      console.error('Error migrating wiki printers:', wikiError);
+      if (error) {
+        console.error('Error migrating wiki printer:', error);
+      }
     }
 
     // Get the wiki printer IDs
-    const { data: wikiPrinters } = await supabase
+    const { data: wikiPrinters, error: wikiError } = await supabase
       .from('printer_wiki')
       .select('id, make, series, model');
 
-    if (!wikiPrinters || wikiPrinters.length === 0) {
-      throw new Error('Failed to retrieve wiki printers');
+    if (wikiError || !wikiPrinters || wikiPrinters.length === 0) {
+      throw new Error('Failed to retrieve wiki printers: ' + (wikiError?.message || 'No printers found'));
     }
 
     // Then, add actual printer instances referencing wiki models
@@ -110,53 +112,60 @@ export const migrateMockData = async () => {
       },
     ];
 
-    // Insert printers
-    const { error: printersError, data: printersData } = await supabase
-      .from('printers')
-      .upsert(
-        mockPrinters.map(printer => ({
-          ...printer,
-          updated_at: new Date().toISOString()
-        })),
-        { onConflict: 'id', returning: 'representation' }
-      );
+    // Insert printers one by one to avoid array/object type conflicts
+    const insertedPrinters = [];
+    for (const printer of mockPrinters) {
+      const { data, error } = await supabase
+        .from('printers')
+        .upsert(
+          {
+            ...printer,
+            updated_at: new Date().toISOString()
+          }
+        )
+        .select();
 
-    if (printersError) {
-      console.error('Error migrating printers:', printersError);
+      if (error) {
+        console.error('Error migrating printer:', error);
+      } else if (data && data.length > 0) {
+        insertedPrinters.push(data[0]);
+      }
     }
 
     // Add rental options for rentable printers
-    if (printersData) {
-      const rentalPrinters = printersData.filter(p => p.is_for_rent);
+    if (insertedPrinters.length > 0) {
+      const rentalPrinters = insertedPrinters.filter(p => p.is_for_rent);
       
-      const rentalOptions = rentalPrinters.map(printer => ({
-        printer_id: printer.id,
-        is_for_rent: true,
-        rental_rate: Math.floor(Math.random() * 100) + 50, // Random rate between 50-150
-        rate_unit: 'daily',
-        minimum_duration: 7,
-        duration_unit: 'days',
-        security_deposit: 200,
-        terms: 'Standard rental terms apply.',
-        cancellation_policy: 'Cancellation allowed up to 48 hours prior to start date.'
-      }));
+      for (const printer of rentalPrinters) {
+        const rentalOption = {
+          printer_id: printer.id,
+          is_for_rent: true,
+          rental_rate: Math.floor(Math.random() * 100) + 50, // Random rate between 50-150
+          rate_unit: 'daily',
+          minimum_duration: 7,
+          duration_unit: 'days',
+          security_deposit: 200,
+          terms: 'Standard rental terms apply.',
+          cancellation_policy: 'Cancellation allowed up to 48 hours prior to start date.'
+        };
 
-      const { error: optionsError } = await supabase
-        .from('rental_options')
-        .upsert(rentalOptions, { onConflict: 'printer_id' });
+        const { error } = await supabase
+          .from('rental_options')
+          .upsert(rentalOption, { onConflict: 'printer_id' });
 
-      if (optionsError) {
-        console.error('Error migrating rental options:', optionsError);
+        if (error) {
+          console.error('Error migrating rental option:', error);
+        }
       }
     }
 
     // Add mock rentals
-    if (printersData && printersData.length >= 2) {
+    if (insertedPrinters.length >= 2) {
       const mockRentals: DatabaseRental[] = [
         { 
-          printer_id: printersData[0].id,
+          printer_id: insertedPrinters[0].id,
           client: 'Acme Corp',
-          printer: `${printersData[0].make} ${printersData[0].model}`,
+          printer: `${insertedPrinters[0].make} ${insertedPrinters[0].model}`,
           start_date: '2023-04-10',
           end_date: '2023-06-10',
           status: 'active',
@@ -165,9 +174,9 @@ export const migrateMockData = async () => {
           next_available_date: '2023-06-11'
         },
         { 
-          printer_id: printersData[1].id,
+          printer_id: insertedPrinters[1].id,
           client: 'TechSolutions Inc',
-          printer: `${printersData[1].make} ${printersData[1].model}`,
+          printer: `${insertedPrinters[1].make} ${insertedPrinters[1].model}`,
           start_date: '2023-03-15',
           end_date: '2023-05-15',
           status: 'active',
@@ -177,25 +186,24 @@ export const migrateMockData = async () => {
         },
       ];
 
-      // Insert rentals
-      const { error: rentalsError } = await supabase
-        .from('rentals')
-        .upsert(
-          mockRentals.map(rental => ({
+      // Insert rentals one by one to avoid array/object type conflicts
+      for (const rental of mockRentals) {
+        const { error } = await supabase
+          .from('rentals')
+          .upsert({
             ...rental,
             updated_at: new Date().toISOString()
-          })),
-          { onConflict: 'id' }
-        );
+          });
 
-      if (rentalsError) {
-        console.error('Error migrating rentals:', rentalsError);
+        if (error) {
+          console.error('Error migrating rental:', error);
+        }
       }
     }
 
     console.log('Data migration completed successfully');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Data migration failed:', error);
     return { success: false, error };
   }
