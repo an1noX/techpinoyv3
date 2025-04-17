@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
 import Index from "./pages/Index";
 import Wiki from "./pages/Wiki";
+import WikiDetail from "./pages/WikiDetail";
+import WikiCreateEdit from "./pages/WikiCreateEdit";
 import Printers from "./pages/Printers";
 import PrinterDetail from "./pages/PrinterDetail";
 import Rentals from "./pages/Rentals";
@@ -27,6 +29,9 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/wiki" element={<Wiki />} />
+            <Route path="/wiki/:id" element={<WikiDetail />} />
+            <Route path="/wiki/new" element={<WikiCreateEdit />} />
+            <Route path="/wiki/edit/:id" element={<WikiCreateEdit />} />
             <Route path="/printers" element={<Printers />} />
             <Route path="/printers/:id" element={<PrinterDetail />} />
             <Route path="/rentals" element={<Rentals />} />

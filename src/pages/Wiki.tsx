@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -73,13 +74,17 @@ export default function Wiki() {
     navigate(`/wiki/${printerId}`);
   };
   
+  const handleAddPrinter = () => {
+    navigate('/wiki/new');
+  };
+  
   return (
     <MobileLayout
       fab={
         <Fab 
           icon={<Plus size={24} />} 
           aria-label="Add printer to wiki" 
-          onClick={() => navigate('/wiki/new')}
+          onClick={handleAddPrinter}
         />
       }
     >
@@ -100,7 +105,7 @@ export default function Wiki() {
             />
           </div>
           <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-            <Search className="h-4 w-4" />
+            <Filter className="h-4 w-4" />
           </Button>
         </div>
         
@@ -111,7 +116,7 @@ export default function Wiki() {
         ) : filteredPrinters.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No printers found</p>
-            <Button className="mt-4" onClick={() => navigate('/wiki/new')}>Add Printer to Wiki</Button>
+            <Button className="mt-4" onClick={handleAddPrinter}>Add Printer to Wiki</Button>
           </div>
         ) : (
           <div className="space-y-4">
