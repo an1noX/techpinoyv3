@@ -1,18 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Printer, Rental } from '@/types';
+import { Printer, Rental } from '@/types';
+import { Database } from '@/integrations/supabase/types';
+
+type DatabasePrinter = Database['public']['Tables']['printers']['Insert'];
+type DatabaseRental = Database['public']['Tables']['rentals']['Insert'];
 
 // Migration script to push mock data to Supabase
 export const migrateMockData = async () => {
   try {
     // Add mock printers
-    const mockPrinters: Omit<Printer, 'id' | 'createdAt' | 'updatedAt'>[] = [
+    const mockPrinters: DatabasePrinter[] = [
       { 
         make: 'HP', 
         series: 'LaserJet', 
         model: 'Pro MFP M428fdn',
         status: 'available',
-        ownedBy: 'system',
+        owned_by: 'system',
         department: 'Marketing',
         location: 'Floor 2, Room 201',
       },
@@ -21,8 +25,8 @@ export const migrateMockData = async () => {
         series: 'MFC', 
         model: 'L8900CDW',
         status: 'rented',
-        ownedBy: 'system',
-        assignedTo: 'Acme Corp',
+        owned_by: 'system',
+        assigned_to: 'Acme Corp',
         department: 'Sales',
         location: 'Floor 1, Room 105',
       },
@@ -31,8 +35,8 @@ export const migrateMockData = async () => {
         series: 'imageRUNNER', 
         model: '1643i',
         status: 'maintenance',
-        ownedBy: 'client',
-        assignedTo: 'TechSolutions Inc',
+        owned_by: 'client',
+        assigned_to: 'TechSolutions Inc',
         department: 'IT',
         location: 'Floor 3, Room 302',
       },
@@ -68,7 +72,7 @@ export const migrateMockData = async () => {
       .eq('model', 'L8900CDW')
       .single();
 
-    const mockRentals = [
+    const mockRentals: DatabaseRental[] = [
       { 
         printer_id: printerId1?.id,
         client: 'Acme Corp',

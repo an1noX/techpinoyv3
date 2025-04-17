@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -47,7 +48,21 @@ export default function Rentals() {
         throw error;
       }
       
-      setRentals(data || []);
+      // Transform the data to match our Rental type
+      const transformedRentals: Rental[] = (data || []).map(rental => ({
+        id: rental.id,
+        printerId: rental.printer_id,
+        clientId: rental.client_id,
+        client: rental.client,
+        printer: rental.printer,
+        startDate: rental.start_date,
+        endDate: rental.end_date,
+        status: rental.status as 'active' | 'completed' | 'cancelled' | 'upcoming',
+        signatureUrl: rental.signature_url,
+        agreementUrl: rental.agreement_url
+      }));
+      
+      setRentals(transformedRentals);
     } catch (error: any) {
       toast({
         title: "Error fetching rentals",

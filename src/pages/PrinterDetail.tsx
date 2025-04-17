@@ -20,6 +20,24 @@ import {
   DialogTrigger 
 } from '@/components/ui/dialog';
 
+const getStatusColor = (status: PrinterStatus) => {
+  switch (status) {
+    case 'available': return 'bg-status-available text-white';
+    case 'rented': return 'bg-status-rented text-black';
+    case 'maintenance': return 'bg-status-maintenance text-white';
+    default: return 'bg-gray-500 text-white';
+  }
+};
+
+const getStatusEmoji = (status: PrinterStatus) => {
+  switch (status) {
+    case 'available': return '🟢';
+    case 'rented': return '🟡';
+    case 'maintenance': return '🔴';
+    default: return '⚪';
+  }
+};
+
 export default function PrinterDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
