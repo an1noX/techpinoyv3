@@ -52,7 +52,12 @@ export const PrinterStatusBadge = ({ printerId, currentStatus, onStatusChange }:
       if (updateError) throw updateError;
 
       // Then add an audit log entry using RPC function
-      const { data, error: logError } = await supabase.rpc<AuditLogRPCResponse>(
+      const { data, error: logError } = await supabase.rpc<AuditLogRPCResponse, {
+        printer_id_param: string;
+        changed_by_param: string;
+        old_status_param: string;
+        new_status_param: string;
+      }>(
         'insert_printer_audit_log',
         {
           printer_id_param: printerId,
