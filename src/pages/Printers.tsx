@@ -151,13 +151,12 @@ export default function Printers() {
 
     try {
       // Fetch the selected model details to get series and make
-      const { data: modelData, error: modelError } = await supabase
-        .rpc<PrinterModelDetails, any>('get_printer_model_details', { model_id: selectedModelId });
+      const { data: modelData, error: modelError } = await rpcGetPrinterModelDetails(selectedModelId);
       
       if (modelError) throw modelError;
-      if (!modelData || !modelData.length) throw new Error("Model details not found");
+      if (!modelData) throw new Error("Model details not found");
       
-      const modelDetails = modelData[0];
+      const modelDetails = Array.isArray(modelData) ? modelData[0] : modelData;
       
       // Insert the printer
       const { data, error } = await supabase

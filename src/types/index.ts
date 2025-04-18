@@ -121,4 +121,11 @@ export interface Client {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  printers?: {
+    id: string;
+    make: string;
+    model: string;
+    status: string;
+    location: string;
+  }[];
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -44,7 +45,22 @@ export default function Clients() {
         throw error;
       }
       
-      setClients(data || []);
+      if (data) {
+        const formattedClients: Client[] = data.map(client => ({
+          id: client.id,
+          name: client.name,
+          company: client.company,
+          email: client.email,
+          phone: client.phone,
+          address: client.address,
+          notes: client.notes,
+          createdAt: client.created_at,
+          updatedAt: client.updated_at,
+          printers: client.printers
+        }));
+        
+        setClients(formattedClients);
+      }
     } catch (error: any) {
       toast({
         title: "Error fetching clients",
@@ -80,7 +96,14 @@ export default function Clients() {
     setOpenClientDetail(true);
   };
 
-  const handleSaveClient = async (clientData: Partial<Client>) => {
+  const handleSaveClient = async (clientData: { 
+    name: string;
+    company?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    notes?: string | null;
+  }) => {
     try {
       if (!clientData.name) {
         throw new Error("Name is required");

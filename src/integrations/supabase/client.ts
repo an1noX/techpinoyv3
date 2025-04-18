@@ -14,22 +14,34 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Add type-safe RPC function wrappers
 export const rpcGetPrinterMakes = () => 
-  supabase.rpc('get_printer_makes') as unknown as Promise<{ data: PrinterMakeRPC[] | null, error: any }>;
+  supabase.rpc('get_printer_makes').then(result => {
+    return { data: result.data as PrinterMakeRPC[] | null, error: result.error };
+  });
 
 export const rpcGetPrinterSeries = (makeId: string) => 
-  supabase.rpc('get_printer_series', { make_id: makeId }) as unknown as Promise<{ data: PrinterSeriesRPC[] | null, error: any }>;
+  supabase.rpc('get_printer_series', { make_id: makeId }).then(result => {
+    return { data: result.data as PrinterSeriesRPC[] | null, error: result.error };
+  });
 
 export const rpcGetPrinterModels = (seriesId: string) => 
-  supabase.rpc('get_printer_models', { series_id: seriesId }) as unknown as Promise<{ data: PrinterModelRPC[] | null, error: any }>;
+  supabase.rpc('get_printer_models', { series_id: seriesId }).then(result => {
+    return { data: result.data as PrinterModelRPC[] | null, error: result.error };
+  });
 
 export const rpcCreatePrinterMake = (name: string) => 
-  supabase.rpc('create_printer_make', { name }) as unknown as Promise<{ data: PrinterMakeRPC | null, error: any }>;
+  supabase.rpc('create_printer_make', { name }).then(result => {
+    return { data: result.data as PrinterMakeRPC | null, error: result.error };
+  });
 
 export const rpcCreatePrinterSeries = (makeId: string, name: string) => 
-  supabase.rpc('create_printer_series', { make_id: makeId, name }) as unknown as Promise<{ data: PrinterSeriesRPC | null, error: any }>;
+  supabase.rpc('create_printer_series', { make_id: makeId, name }).then(result => {
+    return { data: result.data as PrinterSeriesRPC | null, error: result.error };
+  });
 
 export const rpcCreatePrinterModel = (seriesId: string, name: string) => 
-  supabase.rpc('create_printer_model', { series_id: seriesId, name }) as unknown as Promise<{ data: PrinterModelRPC | null, error: any }>;
+  supabase.rpc('create_printer_model', { series_id: seriesId, name }).then(result => {
+    return { data: result.data as PrinterModelRPC | null, error: result.error };
+  });
 
 export const rpcLogPrinterAction = (
   entityType: string,
@@ -42,7 +54,11 @@ export const rpcLogPrinterAction = (
     entity_id: entityId,
     action,
     details
-  }) as unknown as Promise<{ data: AuditLogRPCResponse | null, error: any }>;
+  }).then(result => {
+    return { data: result.data as AuditLogRPCResponse | null, error: result.error };
+  });
 
 export const rpcGetPrinterModelDetails = (modelId: string) =>
-  supabase.rpc('get_printer_model_details', { model_id: modelId }) as unknown as Promise<{ data: PrinterModelDetails | null, error: any }>;
+  supabase.rpc('get_printer_model_details', { model_id: modelId }).then(result => {
+    return { data: result.data as PrinterModelDetails | null, error: result.error };
+  });
