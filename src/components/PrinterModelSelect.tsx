@@ -6,33 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { PrinterMake, PrinterSeries, PrinterModel } from '@/types';
 
 interface PrinterModelSelectProps {
   onSelect: (make: string, series: string, model: string) => void;
 }
 
-interface Make {
-  id: string;
-  name: string;
-}
-
-interface Series {
-  id: string;
-  name: string;
-  make_id: string;
-}
-
-interface Model {
-  id: string;
-  name: string;
-  series_id: string;
-}
-
 export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
   const { toast } = useToast();
-  const [makes, setMakes] = useState<Make[]>([]);
-  const [series, setSeries] = useState<Series[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
+  const [makes, setMakes] = useState<PrinterMake[]>([]);
+  const [series, setSeries] = useState<PrinterSeries[]>([]);
+  const [models, setModels] = useState<PrinterModel[]>([]);
   
   const [selectedMake, setSelectedMake] = useState<string>('');
   const [selectedSeries, setSelectedSeries] = useState<string>('');
@@ -66,131 +50,214 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
   }, [selectedSeries]);
 
   const fetchMakes = async () => {
-    const { data, error } = await supabase
-      .from('printer_makes')
-      .select('*')
-      .order('name');
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('get_printer_makes');
+      
+      if (error) {
+        throw error;
+      }
+      
+      const mappedMakes: PrinterMake[] = data.map((make: any) => ({
+        id: make.id,
+        name: make.name,
+        createdAt: make.created_at
+      }));
+      
+      setMakes(mappedMakes);
+    } catch (error: any) {
+      console.error("Error fetching makes:", error);
       toast({
         title: "Error fetching makes",
         description: error.message,
         variant: "destructive"
       });
-      return;
+      
+      // Fallback to empty array if there's an error
+      setMakes([]);
     }
-    
-    setMakes(data);
   };
 
   const fetchSeries = async (makeId: string) => {
-    const { data, error } = await supabase
-      .from('printer_series')
-      .select('*')
-      .eq('make_id', makeId)
-      .order('name');
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('get_printer_series', { 
+        make_id_param: makeId 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const mappedSeries: PrinterSeries[] = data.map((series: any) => ({
+        id: series.id,
+        makeId: series.make_id,
+        name: series.name,
+        createdAt: series.created_at
+      }));
+      
+      setSeries(mappedSeries);
+    } catch (error: any) {
+      console.error("Error fetching series:", error);
       toast({
         title: "Error fetching series",
         description: error.message,
         variant: "destructive"
       });
-      return;
+      
+      // Fallback to empty array if there's an error
+      setSeries([]);
     }
-    
-    setSeries(data);
   };
 
   const fetchModels = async (seriesId: string) => {
-    const { data, error } = await supabase
-      .from('printer_models')
-      .select('*')
-      .eq('series_id', seriesId)
-      .order('name');
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('get_printer_models', { 
+        series_id_param: seriesId 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const mappedModels: PrinterModel[] = data.map((model: any) => ({
+        id: model.id,
+        seriesId: model.series_id,
+        name: model.name,
+        createdAt: model.created_at
+      }));
+      
+      setModels(mappedModels);
+    } catch (error: any) {
+      console.error("Error fetching models:", error);
       toast({
         title: "Error fetching models",
         description: error.message,
         variant: "destructive"
       });
-      return;
+      
+      // Fallback to empty array if there's an error
+      setModels([]);
     }
-    
-    setModels(data);
   };
 
   const handleAddMake = async () => {
     if (!newMake.trim()) return;
     
-    const { data, error } = await supabase
-      .from('printer_makes')
-      .insert({ name: newMake.trim() })
-      .select()
-      .single();
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('insert_printer_make', { 
+        make_name: newMake.trim() 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newMakeData: PrinterMake = {
+        id: data.id,
+        name: data.name,
+        createdAt: data.created_at
+      };
+      
+      setMakes([...makes, newMakeData]);
+      setSelectedMake(newMakeData.id);
+      setNewMake('');
+      setAddingMake(false);
+      
+      toast({
+        title: "Make added",
+        description: `Added ${newMakeData.name} successfully`,
+      });
+    } catch (error: any) {
+      console.error("Error adding make:", error);
       toast({
         title: "Error adding make",
         description: error.message,
         variant: "destructive"
       });
-      return;
     }
-    
-    setMakes([...makes, data]);
-    setSelectedMake(data.id);
-    setNewMake('');
-    setAddingMake(false);
   };
 
   const handleAddSeries = async () => {
     if (!newSeries.trim() || !selectedMake) return;
     
-    const { data, error } = await supabase
-      .from('printer_series')
-      .insert({ name: newSeries.trim(), make_id: selectedMake })
-      .select()
-      .single();
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('insert_printer_series', { 
+        series_name: newSeries.trim(),
+        make_id_param: selectedMake
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newSeriesData: PrinterSeries = {
+        id: data.id,
+        makeId: data.make_id,
+        name: data.name,
+        createdAt: data.created_at
+      };
+      
+      setSeries([...series, newSeriesData]);
+      setSelectedSeries(newSeriesData.id);
+      setNewSeries('');
+      setAddingSeries(false);
+      
+      toast({
+        title: "Series added",
+        description: `Added ${newSeriesData.name} successfully`,
+      });
+    } catch (error: any) {
+      console.error("Error adding series:", error);
       toast({
         title: "Error adding series",
         description: error.message,
         variant: "destructive"
       });
-      return;
     }
-    
-    setSeries([...series, data]);
-    setSelectedSeries(data.id);
-    setNewSeries('');
-    setAddingSeries(false);
   };
 
   const handleAddModel = async () => {
     if (!newModel.trim() || !selectedSeries) return;
     
-    const { data, error } = await supabase
-      .from('printer_models')
-      .insert({ name: newModel.trim(), series_id: selectedSeries })
-      .select()
-      .single();
-    
-    if (error) {
+    try {
+      // Use raw SQL query since the types aren't updated in the Supabase client yet
+      const { data, error } = await supabase.rpc('insert_printer_model', { 
+        model_name: newModel.trim(),
+        series_id_param: selectedSeries
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      const newModelData: PrinterModel = {
+        id: data.id,
+        seriesId: data.series_id,
+        name: data.name,
+        createdAt: data.created_at
+      };
+      
+      setModels([...models, newModelData]);
+      setSelectedModel(newModelData.id);
+      setNewModel('');
+      setAddingModel(false);
+      
+      toast({
+        title: "Model added",
+        description: `Added ${newModelData.name} successfully`,
+      });
+    } catch (error: any) {
+      console.error("Error adding model:", error);
       toast({
         title: "Error adding model",
         description: error.message,
         variant: "destructive"
       });
-      return;
     }
-    
-    setModels([...models, data]);
-    setSelectedModel(data.id);
-    setNewModel('');
-    setAddingModel(false);
   };
 
   useEffect(() => {
@@ -200,7 +267,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
       const model = models.find(m => m.id === selectedModel)?.name || '';
       onSelect(make, serie, model);
     }
-  }, [selectedMake, selectedSeries, selectedModel]);
+  }, [selectedMake, selectedSeries, selectedModel, makes, series, models, onSelect]);
 
   return (
     <div className="space-y-4">

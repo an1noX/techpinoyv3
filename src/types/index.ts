@@ -1,3 +1,4 @@
+
 // Update Rental type to match actual database schema
 export interface Rental {
   id: string;
@@ -61,4 +62,40 @@ export interface WikiPrinter {
   specs?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
+}
+
+// Add types for printer make, series, and model
+export interface PrinterMake {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface PrinterSeries {
+  id: string;
+  makeId: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface PrinterModel {
+  id: string;
+  seriesId: string;
+  name: string;
+  createdAt: string;
+}
+
+// Add type for printer audit log
+export interface PrinterAuditLog {
+  id: string;
+  printerId: string;
+  changedBy: string;
+  oldStatus?: PrinterStatus;
+  newStatus?: PrinterStatus;
+  oldClientId?: string;
+  newClientId?: string;
+  oldOwner?: string;
+  newOwner?: string;
+  notes?: string;
+  createdAt: string;
 }
