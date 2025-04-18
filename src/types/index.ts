@@ -1,4 +1,3 @@
-
 // Update Rental type to match actual database schema
 export interface Rental {
   id: string;
@@ -33,7 +32,7 @@ export interface Printer {
 }
 
 // Add PrinterStatus type
-export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'deployed';
 
 // Add RentalOptions type
 export interface RentalOptions {

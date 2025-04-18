@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -43,12 +42,12 @@ export default function Printers() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedWikiPrinter, setSelectedWikiPrinter] = useState<string>('');
   const [department, setDepartment] = useState<string>('');
-  const [location, setLocation] = useState<string>('');
-  
+  const [location, setLocation] = useState<string>();
+
   useEffect(() => {
     fetchPrinters();
   }, []);
-  
+
   const fetchPrinters = async () => {
     try {
       setLoading(true);
@@ -131,88 +130,49 @@ export default function Printers() {
     }
   };
 
-  const fetchWikiPrinters = async () => {
-    try {
-      setLoadingWiki(true);
-      
-      const { data, error } = await supabase
-        .from('printer_wiki')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      const transformedWikiPrinters: WikiPrinter[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        maintenanceTips: printer.maintenance_tips || undefined,
-        specs: printer.specs as Record<string, string> || {},
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at
-      }));
-      
-      setWikiPrinters(transformedWikiPrinters);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching wiki printers",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingWiki(false);
-    }
-  };
-  
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-  
+
   const filteredPrinters = printers.filter(printer => 
     printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const handleAssignPrinter = async (printerId: string) => {
     navigate(`/printers/${printerId}`);
   };
 
   const handleOpenImportDialog = () => {
-    fetchWikiPrinters();
     setImportDialogOpen(true);
   };
 
-  const handleImportPrinter = async () => {
-    if (!selectedWikiPrinter) {
-      toast({
-        title: "Error",
-        description: "Please select a printer to import",
-        variant: "destructive"
-      });
-      return;
-    }
+  const handleModelSelect = (make: string, series: string, model: string) => {
+    const printerToImport = {
+      make,
+      series,
+      model,
+      department,
+      location
+    };
+    
+    handleImportPrinter(printerToImport);
+  };
 
+  const handleImportPrinter = async (printerData: any) => {
     try {
-      const selectedPrinter = wikiPrinters.find(p => p.id === selectedWikiPrinter);
-      
-      if (!selectedPrinter) {
-        throw new Error("Selected printer not found in wiki");
-      }
-
       const { data, error } = await supabase
         .from('printers')
         .insert({
-          make: selectedPrinter.make,
-          series: selectedPrinter.series,
-          model: selectedPrinter.model,
-          status: 'available' as PrinterStatus,
+          make: printerData.make,
+          series: printerData.series,
+          model: printerData.model,
+          status: 'available',
           owned_by: 'system',
-          department: department || null,
-          location: location || null,
+          department: printerData.department || null,
+          location: printerData.location || null,
           is_for_rent: false
         })
         .select();
@@ -223,11 +183,10 @@ export default function Printers() {
 
       toast({
         title: "Success",
-        description: `${selectedPrinter.make} ${selectedPrinter.model} imported successfully`,
+        description: `${printerData.make} ${printerData.model} imported successfully`,
       });
 
       setImportDialogOpen(false);
-      setSelectedWikiPrinter('');
       setDepartment('');
       setLocation('');
       
@@ -240,7 +199,62 @@ export default function Printers() {
       });
     }
   };
-  
+
+  const renderPrinterCard = (printer: Printer) => (
+    <Card key={printer.id} className="overflow-hidden">
+      <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
+        <div>
+          <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            {printer.department} • {printer.location}
+          </p>
+        </div>
+        <PrinterStatusBadge
+          printerId={printer.id}
+          currentStatus={printer.status}
+          onStatusChange={async (newStatus) => {
+            try {
+              const { error } = await supabase
+                .from('printers')
+                .update({ status: newStatus })
+                .eq('id', printer.id);
+
+              if (error) throw error;
+              
+              await fetchPrinters();
+            } catch (error: any) {
+              toast({
+                title: "Error updating status",
+                description: error.message,
+                variant: "destructive"
+              });
+            }
+          }}
+        />
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <div className="flex justify-between mt-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 mr-2"
+            onClick={() => navigate(`/printers/${printer.id}`)}
+          >
+            Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1"
+            onClick={() => handleAssignPrinter(printer.id)}
+          >
+            Assign
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <MobileLayout
       fab={
@@ -293,41 +307,7 @@ export default function Printers() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredPrinters.map((printer) => (
-              <Card key={printer.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {printer.department} • {printer.location}
-                    </p>
-                  </div>
-                  <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
-                    {getStatusEmoji(printer.status)} {printer.status}
-                  </Badge>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="flex justify-between mt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 mr-2"
-                      onClick={() => navigate(`/printers/${printer.id}`)}
-                    >
-                      Details
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleAssignPrinter(printer.id)}
-                    >
-                      Assign
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {filteredPrinters.map(renderPrinterCard)}
           </div>
         )}
       </div>
@@ -335,31 +315,11 @@ export default function Printers() {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Import Printer from Wiki</DialogTitle>
+            <DialogTitle>Import Printer</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Printer Model</label>
-              {loadingWiki ? (
-                <div className="flex justify-center py-2">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <Select value={selectedWikiPrinter} onValueChange={setSelectedWikiPrinter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a printer model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wikiPrinters.map(printer => (
-                      <SelectItem key={printer.id} value={printer.id}>
-                        {printer.make} {printer.series} {printer.model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            <PrinterModelSelect onSelect={handleModelSelect} />
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
@@ -382,7 +342,6 @@ export default function Printers() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleImportPrinter}>Import Printer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
