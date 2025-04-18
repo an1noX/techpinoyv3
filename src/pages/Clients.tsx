@@ -104,9 +104,19 @@ export default function Clients() {
         return;
       }
 
+      // Create a properly typed object that matches Supabase's expected schema
+      const newClient = {
+        name: clientData.name,
+        company: clientData.company || null,
+        email: clientData.email || null,
+        phone: clientData.phone || null,
+        address: clientData.address || null,
+        notes: clientData.notes || null
+      };
+
       const { data, error } = await supabase
         .from('clients')
-        .insert([clientData])
+        .insert([newClient])
         .select();
 
       if (error) {
