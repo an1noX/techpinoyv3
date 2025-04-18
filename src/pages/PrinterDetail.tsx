@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -44,6 +43,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { PrinterStatusBadge } from '@/components/PrinterStatusBadge';
 
 interface RentalOptions {
   isForRent: boolean;
@@ -131,10 +131,12 @@ export default function PrinterDetail() {
         department: data.department || undefined,
         location: data.location || undefined,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
+        isForRent: data.is_for_rent || false
       };
       
       setPrinter(transformedPrinter);
+      setIsForRent(data.is_for_rent || false);
     } catch (error: any) {
       toast({
         title: "Error fetching printer details",
@@ -195,26 +197,50 @@ export default function PrinterDetail() {
   
   const fetchRentalOptions = async (printerId: string) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
+      const { data, error } = await supabase
+        .from('rental_options')
+        .select('*')
+        .eq('printer_id', printerId)
+        .single();
       
-      const mockRentalOptions: RentalOptions = {
-        isForRent: true,
-        rentalRate: 25,
-        rateUnit: 'daily',
-        minimumDuration: 3,
-        durationUnit: 'days',
-        securityDeposit: 200,
-        terms: 'Printer must be returned in the same condition. Any damage will be charged from the security deposit.',
-        cancellationPolicy: 'Free cancellation up to 48 hours before rental start time.',
-        availability: [
-          new Date(2025, 3, 20),
-          new Date(2025, 3, 21),
-          new Date(2025, 3, 22),
-        ],
+      if (error) {
+        if (error.code === 'PGRST116') {
+          const defaultRentalOptions = {
+            isForRent: false,
+            rentalRate: 25,
+            rateUnit: 'daily' as const,
+            minimumDuration: 3,
+            durationUnit: 'days' as const,
+            securityDeposit: 200,
+            terms: 'Printer must be returned in the same condition. Any damage will be charged from the security deposit.',
+            cancellationPolicy: 'Free cancellation up to 48 hours before rental start time.',
+            availability: [],
+          };
+          
+          setRentalOptions(defaultRentalOptions);
+          return;
+        }
+        throw error;
+      }
+      
+      const transformedOptions = {
+        id: data.id,
+        printerId: data.printer_id,
+        isForRent: data.is_for_rent || false,
+        rentalRate: data.rental_rate,
+        rateUnit: data.rate_unit as 'hourly' | 'daily' | 'weekly' | 'monthly',
+        minimumDuration: data.minimum_duration,
+        durationUnit: data.duration_unit as 'hours' | 'days' | 'weeks' | 'months',
+        securityDeposit: data.security_deposit,
+        terms: data.terms || '',
+        cancellationPolicy: data.cancellation_policy || '',
+        availability: data.availability ? (data.availability as any[]).map(date => new Date(date)) : [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
       
-      setRentalOptions(mockRentalOptions);
-      setIsForRent(mockRentalOptions.isForRent);
+      setRentalOptions(transformedOptions);
+      setIsForRent(transformedOptions.isForRent);
     } catch (error: any) {
       toast({
         title: "Error fetching rental options",
@@ -224,14 +250,14 @@ export default function PrinterDetail() {
     }
   };
   
-  const handleChangeStatus = async (status: PrinterStatus) => {
+  const handleChangeStatus = async (newStatus: PrinterStatus) => {
     if (!printer) return;
     
     try {
       const { error } = await supabase
         .from('printers')
         .update({ 
-          status, 
+          status: newStatus, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', printer.id);
@@ -242,13 +268,13 @@ export default function PrinterDetail() {
       
       setPrinter({
         ...printer,
-        status,
+        status: newStatus,
         updatedAt: new Date().toISOString()
       });
       
       toast({
         title: "Status updated",
-        description: `Printer status changed to ${status}`,
+        description: `Printer status changed to ${newStatus}`,
       });
     } catch (error: any) {
       toast({
@@ -289,11 +315,13 @@ export default function PrinterDetail() {
     }
   };
   
-  const handleToggleRental = (checked: boolean) => {
+  const handleToggleRental = async (checked: boolean) => {
+    if (!printer) return;
+    
     if (!checked && hasUnsavedChanges) {
       setConfirmToggleDialogOpen(true);
     } else {
-      saveRentalToggleState(checked);
+      await saveRentalToggleState(checked);
     }
   };
   
@@ -301,7 +329,55 @@ export default function PrinterDetail() {
     try {
       setLoading(true);
       
+      const { error: printerError } = await supabase
+        .from('printers')
+        .update({ 
+          is_for_rent: state,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', printer!.id);
+      
+      if (printerError) throw printerError;
+      
+      const { data: existingOptions } = await supabase
+        .from('rental_options')
+        .select('id')
+        .eq('printer_id', printer!.id);
+      
+      if (existingOptions && existingOptions.length > 0) {
+        const { error: optionsError } = await supabase
+          .from('rental_options')
+          .update({ 
+            is_for_rent: state,
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', existingOptions[0].id);
+        
+        if (optionsError) throw optionsError;
+      } else if (state) {
+        const { error: createError } = await supabase
+          .from('rental_options')
+          .insert({
+            printer_id: printer!.id,
+            is_for_rent: state,
+            rental_rate: rentalOptions.rentalRate,
+            rate_unit: rentalOptions.rateUnit,
+            minimum_duration: rentalOptions.minimumDuration,
+            duration_unit: rentalOptions.durationUnit,
+            security_deposit: rentalOptions.securityDeposit,
+            terms: rentalOptions.terms,
+            cancellation_policy: rentalOptions.cancellationPolicy
+          });
+        
+        if (createError) throw createError;
+      }
+      
       setIsForRent(state);
+      
+      setPrinter({
+        ...printer!,
+        isForRent: state
+      });
       
       if (!state && activeTab === 'rentOptions') {
         setActiveTab('details');
@@ -442,9 +518,12 @@ export default function PrinterDetail() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-4">
-          <Badge className={`${getStatusColor(printer.status)}`}>
-            {getStatusEmoji(printer.status)} {printer.status}
-          </Badge>
+          <PrinterStatusBadge 
+            status={printer.status}
+            printerId={printer.id}
+            onStatusChange={handleChangeStatus}
+            clickable
+          />
           
           <div className="flex items-center ml-0 sm:ml-4">
             <Switch 

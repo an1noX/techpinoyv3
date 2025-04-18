@@ -33,7 +33,7 @@ export interface Printer {
 }
 
 // Add PrinterStatus type
-export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'deployed';
 
 // Add RentalOptions type
 export interface RentalOptions {
@@ -62,4 +62,43 @@ export interface WikiPrinter {
   specs?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
+}
+
+// Add printer-related RPC types
+export interface PrinterMakeRPC {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface PrinterSeriesRPC {
+  id: string;
+  make_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface PrinterModelRPC {
+  id: string;
+  series_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface AuditLogRPCResponse {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  details: Record<string, any>;
+  created_by: string;
+  created_at: string;
+}
+
+export interface TonerItem {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  page_yield: number;
 }

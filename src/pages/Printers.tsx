@@ -7,43 +7,30 @@ import { Plus, Search, Import } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { PrinterStatusBadge } from '@/components/PrinterStatusBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Printer, PrinterStatus, WikiPrinter } from '@/types';
+import { Printer, PrinterStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const getStatusColor = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return 'bg-status-available text-white';
-    case 'rented': return 'bg-status-rented text-black';
-    case 'maintenance': return 'bg-status-maintenance text-white';
-    default: return 'bg-gray-500 text-white';
-  }
-};
-
-const getStatusEmoji = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return '🟢';
-    case 'rented': return '🟡';
-    case 'maintenance': return '🔴';
-    default: return '⚪';
-  }
-};
+import { PrinterMakeSelect } from '@/components/PrinterMakeSelect';
+import { PrinterSeriesSelect } from '@/components/PrinterSeriesSelect';
+import { PrinterModelSelect } from '@/components/PrinterModelSelect';
+import { ClientDropdown } from '@/components/ClientDropdown';
 
 export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [printers, setPrinters] = useState<Printer[]>([]);
-  const [wikiPrinters, setWikiPrinters] = useState<WikiPrinter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingWiki, setLoadingWiki] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedWikiPrinter, setSelectedWikiPrinter] = useState<string>('');
+  const [selectedMakeId, setSelectedMakeId] = useState('');
+  const [selectedSeriesId, setSelectedSeriesId] = useState('');
+  const [selectedModelId, setSelectedModelId] = useState('');
   const [department, setDepartment] = useState<string>('');
   const [location, setLocation] = useState<string>('');
+  const [isForRent, setIsForRent] = useState<boolean>(false);
   
   useEffect(() => {
     fetchPrinters();
@@ -73,7 +60,7 @@ export default function Printers() {
         location: printer.location || undefined,
         createdAt: printer.created_at,
         updatedAt: printer.updated_at,
-        isForRent: printer.is_for_rent
+        isForRent: printer.is_for_rent || false
       }));
       
       setPrinters(transformedPrinters);
@@ -130,41 +117,6 @@ export default function Printers() {
       setLoading(false);
     }
   };
-
-  const fetchWikiPrinters = async () => {
-    try {
-      setLoadingWiki(true);
-      
-      const { data, error } = await supabase
-        .from('printer_wiki')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      const transformedWikiPrinters: WikiPrinter[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        maintenanceTips: printer.maintenance_tips || undefined,
-        specs: printer.specs as Record<string, string> || {},
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at
-      }));
-      
-      setWikiPrinters(transformedWikiPrinters);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching wiki printers",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingWiki(false);
-    }
-  };
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -182,54 +134,59 @@ export default function Printers() {
   };
 
   const handleOpenImportDialog = () => {
-    fetchWikiPrinters();
     setImportDialogOpen(true);
+    setIsForRent(false); // Ensure "For Rent" is defaulted to off
   };
 
   const handleImportPrinter = async () => {
-    if (!selectedWikiPrinter) {
+    if (!selectedModelId) {
       toast({
         title: "Error",
-        description: "Please select a printer to import",
+        description: "Please select a printer model",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      const selectedPrinter = wikiPrinters.find(p => p.id === selectedWikiPrinter);
+      // Fetch the selected model details to get series and make
+      const { data: modelData, error: modelError } = await supabase
+        .rpc('get_printer_model_details', { model_id: selectedModelId });
       
-      if (!selectedPrinter) {
-        throw new Error("Selected printer not found in wiki");
-      }
-
+      if (modelError) throw modelError;
+      if (!modelData || !modelData.length) throw new Error("Model details not found");
+      
+      const modelDetails = modelData[0];
+      
+      // Insert the printer
       const { data, error } = await supabase
         .from('printers')
         .insert({
-          make: selectedPrinter.make,
-          series: selectedPrinter.series,
-          model: selectedPrinter.model,
+          make: modelDetails.make_name,
+          series: modelDetails.series_name,
+          model: modelDetails.model_name,
           status: 'available' as PrinterStatus,
           owned_by: 'system',
           department: department || null,
           location: location || null,
-          is_for_rent: false
+          is_for_rent: isForRent
         })
         .select();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast({
         title: "Success",
-        description: `${selectedPrinter.make} ${selectedPrinter.model} imported successfully`,
+        description: `${modelDetails.make_name} ${modelDetails.model_name} imported successfully`,
       });
 
       setImportDialogOpen(false);
-      setSelectedWikiPrinter('');
+      setSelectedMakeId('');
+      setSelectedSeriesId('');
+      setSelectedModelId('');
       setDepartment('');
       setLocation('');
+      setIsForRent(false);
       
       await fetchPrinters();
     } catch (error: any) {
@@ -239,6 +196,49 @@ export default function Printers() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleStatusChange = async (printerId: string, newStatus: PrinterStatus) => {
+    try {
+      const { error } = await supabase
+        .from('printers')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', printerId);
+      
+      if (error) throw error;
+      
+      // Update the local state
+      setPrinters(printers.map(printer => 
+        printer.id === printerId ? { ...printer, status: newStatus } : printer
+      ));
+      
+      toast({
+        title: "Status updated",
+        description: `Printer status changed to ${newStatus}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleClientAssigned = (printerId: string, clientId: string | null, clientName: string | null) => {
+    // Update the local state
+    setPrinters(printers.map(printer => 
+      printer.id === printerId 
+        ? { 
+            ...printer, 
+            assignedTo: clientName || undefined,
+            status: clientId ? 'deployed' : 'available'
+          } 
+        : printer
+    ));
   };
   
   return (
@@ -301,10 +301,18 @@ export default function Printers() {
                     <p className="text-sm text-muted-foreground mt-1">
                       {printer.department} • {printer.location}
                     </p>
+                    {printer.assignedTo && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Assigned to: {printer.assignedTo}
+                      </p>
+                    )}
                   </div>
-                  <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
-                    {getStatusEmoji(printer.status)} {printer.status}
-                  </Badge>
+                  <PrinterStatusBadge 
+                    status={printer.status}
+                    printerId={printer.id}
+                    onStatusChange={(newStatus) => handleStatusChange(printer.id, newStatus)}
+                    clickable
+                  />
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="flex justify-between mt-2">
@@ -316,14 +324,12 @@ export default function Printers() {
                     >
                       Details
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleAssignPrinter(printer.id)}
-                    >
-                      Assign
-                    </Button>
+                    <ClientDropdown
+                      printerId={printer.id}
+                      currentClientId={null} // Would need to modify the printer type to include clientId
+                      onClientAssigned={(clientId, clientName) => handleClientAssigned(printer.id, clientId, clientName)}
+                      triggerLabel={printer.assignedTo ? "Change Client" : "Assign Client"}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -339,27 +345,24 @@ export default function Printers() {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Printer Model</label>
-              {loadingWiki ? (
-                <div className="flex justify-center py-2">
-                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <Select value={selectedWikiPrinter} onValueChange={setSelectedWikiPrinter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a printer model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wikiPrinters.map(printer => (
-                      <SelectItem key={printer.id} value={printer.id}>
-                        {printer.make} {printer.series} {printer.model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
+            <PrinterMakeSelect
+              value={selectedMakeId}
+              onChange={setSelectedMakeId}
+            />
+            
+            <PrinterSeriesSelect
+              makeId={selectedMakeId}
+              value={selectedSeriesId}
+              onChange={setSelectedSeriesId}
+              disabled={!selectedMakeId}
+            />
+            
+            <PrinterModelSelect
+              seriesId={selectedSeriesId}
+              value={selectedModelId}
+              onChange={setSelectedModelId}
+              disabled={!selectedSeriesId}
+            />
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
@@ -377,6 +380,19 @@ export default function Printers() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="for-rent"
+                checked={isForRent}
+                onChange={(e) => setIsForRent(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="for-rent" className="text-sm font-medium">
+                Available for Rent
+              </label>
             </div>
           </div>
 
