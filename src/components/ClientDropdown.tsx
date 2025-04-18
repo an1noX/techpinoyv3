@@ -9,9 +9,10 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus } from 'lucide-react';
+import { Users, UserPlus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Client {
   id: string;
@@ -35,6 +36,7 @@ export function ClientDropdown({
   const { toast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchClients();
@@ -59,7 +61,10 @@ export function ClientDropdown({
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      // Set a minimum loading time to avoid flashing
+      setTimeout(() => {
+        setLoading(false);
+      }, 300);
     }
   };
 
@@ -99,53 +104,87 @@ export function ClientDropdown({
     }
   };
 
+  // Filter clients based on search term
+  const filteredClients = searchTerm
+    ? clients.filter(client => 
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : clients;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="w-full">
-          <Users className="mr-2 h-4 w-4" />
+          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
           {triggerLabel}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-60" align="end">
         <DropdownMenuLabel>Clients</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {loading ? (
-          <DropdownMenuItem disabled>
-            <div className="flex items-center">
-              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full mr-2"></div>
-              Loading...
-            </div>
-          </DropdownMenuItem>
-        ) : clients.length === 0 ? (
-          <DropdownMenuItem disabled>No clients found</DropdownMenuItem>
-        ) : (
-          <>
-            {clients.map(client => (
-              <DropdownMenuItem
-                key={client.id}
-                className={client.id === currentClientId ? "bg-muted" : ""}
-                onClick={() => handleAssignClient(client.id)}
-              >
-                {client.name} {client.company ? `(${client.company})` : ""}
-              </DropdownMenuItem>
-            ))}
-            
-            {currentClientId && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleAssignClient(null)}>
-                  <span className="text-destructive">Unassign Client</span>
+        <div className="px-2 py-1.5">
+          <input
+            type="text"
+            placeholder="Search clients..."
+            className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <DropdownMenuSeparator />
+        
+        <ScrollArea className="h-[200px]">
+          {loading ? (
+            <DropdownMenuItem disabled>
+              <div className="flex items-center">
+                <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                Loading clients...
+              </div>
+            </DropdownMenuItem>
+          ) : filteredClients.length === 0 ? (
+            <DropdownMenuItem disabled>
+              {searchTerm ? "No matching clients found" : "No clients found"}
+            </DropdownMenuItem>
+          ) : (
+            <>
+              {filteredClients.map(client => (
+                <DropdownMenuItem
+                  key={client.id}
+                  className={`${client.id === currentClientId ? "bg-muted" : ""} cursor-pointer`}
+                  onClick={() => handleAssignClient(client.id)}
+                >
+                  <div className="truncate">
+                    <span className="font-medium">{client.name}</span>
+                    {client.company && (
+                      <span className="text-xs block text-muted-foreground truncate">
+                        {client.company}
+                      </span>
+                    )}
+                  </div>
                 </DropdownMenuItem>
-              </>
-            )}
+              ))}
+            </>
+          )}
+        </ScrollArea>
+        
+        {currentClientId && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive hover:text-destructive cursor-pointer" 
+              onClick={() => handleAssignClient(null)}
+            >
+              Unassign Client
+            </DropdownMenuItem>
           </>
         )}
         
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a href="/clients/new">
+        <DropdownMenuItem className="cursor-pointer" asChild>
+          <a href="/clients/new" className="flex items-center">
             <UserPlus className="mr-2 h-4 w-4" />
             Add New Client
           </a>
