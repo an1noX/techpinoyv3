@@ -102,3 +102,23 @@ export interface TonerItem {
   color: string;
   page_yield: number;
 }
+
+// Add type for printer model details from RPC
+export interface PrinterModelDetails {
+  make_name: string;
+  series_name: string;
+  model_name: string;
+}
+
+// Add Client type
+export interface Client {
+  id: string;
+  name: string;
+  company?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -14,22 +14,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 
 // Add type-safe RPC function wrappers
 export const rpcGetPrinterMakes = () => 
-  supabase.rpc<PrinterMakeRPC>('get_printer_makes');
+  supabase.rpc<PrinterMakeRPC, any>('get_printer_makes');
 
 export const rpcGetPrinterSeries = (makeId: string) => 
-  supabase.rpc<PrinterSeriesRPC>('get_printer_series', { make_id: makeId });
+  supabase.rpc<PrinterSeriesRPC, any>('get_printer_series', { make_id: makeId });
 
 export const rpcGetPrinterModels = (seriesId: string) => 
-  supabase.rpc<PrinterModelRPC>('get_printer_models', { series_id: seriesId });
+  supabase.rpc<PrinterModelRPC, any>('get_printer_models', { series_id: seriesId });
 
 export const rpcCreatePrinterMake = (name: string) => 
-  supabase.rpc<PrinterMakeRPC>('create_printer_make', { name });
+  supabase.rpc<PrinterMakeRPC, any>('create_printer_make', { name });
 
 export const rpcCreatePrinterSeries = (makeId: string, name: string) => 
-  supabase.rpc<PrinterSeriesRPC>('create_printer_series', { make_id: makeId, name });
+  supabase.rpc<PrinterSeriesRPC, any>('create_printer_series', { make_id: makeId, name });
 
 export const rpcCreatePrinterModel = (seriesId: string, name: string) => 
-  supabase.rpc<PrinterModelRPC>('create_printer_model', { series_id: seriesId, name });
+  supabase.rpc<PrinterModelRPC, any>('create_printer_model', { series_id: seriesId, name });
 
 export const rpcLogPrinterAction = (
   entityType: string,
@@ -37,7 +37,7 @@ export const rpcLogPrinterAction = (
   action: string,
   details: Record<string, any>
 ) => 
-  supabase.rpc<AuditLogRPCResponse>('log_printer_action', {
+  supabase.rpc<AuditLogRPCResponse, any>('log_printer_action', {
     entity_type: entityType,
     entity_id: entityId,
     action,

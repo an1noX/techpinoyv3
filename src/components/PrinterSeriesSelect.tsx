@@ -66,6 +66,7 @@ export function PrinterSeriesSelect({ makeId, value, onChange, disabled = false 
         description: error.message,
         variant: "destructive"
       });
+      setSeries([]);
     } finally {
       setLoading(false);
     }

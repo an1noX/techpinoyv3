@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PrinterStatusBadge } from '@/components/PrinterStatusBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Printer, PrinterStatus } from '@/types';
+import { Printer, PrinterStatus, PrinterModelDetails } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -151,7 +151,7 @@ export default function Printers() {
     try {
       // Fetch the selected model details to get series and make
       const { data: modelData, error: modelError } = await supabase
-        .rpc('get_printer_model_details', { model_id: selectedModelId });
+        .rpc<PrinterModelDetails, any>('get_printer_model_details', { model_id: selectedModelId });
       
       if (modelError) throw modelError;
       if (!modelData || !modelData.length) throw new Error("Model details not found");

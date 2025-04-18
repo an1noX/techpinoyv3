@@ -82,6 +82,7 @@ export function PrinterModelSelect({
         description: error.message,
         variant: "destructive"
       });
+      setModels([]);
     } finally {
       setLoading(false);
     }

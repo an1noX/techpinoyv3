@@ -54,6 +54,7 @@ export function PrinterMakeSelect({ value, onChange }: PrinterMakeSelectProps) {
         description: error.message,
         variant: "destructive"
       });
+      setMakes([]);
     } finally {
       setLoading(false);
     }
