@@ -34,14 +34,28 @@ export const PrinterStatusBadge = ({ printerId, currentStatus, onStatusChange }:
 
   const handleStatusChange = async (newStatus: PrinterStatus) => {
     try {
-      const { error } = await supabase.from('printer_audit_logs').insert({
-        printer_id: printerId,
-        changed_by: 'system',
-        old_status: currentStatus,
-        new_status: newStatus,
-      });
+      // First update the printer's status
+      const { error: updateError } = await supabase
+        .from('printers')
+        .update({ status: newStatus })
+        .eq('id', printerId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Then add an audit log entry (using regular insert since we don't have an RPC for this yet)
+      const { error: logError } = await supabase
+        .from('printer_audit_logs')
+        .insert({
+          printer_id: printerId,
+          changed_by: 'system',
+          old_status: currentStatus,
+          new_status: newStatus
+        });
+
+      if (logError) {
+        console.error("Error logging status change:", logError);
+        // Continue even if logging fails
+      }
 
       onStatusChange(newStatus);
       
