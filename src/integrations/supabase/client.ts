@@ -10,7 +10,46 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// Create a custom type that extends Database with RPCs
+type SupabaseClientWithRPCs = Database & {
+  public: {
+    Functions: {
+      get_printer_makes: {
+        Returns: PrinterMakeRPC[]
+      },
+      get_printer_series: {
+        Args: { make_id: string },
+        Returns: PrinterSeriesRPC[]
+      },
+      get_printer_models: {
+        Args: { series_id: string },
+        Returns: PrinterModelRPC[]
+      },
+      create_printer_make: {
+        Args: { name: string },
+        Returns: PrinterMakeRPC
+      },
+      create_printer_series: {
+        Args: { make_id: string, name: string },
+        Returns: PrinterSeriesRPC
+      },
+      create_printer_model: {
+        Args: { series_id: string, name: string },
+        Returns: PrinterModelRPC
+      },
+      log_printer_action: {
+        Args: { entity_type: string, entity_id: string, action: string, details: Record<string, any> },
+        Returns: AuditLogRPCResponse
+      },
+      get_printer_model_details: {
+        Args: { model_id: string },
+        Returns: PrinterModelDetails
+      }
+    }
+  }
+}
+
+export const supabase = createClient<SupabaseClientWithRPCs>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Add type-safe RPC function wrappers
 export const rpcGetPrinterMakes = async () => {
