@@ -13,7 +13,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
-import { Client } from '@/types';
+
+interface Client {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  notes: string | null;
+  printers: any[];
+}
 
 export default function Clients() {
   const navigate = useNavigate();
@@ -34,6 +44,7 @@ export default function Clients() {
     try {
       setLoading(true);
       
+      // Fetch clients with their assigned printers
       const { data, error } = await supabase
         .from('clients')
         .select(`
@@ -45,22 +56,7 @@ export default function Clients() {
         throw error;
       }
       
-      if (data) {
-        const formattedClients: Client[] = data.map(client => ({
-          id: client.id,
-          name: client.name,
-          company: client.company,
-          email: client.email,
-          phone: client.phone,
-          address: client.address,
-          notes: client.notes,
-          createdAt: client.created_at,
-          updatedAt: client.updated_at,
-          printers: client.printers
-        }));
-        
-        setClients(formattedClients);
-      }
+      setClients(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching clients",
@@ -96,19 +92,8 @@ export default function Clients() {
     setOpenClientDetail(true);
   };
 
-  const handleSaveClient = async (clientData: { 
-    name: string;
-    company?: string | null;
-    email?: string | null;
-    phone?: string | null;
-    address?: string | null;
-    notes?: string | null;
-  }) => {
+  const handleSaveClient = async (clientData: Partial<Client>) => {
     try {
-      if (!clientData.name) {
-        throw new Error("Name is required");
-      }
-      
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])

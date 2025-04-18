@@ -1,63 +1,61 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search, Import, SlidersHorizontal } from 'lucide-react';
+import { Plus, Search, Import } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PrinterStatusBadge } from '@/components/PrinterStatusBadge';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Printer, PrinterStatus, PrinterModelDetails } from '@/types';
+import { Printer, PrinterStatus, WikiPrinter } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PrinterMakeSelect } from '@/components/PrinterMakeSelect';
-import { PrinterSeriesSelect } from '@/components/PrinterSeriesSelect';
-import { PrinterModelSelect } from '@/components/PrinterModelSelect';
-import { ClientDropdown } from '@/components/ClientDropdown';
-import { rpcGetPrinterModelDetails } from '@/integrations/supabase/client';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Filter } from 'lucide-react';
+
+const getStatusColor = (status: PrinterStatus) => {
+  switch (status) {
+    case 'available': return 'bg-status-available text-white';
+    case 'rented': return 'bg-status-rented text-black';
+    case 'maintenance': return 'bg-status-maintenance text-white';
+    default: return 'bg-gray-500 text-white';
+  }
+};
+
+const getStatusEmoji = (status: PrinterStatus) => {
+  switch (status) {
+    case 'available': return '🟢';
+    case 'rented': return '🟡';
+    case 'maintenance': return '🔴';
+    default: return '⚪';
+  }
+};
 
 export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [printers, setPrinters] = useState<Printer[]>([]);
+  const [wikiPrinters, setWikiPrinters] = useState<WikiPrinter[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingWiki, setLoadingWiki] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedMakeId, setSelectedMakeId] = useState('');
-  const [selectedSeriesId, setSelectedSeriesId] = useState('');
-  const [selectedModelId, setSelectedModelId] = useState('');
+  const [selectedWikiPrinter, setSelectedWikiPrinter] = useState<string>('');
   const [department, setDepartment] = useState<string>('');
   const [location, setLocation] = useState<string>('');
-  const [isForRent, setIsForRent] = useState<boolean>(false);
-  const [modelDetails, setModelDetails] = useState<PrinterModelDetails | null>(null);
-  const [ownershipFilter, setOwnershipFilter] = useState<'all' | 'system' | 'client'>('all');
-  const [filtersOpen, setFiltersOpen] = useState(false);
-
+  
   useEffect(() => {
     fetchPrinters();
-  }, [ownershipFilter]);
-
+  }, []);
+  
   const fetchPrinters = async () => {
     try {
       setLoading(true);
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('printers')
         .select('*');
-      
-      // Apply ownership filter
-      if (ownershipFilter === 'system') {
-        query = query.eq('owned_by', 'system');
-      } else if (ownershipFilter === 'client') {
-        query = query.eq('owned_by', 'client');
-      }
-      
-      const { data, error } = await query;
       
       if (error) {
         throw error;
@@ -75,7 +73,7 @@ export default function Printers() {
         location: printer.location || undefined,
         createdAt: printer.created_at,
         updatedAt: printer.updated_at,
-        isForRent: printer.is_for_rent || false
+        isForRent: printer.is_for_rent
       }));
       
       setPrinters(transformedPrinters);
@@ -86,7 +84,6 @@ export default function Printers() {
         variant: "destructive"
       });
       
-      // Mock data for fallback (keeping the existing mock data)
       const mockPrinters: Printer[] = [
         { 
           id: '1', 
@@ -130,82 +127,110 @@ export default function Printers() {
       
       setPrinters(mockPrinters);
     } finally {
-      // Set a minimum loading time to avoid flashing
-      setTimeout(() => {
-        setLoading(false);
-      }, 300);
+      setLoading(false);
     }
   };
 
+  const fetchWikiPrinters = async () => {
+    try {
+      setLoadingWiki(true);
+      
+      const { data, error } = await supabase
+        .from('printer_wiki')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      const transformedWikiPrinters: WikiPrinter[] = (data || []).map(printer => ({
+        id: printer.id,
+        make: printer.make,
+        series: printer.series,
+        model: printer.model,
+        maintenanceTips: printer.maintenance_tips || undefined,
+        specs: printer.specs as Record<string, string> || {},
+        createdAt: printer.created_at,
+        updatedAt: printer.updated_at
+      }));
+      
+      setWikiPrinters(transformedWikiPrinters);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching wiki printers",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingWiki(false);
+    }
+  };
+  
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
+  
   const filteredPrinters = printers.filter(printer => 
-    (printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.location?.toLowerCase().includes(searchTerm.toLowerCase()))
+    printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+  
   const handleAssignPrinter = async (printerId: string) => {
     navigate(`/printers/${printerId}`);
   };
 
   const handleOpenImportDialog = () => {
+    fetchWikiPrinters();
     setImportDialogOpen(true);
-    setIsForRent(false); // Ensure "For Rent" is defaulted to off
-    // Reset selection state when opening dialog
-    setSelectedMakeId('');
-    setSelectedSeriesId('');
-    setSelectedModelId('');
-    setDepartment('');
-    setLocation('');
   };
 
   const handleImportPrinter = async () => {
-    if (!selectedModelId) {
+    if (!selectedWikiPrinter) {
       toast({
         title: "Error",
-        description: "Please select a printer model",
+        description: "Please select a printer to import",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Fetch the selected model details to get series and make
-      const { data: modelData, error: modelError } = await rpcGetPrinterModelDetails(selectedModelId);
+      const selectedPrinter = wikiPrinters.find(p => p.id === selectedWikiPrinter);
       
-      if (modelError) throw modelError;
-      if (!modelData) throw new Error("Model details not found");
-      
-      const modelDetails = Array.isArray(modelData) ? modelData[0] : modelData;
-      
-      // Insert the printer
+      if (!selectedPrinter) {
+        throw new Error("Selected printer not found in wiki");
+      }
+
       const { data, error } = await supabase
         .from('printers')
         .insert({
-          make: modelDetails.make_name,
-          series: modelDetails.series_name,
-          model: modelDetails.model_name,
+          make: selectedPrinter.make,
+          series: selectedPrinter.series,
+          model: selectedPrinter.model,
           status: 'available' as PrinterStatus,
           owned_by: 'system',
           department: department || null,
           location: location || null,
-          is_for_rent: isForRent
+          is_for_rent: false
         })
         .select();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: "Success",
-        description: `${modelDetails.make_name} ${modelDetails.model_name} imported successfully`,
+        description: `${selectedPrinter.make} ${selectedPrinter.model} imported successfully`,
       });
 
       setImportDialogOpen(false);
-      resetImportForm();
+      setSelectedWikiPrinter('');
+      setDepartment('');
+      setLocation('');
+      
       await fetchPrinters();
     } catch (error: any) {
       toast({
@@ -215,95 +240,7 @@ export default function Printers() {
       });
     }
   };
-
-  const resetImportForm = () => {
-    setSelectedMakeId('');
-    setSelectedSeriesId('');
-    setSelectedModelId('');
-    setDepartment('');
-    setLocation('');
-    setIsForRent(false);
-  };
-
-  const handleStatusChange = async (printerId: string, newStatus: PrinterStatus) => {
-    try {
-      const { error } = await supabase
-        .from('printers')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', printerId);
-      
-      if (error) throw error;
-      
-      // Update the local state
-      setPrinters(printers.map(printer => 
-        printer.id === printerId ? { ...printer, status: newStatus } : printer
-      ));
-      
-      toast({
-        title: "Status updated",
-        description: `Printer status changed to ${newStatus}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error updating status",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleClientAssigned = (printerId: string, clientId: string | null, clientName: string | null) => {
-    // Update the local state
-    setPrinters(printers.map(printer => 
-      printer.id === printerId 
-        ? { 
-            ...printer, 
-            assignedTo: clientName || undefined,
-            status: clientId ? 'deployed' : 'available'
-          } 
-        : printer
-    ));
-  };
-
-  const fetchModelDetails = async (modelId: string) => {
-    try {
-      const { data, error } = await rpcGetPrinterModelDetails(modelId);
-      
-      if (error) throw error;
-      
-      if (data) {
-        setModelDetails(data);
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error fetching model details",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Render loading skeleton for printer cards
-  const renderSkeletons = () => {
-    return Array(3).fill(0).map((_, index) => (
-      <Card key={`skeleton-${index}`} className="overflow-hidden">
-        <CardHeader className="p-4 pb-2">
-          <Skeleton className="h-6 w-3/4 mb-2" />
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="flex justify-between mt-2">
-            <Skeleton className="h-9 w-1/3 mr-2" />
-            <Skeleton className="h-9 w-1/2" />
-          </div>
-        </CardContent>
-      </Card>
-    ));
-  };
-
+  
   return (
     <MobileLayout
       fab={
@@ -319,42 +256,11 @@ export default function Printers() {
       <div className="container px-4 py-4">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Printer Fleet</h1>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setFiltersOpen(!filtersOpen)}
-          >
-            <Filter size={18} />
-          </Button>
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
           Manage actual printers in your system. New printers can only be imported from the Wiki.
         </p>
-        
-        {filtersOpen && (
-          <div className="mb-4 p-3 border rounded-md bg-muted/20">
-            <p className="text-sm font-medium mb-2">Filter by ownership:</p>
-            <ToggleGroup 
-              type="single" 
-              value={ownershipFilter} 
-              onValueChange={(value) => {
-                if (value) setOwnershipFilter(value as 'all' | 'system' | 'client');
-              }}
-              className="justify-start mb-3"
-            >
-              <ToggleGroupItem value="all" aria-label="Show all printers">
-                All
-              </ToggleGroupItem>
-              <ToggleGroupItem value="system" aria-label="Show system-owned printers">
-                System
-              </ToggleGroupItem>
-              <ToggleGroupItem value="client" aria-label="Show client-owned printers">
-                Client
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        )}
         
         <div className="flex items-center space-x-2 mb-6">
           <div className="relative flex-1">
@@ -377,8 +283,8 @@ export default function Printers() {
         </div>
         
         {loading ? (
-          <div className="space-y-4">
-            {renderSkeletons()}
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
           </div>
         ) : filteredPrinters.length === 0 ? (
           <div className="text-center py-8">
@@ -395,23 +301,10 @@ export default function Printers() {
                     <p className="text-sm text-muted-foreground mt-1">
                       {printer.department} • {printer.location}
                     </p>
-                    {printer.assignedTo && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Assigned to: {printer.assignedTo}
-                      </p>
-                    )}
-                    <div className="mt-1">
-                      <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                        {printer.ownedBy === 'system' ? 'System' : 'Client'} owned
-                      </span>
-                    </div>
                   </div>
-                  <PrinterStatusBadge 
-                    status={printer.status}
-                    printerId={printer.id}
-                    onStatusChange={(newStatus) => handleStatusChange(printer.id, newStatus)}
-                    clickable
-                  />
+                  <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
+                    {getStatusEmoji(printer.status)} {printer.status}
+                  </Badge>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <div className="flex justify-between mt-2">
@@ -423,12 +316,14 @@ export default function Printers() {
                     >
                       Details
                     </Button>
-                    <ClientDropdown
-                      printerId={printer.id}
-                      currentClientId={null} // Would need to modify the printer type to include clientId
-                      onClientAssigned={(clientId, clientName) => handleClientAssigned(printer.id, clientId, clientName)}
-                      triggerLabel={printer.assignedTo ? "Change Client" : "Assign Client"}
-                    />
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleAssignPrinter(printer.id)}
+                    >
+                      Assign
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -438,30 +333,33 @@ export default function Printers() {
       </div>
 
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Import Printer from Wiki</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
-            <PrinterMakeSelect
-              value={selectedMakeId}
-              onChange={setSelectedMakeId}
-            />
-            
-            <PrinterSeriesSelect
-              makeId={selectedMakeId}
-              value={selectedSeriesId}
-              onChange={setSelectedSeriesId}
-              disabled={!selectedMakeId}
-            />
-            
-            <PrinterModelSelect
-              seriesId={selectedSeriesId}
-              value={selectedModelId}
-              onChange={setSelectedModelId}
-              disabled={!selectedSeriesId}
-            />
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Printer Model</label>
+              {loadingWiki ? (
+                <div className="flex justify-center py-2">
+                  <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
+                <Select value={selectedWikiPrinter} onValueChange={setSelectedWikiPrinter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a printer model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {wikiPrinters.map(printer => (
+                      <SelectItem key={printer.id} value={printer.id}>
+                        {printer.make} {printer.series} {printer.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Department</label>
@@ -480,26 +378,10 @@ export default function Printers() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="for-rent"
-                checked={isForRent}
-                onChange={(e) => setIsForRent(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="for-rent" className="text-sm font-medium">
-                Available for Rent
-              </label>
-            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setImportDialogOpen(false);
-              resetImportForm();
-            }}>Cancel</Button>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleImportPrinter}>Import Printer</Button>
           </DialogFooter>
         </DialogContent>

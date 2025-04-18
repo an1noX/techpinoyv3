@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Printer, PrinterStatus } from '@/types';
+import { Printer } from '@/types';
 
 interface AssignPrinterDialogProps {
   open: boolean;
@@ -49,24 +49,8 @@ export function AssignPrinterDialog({
       if (error) {
         throw error;
       }
-
-      // Transform database records to Printer objects
-      const transformedPrinters: Printer[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        status: printer.status as PrinterStatus,
-        ownedBy: printer.owned_by,
-        assignedTo: printer.assigned_to || undefined,
-        department: printer.department || undefined,
-        location: printer.location || undefined,
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at,
-        isForRent: printer.is_for_rent || false
-      }));
       
-      setAvailablePrinters(transformedPrinters);
+      setAvailablePrinters(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching available printers",

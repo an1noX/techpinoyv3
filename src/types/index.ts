@@ -33,7 +33,7 @@ export interface Printer {
 }
 
 // Add PrinterStatus type
-export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'deployed';
+export type PrinterStatus = 'available' | 'rented' | 'maintenance';
 
 // Add RentalOptions type
 export interface RentalOptions {
@@ -62,70 +62,4 @@ export interface WikiPrinter {
   specs?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
-}
-
-// Add printer-related RPC types
-export interface PrinterMakeRPC {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-export interface PrinterSeriesRPC {
-  id: string;
-  make_id: string;
-  name: string;
-  created_at: string;
-}
-
-export interface PrinterModelRPC {
-  id: string;
-  series_id: string;
-  name: string;
-  created_at: string;
-}
-
-export interface AuditLogRPCResponse {
-  id: string;
-  entity_type: string;
-  entity_id: string;
-  action: string;
-  details: Record<string, any>;
-  created_by: string;
-  created_at: string;
-}
-
-export interface TonerItem {
-  id: string;
-  brand: string;
-  model: string;
-  color: string;
-  page_yield: number;
-}
-
-// Add type for printer model details from RPC
-export interface PrinterModelDetails {
-  make_name: string;
-  series_name: string;
-  model_name: string;
-}
-
-// Add Client type
-export interface Client {
-  id: string;
-  name: string;
-  company?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  printers?: {
-    id: string;
-    make: string;
-    model: string;
-    status: string;
-    location: string;
-  }[];
 }
