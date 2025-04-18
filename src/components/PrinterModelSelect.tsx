@@ -57,13 +57,15 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
         throw error;
       }
       
-      const mappedMakes: PrinterMake[] = data ? data.map((make: any) => ({
-        id: make.id,
-        name: make.name,
-        createdAt: make.created_at
-      })) : [];
-      
-      setMakes(mappedMakes);
+      if (data) {
+        const mappedMakes: PrinterMake[] = data.map((make: any) => ({
+          id: make.id,
+          name: make.name,
+          createdAt: make.created_at
+        }));
+        
+        setMakes(mappedMakes);
+      }
     } catch (error: any) {
       console.error("Error fetching makes:", error);
       toast({
@@ -87,14 +89,16 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
         throw error;
       }
       
-      const mappedSeries: PrinterSeries[] = data ? data.map((series: any) => ({
-        id: series.id,
-        makeId: series.make_id,
-        name: series.name,
-        createdAt: series.created_at
-      })) : [];
-      
-      setSeries(mappedSeries);
+      if (data) {
+        const mappedSeries: PrinterSeries[] = data.map((series: any) => ({
+          id: series.id,
+          makeId: series.make_id,
+          name: series.name,
+          createdAt: series.created_at
+        }));
+        
+        setSeries(mappedSeries);
+      }
     } catch (error: any) {
       console.error("Error fetching series:", error);
       toast({
@@ -118,14 +122,16 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
         throw error;
       }
       
-      const mappedModels: PrinterModel[] = data ? data.map((model: any) => ({
-        id: model.id,
-        seriesId: model.series_id,
-        name: model.name,
-        createdAt: model.created_at
-      })) : [];
-      
-      setModels(mappedModels);
+      if (data) {
+        const mappedModels: PrinterModel[] = data.map((model: any) => ({
+          id: model.id,
+          seriesId: model.series_id,
+          name: model.name,
+          createdAt: model.created_at
+        }));
+        
+        setModels(mappedModels);
+      }
     } catch (error: any) {
       console.error("Error fetching models:", error);
       toast({

@@ -12,6 +12,8 @@ import { Printer, PrinterStatus, WikiPrinter } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PrinterStatusBadge } from '@/components/PrinterStatusBadge';
+import { PrinterModelSelect } from '@/components/PrinterModelSelect';
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
