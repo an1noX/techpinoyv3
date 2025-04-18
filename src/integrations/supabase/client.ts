@@ -13,52 +13,52 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // Add type-safe RPC function wrappers
-export const rpcGetPrinterMakes = () => 
-  supabase.rpc('get_printer_makes').then(result => {
-    return { data: result.data as PrinterMakeRPC[] | null, error: result.error };
-  });
+export const rpcGetPrinterMakes = async () => {
+  const result = await supabase.rpc('get_printer_makes');
+  return { data: result.data as PrinterMakeRPC[] | null, error: result.error };
+};
 
-export const rpcGetPrinterSeries = (makeId: string) => 
-  supabase.rpc('get_printer_series', { make_id: makeId }).then(result => {
-    return { data: result.data as PrinterSeriesRPC[] | null, error: result.error };
-  });
+export const rpcGetPrinterSeries = async (makeId: string) => {
+  const result = await supabase.rpc('get_printer_series', { make_id: makeId });
+  return { data: result.data as PrinterSeriesRPC[] | null, error: result.error };
+};
 
-export const rpcGetPrinterModels = (seriesId: string) => 
-  supabase.rpc('get_printer_models', { series_id: seriesId }).then(result => {
-    return { data: result.data as PrinterModelRPC[] | null, error: result.error };
-  });
+export const rpcGetPrinterModels = async (seriesId: string) => {
+  const result = await supabase.rpc('get_printer_models', { series_id: seriesId });
+  return { data: result.data as PrinterModelRPC[] | null, error: result.error };
+};
 
-export const rpcCreatePrinterMake = (name: string) => 
-  supabase.rpc('create_printer_make', { name }).then(result => {
-    return { data: result.data as PrinterMakeRPC | null, error: result.error };
-  });
+export const rpcCreatePrinterMake = async (name: string) => {
+  const result = await supabase.rpc('create_printer_make', { name });
+  return { data: result.data as PrinterMakeRPC | null, error: result.error };
+};
 
-export const rpcCreatePrinterSeries = (makeId: string, name: string) => 
-  supabase.rpc('create_printer_series', { make_id: makeId, name }).then(result => {
-    return { data: result.data as PrinterSeriesRPC | null, error: result.error };
-  });
+export const rpcCreatePrinterSeries = async (makeId: string, name: string) => {
+  const result = await supabase.rpc('create_printer_series', { make_id: makeId, name });
+  return { data: result.data as PrinterSeriesRPC | null, error: result.error };
+};
 
-export const rpcCreatePrinterModel = (seriesId: string, name: string) => 
-  supabase.rpc('create_printer_model', { series_id: seriesId, name }).then(result => {
-    return { data: result.data as PrinterModelRPC | null, error: result.error };
-  });
+export const rpcCreatePrinterModel = async (seriesId: string, name: string) => {
+  const result = await supabase.rpc('create_printer_model', { series_id: seriesId, name });
+  return { data: result.data as PrinterModelRPC | null, error: result.error };
+};
 
-export const rpcLogPrinterAction = (
+export const rpcLogPrinterAction = async (
   entityType: string,
   entityId: string,
   action: string,
   details: Record<string, any>
-) => 
-  supabase.rpc('log_printer_action', {
+) => {
+  const result = await supabase.rpc('log_printer_action', {
     entity_type: entityType,
     entity_id: entityId,
     action,
     details
-  }).then(result => {
-    return { data: result.data as AuditLogRPCResponse | null, error: result.error };
   });
+  return { data: result.data as AuditLogRPCResponse | null, error: result.error };
+};
 
-export const rpcGetPrinterModelDetails = (modelId: string) =>
-  supabase.rpc('get_printer_model_details', { model_id: modelId }).then(result => {
-    return { data: result.data as PrinterModelDetails | null, error: result.error };
-  });
+export const rpcGetPrinterModelDetails = async (modelId: string) => {
+  const result = await supabase.rpc('get_printer_model_details', { model_id: modelId });
+  return { data: result.data as PrinterModelDetails | null, error: result.error };
+};
