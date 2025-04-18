@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -17,6 +16,7 @@ import { PrinterMakeSelect } from '@/components/PrinterMakeSelect';
 import { PrinterSeriesSelect } from '@/components/PrinterSeriesSelect';
 import { PrinterModelSelect } from '@/components/PrinterModelSelect';
 import { ClientDropdown } from '@/components/ClientDropdown';
+import { rpcGetPrinterModelDetails } from '@/integrations/supabase/client';
 
 export default function Printers() {
   const navigate = useNavigate();
@@ -31,11 +31,12 @@ export default function Printers() {
   const [department, setDepartment] = useState<string>('');
   const [location, setLocation] = useState<string>('');
   const [isForRent, setIsForRent] = useState<boolean>(false);
-  
+  const [modelDetails, setModelDetails] = useState<PrinterModelDetails | null>(null);
+
   useEffect(() => {
     fetchPrinters();
   }, []);
-  
+
   const fetchPrinters = async () => {
     try {
       setLoading(true);
@@ -117,18 +118,18 @@ export default function Printers() {
       setLoading(false);
     }
   };
-  
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-  
+
   const filteredPrinters = printers.filter(printer => 
     printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const handleAssignPrinter = async (printerId: string) => {
     navigate(`/printers/${printerId}`);
   };
@@ -240,7 +241,21 @@ export default function Printers() {
         : printer
     ));
   };
-  
+
+  const fetchModelDetails = async (modelId: string) => {
+    try {
+      const { data, error } = await rpcGetPrinterModelDetails(modelId);
+      
+      if (error) throw error;
+      
+      if (data) {
+        setModelDetails(data);
+      }
+    } catch (error: any) {
+      // Error handling
+    }
+  };
+
   return (
     <MobileLayout
       fab={

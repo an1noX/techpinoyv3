@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -14,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import {
   ChevronLeft, 

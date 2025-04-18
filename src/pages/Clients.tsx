@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -13,17 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
-
-interface Client {
-  id: string;
-  name: string;
-  company: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  notes: string | null;
-  printers: any[];
-}
+import { Client } from '@/types';
 
 export default function Clients() {
   const navigate = useNavigate();
@@ -44,7 +33,6 @@ export default function Clients() {
     try {
       setLoading(true);
       
-      // Fetch clients with their assigned printers
       const { data, error } = await supabase
         .from('clients')
         .select(`
@@ -94,6 +82,10 @@ export default function Clients() {
 
   const handleSaveClient = async (clientData: Partial<Client>) => {
     try {
+      if (!clientData.name) {
+        throw new Error("Name is required");
+      }
+      
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])
