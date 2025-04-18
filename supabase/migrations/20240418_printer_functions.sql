@@ -78,3 +78,34 @@ BEGIN
   RETURN new_model;
 END;
 $$;
+
+-- Function to insert a printer audit log
+CREATE OR REPLACE FUNCTION insert_printer_audit_log(
+  printer_id_param UUID,
+  changed_by_param TEXT,
+  old_status_param TEXT,
+  new_status_param TEXT
+)
+RETURNS printer_audit_logs
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  new_log printer_audit_logs;
+BEGIN
+  INSERT INTO printer_audit_logs (
+    printer_id,
+    changed_by,
+    old_status,
+    new_status
+  )
+  VALUES (
+    printer_id_param,
+    changed_by_param,
+    old_status_param,
+    new_status_param
+  )
+  RETURNING * INTO new_log;
+  
+  RETURN new_log;
+END;
+$$;
