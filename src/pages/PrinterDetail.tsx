@@ -301,6 +301,26 @@ export default function PrinterDetail() {
     try {
       setLoading(true);
       
+      const { error } = await supabase
+        .from('printers')
+        .update({ 
+          is_for_rent: state,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', printer!.id);
+      
+      if (error) {
+        throw error;
+      }
+
+      if (printer) {
+        setPrinter({
+          ...printer,
+          isForRent: state,
+          updatedAt: new Date().toISOString()
+        });
+      }
+      
       setIsForRent(state);
       
       if (!state && activeTab === 'rentOptions') {
@@ -319,12 +339,19 @@ export default function PrinterDetail() {
         description: error.message,
         variant: "destructive"
       });
+      setIsForRent(!state);
     } finally {
       setLoading(false);
       setConfirmToggleDialogOpen(false);
     }
   };
-  
+
+  useEffect(() => {
+    if (printer) {
+      setIsForRent(printer.isForRent || false);
+    }
+  }, [printer]);
+
   const handleRentalOptionChange = (
     field: keyof RentalOptions, 
     value: string | number | boolean | Date[] | undefined

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon } from 'lucide-react';
+import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNavigation() {
@@ -23,6 +23,11 @@ export function BottomNavigation() {
       name: 'Rentals', 
       path: '/rentals', 
       icon: CalendarIcon 
+    },
+    { 
+      name: 'Clients', 
+      path: '/clients', 
+      icon: Users 
     },
     { 
       name: 'Profile', 
