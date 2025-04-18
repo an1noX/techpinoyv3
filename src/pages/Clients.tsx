@@ -94,6 +94,16 @@ export default function Clients() {
 
   const handleSaveClient = async (clientData: Partial<Client>) => {
     try {
+      // Ensure name is provided
+      if (!clientData.name) {
+        toast({
+          title: "Error",
+          description: "Name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('clients')
         .insert([clientData])
