@@ -13,7 +13,6 @@ interface PrinterStatusBadgeProps {
   onStatusChange: (newStatus: PrinterStatus) => void;
 }
 
-// Define the response type for the insert_printer_audit_log RPC function
 interface AuditLogRPCResponse {
   id: string;
   printer_id: string;
@@ -53,12 +52,15 @@ export const PrinterStatusBadge = ({ printerId, currentStatus, onStatusChange }:
       if (updateError) throw updateError;
 
       // Then add an audit log entry using RPC function
-      const { data, error: logError } = await supabase.rpc('insert_printer_audit_log', {
-        printer_id_param: printerId,
-        changed_by_param: 'system',
-        old_status_param: currentStatus,
-        new_status_param: newStatus
-      });
+      const { data, error: logError } = await supabase.rpc<AuditLogRPCResponse>(
+        'insert_printer_audit_log',
+        {
+          printer_id_param: printerId,
+          changed_by_param: 'system',
+          old_status_param: currentStatus,
+          new_status_param: newStatus
+        }
+      );
 
       if (logError) {
         console.error("Error logging status change:", logError);

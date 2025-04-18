@@ -72,7 +72,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
 
   const fetchMakes = async () => {
     try {
-      const { data, error } = await supabase.rpc('get_printer_makes');
+      const { data, error } = await supabase.rpc<PrinterMakeRPC[]>('get_printer_makes');
       
       if (error) {
         throw error;
@@ -102,7 +102,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
 
   const fetchSeries = async (makeId: string) => {
     try {
-      const { data, error } = await supabase.rpc('get_printer_series', { 
+      const { data, error } = await supabase.rpc<PrinterSeriesRPC[]>('get_printer_series', { 
         make_id_param: makeId 
       });
       
@@ -135,7 +135,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
 
   const fetchModels = async (seriesId: string) => {
     try {
-      const { data, error } = await supabase.rpc('get_printer_models', { 
+      const { data, error } = await supabase.rpc<PrinterModelRPC[]>('get_printer_models', { 
         series_id_param: seriesId 
       });
       
@@ -170,7 +170,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
     if (!newMake.trim()) return;
     
     try {
-      const { data, error } = await supabase.rpc('insert_printer_make', { 
+      const { data, error } = await supabase.rpc<PrinterMakeRPC>('insert_printer_make', { 
         make_name: newMake.trim() 
       });
       
@@ -179,11 +179,10 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
       }
       
       if (data) {
-        const make = data as PrinterMakeRPC;
         const newMakeData: PrinterMake = {
-          id: make.id,
-          name: make.name,
-          createdAt: make.created_at
+          id: data.id,
+          name: data.name,
+          createdAt: data.created_at
         };
         
         setMakes([...makes, newMakeData]);
@@ -210,7 +209,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
     if (!newSeries.trim() || !selectedMake) return;
     
     try {
-      const { data, error } = await supabase.rpc('insert_printer_series', { 
+      const { data, error } = await supabase.rpc<PrinterSeriesRPC>('insert_printer_series', { 
         series_name: newSeries.trim(),
         make_id_param: selectedMake
       });
@@ -220,12 +219,11 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
       }
       
       if (data) {
-        const series = data as PrinterSeriesRPC;
         const newSeriesData: PrinterSeries = {
-          id: series.id,
-          makeId: series.make_id,
-          name: series.name,
-          createdAt: series.created_at
+          id: data.id,
+          makeId: data.make_id,
+          name: data.name,
+          createdAt: data.created_at
         };
         
         setSeries(prevSeries => [...prevSeries, newSeriesData]);
@@ -252,7 +250,7 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
     if (!newModel.trim() || !selectedSeries) return;
     
     try {
-      const { data, error } = await supabase.rpc('insert_printer_model', { 
+      const { data, error } = await supabase.rpc<PrinterModelRPC>('insert_printer_model', { 
         model_name: newModel.trim(),
         series_id_param: selectedSeries
       });
@@ -262,12 +260,11 @@ export const PrinterModelSelect = ({ onSelect }: PrinterModelSelectProps) => {
       }
       
       if (data) {
-        const model = data as PrinterModelRPC;
         const newModelData: PrinterModel = {
-          id: model.id,
-          seriesId: model.series_id,
-          name: model.name,
-          createdAt: model.created_at
+          id: data.id,
+          seriesId: data.series_id,
+          name: data.name,
+          createdAt: data.created_at
         };
         
         setModels(prevModels => [...prevModels, newModelData]);
