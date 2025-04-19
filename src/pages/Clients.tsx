@@ -7,23 +7,12 @@ import { Plus, Search, Filter, Printer, Mail, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
-
-interface Client {
-  id: string;
-  name: string;
-  company: string | null;
-  email: string | null;
-  phone: string | null;
-  address: string | null;
-  notes: string | null;
-  printers: any[];
-}
+import { getClients, createClient, Client } from '@/services/clients';
 
 export default function Clients() {
   const navigate = useNavigate();
@@ -43,21 +32,17 @@ export default function Clients() {
   const fetchClients = async () => {
     try {
       setLoading(true);
+      const clientsData = await getClients();
       
-      // Fetch clients with their assigned printers
-      const { data, error } = await supabase
-        .from('clients')
-        .select(`
-          *,
-          printers:printers(id, make, model, status, location)
-        `);
+      // Temporary transformation until we implement the full client-printer relationship
+      const clientsWithPrinters = clientsData.map(client => ({
+        ...client,
+        printers: [] // This will be populated with actual data from a separate query
+      }));
       
-      if (error) {
-        throw error;
-      }
-      
-      setClients(data || []);
+      setClients(clientsWithPrinters);
     } catch (error: any) {
+      console.error('Error fetching clients:', error);
       toast({
         title: "Error fetching clients",
         description: error.message,
@@ -82,27 +67,20 @@ export default function Clients() {
     setOpenAddClientDialog(true);
   };
 
-  const handleAssignPrinter = (client: Client) => {
+  const handleAssignPrinter = (client: Client & { printers: any[] }) => {
     setSelectedClient(client);
     setOpenAssignDialog(true);
   };
 
-  const handleViewClientDetails = (client: Client) => {
+  const handleViewClientDetails = (client: Client & { printers: any[] }) => {
     setSelectedClient(client);
     setOpenClientDetail(true);
   };
 
-  const handleSaveClient = async (clientData: Partial<Client>) => {
+  const handleSaveClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .insert([clientData])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
+      await createClient(clientData);
+      
       toast({
         title: "Success",
         description: "Client added successfully"
@@ -111,6 +89,7 @@ export default function Clients() {
       setOpenAddClientDialog(false);
       fetchClients();
     } catch (error: any) {
+      console.error('Error adding client:', error);
       toast({
         title: "Error adding client",
         description: error.message,
@@ -204,13 +183,13 @@ export default function Clients() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleViewClientDetails(client)}
+                    onClick={() => handleViewClientDetails(client as Client & { printers: any[] })}
                   >
                     View Details
                   </Button>
                   <Button 
                     size="sm"
-                    onClick={() => handleAssignPrinter(client)}
+                    onClick={() => handleAssignPrinter(client as Client & { printers: any[] })}
                   >
                     Assign Printer
                   </Button>
@@ -297,7 +276,7 @@ export default function Clients() {
         <AssignPrinterDialog
           open={openAssignDialog}
           onOpenChange={setOpenAssignDialog}
-          client={selectedClient}
+          client={selectedClient as any}
           onAssignSuccess={fetchClients}
         />
       )}
@@ -307,7 +286,7 @@ export default function Clients() {
         <ClientDetailSheet
           open={openClientDetail}
           onOpenChange={setOpenClientDetail}
-          client={selectedClient}
+          client={selectedClient as any}
           onClientUpdated={fetchClients}
         />
       )}

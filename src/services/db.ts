@@ -10,16 +10,57 @@ export const pool = mysql.createPool({
   database: process.env.DB_NAME || 'printpal',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  charset: 'utf8mb4'
 });
 
 // Helper to execute queries
 export async function query<T>(sql: string, params?: any[]): Promise<T> {
-  const [rows] = await pool.execute(sql, params);
-  return rows as T;
+  try {
+    const [rows] = await pool.execute(sql, params || []);
+    return rows as T;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
 }
 
 // Close the connection pool (use when shutting down the app)
 export async function closePool(): Promise<void> {
   await pool.end();
+}
+
+// Function to check the database connection
+export async function checkConnection(): Promise<boolean> {
+  try {
+    await pool.query('SELECT 1');
+    return true;
+  } catch (error) {
+    console.error('Database connection error:', error);
+    return false;
+  }
+}
+
+// Function to initialize the database with schema
+export async function initializeDatabase(): Promise<boolean> {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const schema = fs.readFileSync(path.join(process.cwd(), 'src/services/schema.sql'), 'utf8');
+    
+    // Split the schema into individual statements
+    const statements = schema
+      .split(';')
+      .filter((statement: string) => statement.trim() !== '');
+    
+    // Execute each statement
+    for (const statement of statements) {
+      await pool.query(`${statement};`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    return false;
+  }
 }

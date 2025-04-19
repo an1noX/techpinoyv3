@@ -66,26 +66,27 @@ export async function getPrinterById(id: string): Promise<Printer | null> {
 
 export async function createPrinter(printer: Omit<Printer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Printer> {
   const id = uuidv4();
-  const now = new Date().toISOString();
   
   await query(
     `INSERT INTO printers (
       id, make, model, series, status, owned_by, assigned_to, client_id, 
-      department, location, is_for_rent, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      department, location, is_for_rent
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id, printer.make, printer.model, printer.series, printer.status, printer.ownedBy, 
       printer.assignedTo, printer.clientId, printer.department, printer.location, 
-      printer.isForRent, now, now
+      printer.isForRent
     ]
   );
   
-  return {
-    ...printer,
-    id,
-    createdAt: now,
-    updatedAt: now
-  };
+  // Get the newly created printer with timestamps
+  const created = await getPrinterById(id);
+  
+  if (!created) {
+    throw new Error('Failed to retrieve created printer');
+  }
+  
+  return created;
 }
 
 export async function updatePrinter(id: string, updates: Partial<Printer>): Promise<Printer | null> {
@@ -150,33 +151,46 @@ export async function updatePrinter(id: string, updates: Partial<Printer>): Prom
     updateValues.push(updates.isForRent);
   }
   
-  // Add updated_at
-  const now = new Date().toISOString();
-  updateFields.push('updated_at = ?');
-  updateValues.push(now);
-  
   // Add id to values
   updateValues.push(id);
   
-  // Execute update
-  await query(
-    `UPDATE printers SET ${updateFields.join(', ')} WHERE id = ?`,
-    updateValues
-  );
+  // Execute update if there are fields to update
+  if (updateFields.length > 0) {
+    await query(
+      `UPDATE printers SET ${updateFields.join(', ')} WHERE id = ?`,
+      updateValues
+    );
+  }
   
   // Return updated printer
-  return {
-    ...printer,
-    ...updates,
-    updatedAt: now
-  };
+  return getPrinterById(id);
 }
 
 export async function deletePrinter(id: string): Promise<boolean> {
-  const result = await query<any>('DELETE FROM printers WHERE id = ?', [id]);
+  await query<any>('DELETE FROM printers WHERE id = ?', [id]);
   return true;
 }
 
 export async function updatePrinterRentalStatus(id: string, isForRent: boolean): Promise<Printer | null> {
   return updatePrinter(id, { isForRent });
+}
+
+export async function getPrintersByClientId(clientId: string): Promise<Printer[]> {
+  const results = await query<any[]>('SELECT * FROM printers WHERE client_id = ? ORDER BY created_at DESC', [clientId]);
+  
+  return results.map(row => ({
+    id: row.id,
+    make: row.make,
+    model: row.model,
+    series: row.series,
+    status: row.status,
+    ownedBy: row.owned_by,
+    assignedTo: row.assigned_to,
+    clientId: row.client_id,
+    department: row.department,
+    location: row.location,
+    isForRent: Boolean(row.is_for_rent),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
 }

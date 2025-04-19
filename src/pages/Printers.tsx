@@ -8,11 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Printer, PrinterStatus, WikiPrinter } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Printer, PrinterStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getPrinters, createPrinter } from '@/services/printers';
+import { query } from '@/services/db';
+
+interface WikiPrinter {
+  id: string;
+  make: string;
+  model: string;
+  series: string;
+  specs?: Record<string, string>;
+  maintenanceTips?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
@@ -52,38 +64,17 @@ export default function Printers() {
   const fetchPrinters = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('printers')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      const transformedPrinters: Printer[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        status: printer.status as PrinterStatus,
-        ownedBy: printer.owned_by,
-        assignedTo: printer.assigned_to || undefined,
-        department: printer.department || undefined,
-        location: printer.location || undefined,
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at,
-        isForRent: printer.is_for_rent
-      }));
-      
-      setPrinters(transformedPrinters);
+      const printersData = await getPrinters();
+      setPrinters(printersData);
     } catch (error: any) {
+      console.error('Error fetching printers:', error);
       toast({
         title: "Error fetching printers",
         description: error.message,
         variant: "destructive"
       });
       
+      // Fallback to mock data if database is not available
       const mockPrinters: Printer[] = [
         { 
           id: '1', 
@@ -96,6 +87,7 @@ export default function Printers() {
           location: 'Floor 2, Room 201',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          isForRent: false
         },
         { 
           id: '2', 
@@ -109,6 +101,7 @@ export default function Printers() {
           location: 'Floor 1, Room 105',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          isForRent: true
         },
         { 
           id: '3', 
@@ -122,6 +115,7 @@ export default function Printers() {
           location: 'Floor 3, Room 302',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          isForRent: false
         },
       ];
       
@@ -135,15 +129,9 @@ export default function Printers() {
     try {
       setLoadingWiki(true);
       
-      const { data, error } = await supabase
-        .from('printer_wiki')
-        .select('*');
+      const results = await query<any[]>('SELECT * FROM printer_wiki');
       
-      if (error) {
-        throw error;
-      }
-      
-      const transformedWikiPrinters: WikiPrinter[] = (data || []).map(printer => ({
+      const transformedWikiPrinters: WikiPrinter[] = results.map(printer => ({
         id: printer.id,
         make: printer.make,
         series: printer.series,
@@ -156,11 +144,45 @@ export default function Printers() {
       
       setWikiPrinters(transformedWikiPrinters);
     } catch (error: any) {
+      console.error('Error fetching wiki printers:', error);
       toast({
         title: "Error fetching wiki printers",
         description: error.message,
         variant: "destructive"
       });
+      
+      // Mock wiki printers if database is not available
+      const mockWikiPrinters: WikiPrinter[] = [
+        {
+          id: 'w1',
+          make: 'HP',
+          series: 'LaserJet',
+          model: 'Pro MFP M428fdn',
+          specs: { 'print-speed': '40ppm', 'color': 'No' },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'w2',
+          make: 'Brother',
+          series: 'MFC',
+          model: 'L8900CDW',
+          specs: { 'print-speed': '35ppm', 'color': 'Yes' },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'w3',
+          make: 'Canon',
+          series: 'imageRUNNER',
+          model: '1643i',
+          specs: { 'print-speed': '43ppm', 'color': 'No' },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      
+      setWikiPrinters(mockWikiPrinters);
     } finally {
       setLoadingWiki(false);
     }
@@ -203,23 +225,18 @@ export default function Printers() {
         throw new Error("Selected printer not found in wiki");
       }
 
-      const { data, error } = await supabase
-        .from('printers')
-        .insert({
-          make: selectedPrinter.make,
-          series: selectedPrinter.series,
-          model: selectedPrinter.model,
-          status: 'available' as PrinterStatus,
-          owned_by: 'system',
-          department: department || null,
-          location: location || null,
-          is_for_rent: false
-        })
-        .select();
-
-      if (error) {
-        throw error;
-      }
+      await createPrinter({
+        make: selectedPrinter.make,
+        series: selectedPrinter.series,
+        model: selectedPrinter.model,
+        status: 'available',
+        ownedBy: 'system',
+        assignedTo: null,
+        clientId: null,
+        department: department || null,
+        location: location || null,
+        isForRent: false
+      });
 
       toast({
         title: "Success",
@@ -233,6 +250,7 @@ export default function Printers() {
       
       await fetchPrinters();
     } catch (error: any) {
+      console.error('Error importing printer:', error);
       toast({
         title: "Error importing printer",
         description: error.message,
@@ -302,8 +320,8 @@ export default function Printers() {
                       {printer.department} • {printer.location}
                     </p>
                   </div>
-                  <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
-                    {getStatusEmoji(printer.status)} {printer.status}
+                  <Badge className={`ml-2 ${getStatusColor(printer.status as PrinterStatus)}`}>
+                    {getStatusEmoji(printer.status as PrinterStatus)} {printer.status}
                   </Badge>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">

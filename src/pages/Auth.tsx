@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +17,7 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, session, user } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -39,6 +40,7 @@ export default function Auth() {
             navigate('/printers');
           }
         } catch (error) {
+          console.error('Error checking user role:', error);
           toast({
             title: "Error checking user role",
             description: error instanceof Error ? error.message : "Unknown error occurred",
@@ -72,6 +74,7 @@ export default function Auth() {
         });
       }
     } catch (error: any) {
+      console.error('Sign in error:', error);
       toast({
         title: "An error occurred",
         description: error.message || "Could not sign in. Please try again.",
@@ -107,6 +110,7 @@ export default function Auth() {
         });
       }
     } catch (error: any) {
+      console.error('Sign up error:', error);
       toast({
         title: "An error occurred",
         description: error.message || "Could not create account. Please try again.",
