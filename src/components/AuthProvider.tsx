@@ -1,13 +1,14 @@
 
 import React, { createContext, useEffect, useState } from 'react';
-import { Session, User, getSession, signIn, signOut, signUp } from '@/services/auth';
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  signUp: (data: { email: string; password: string; firstName?: string; lastName?: string }) => Promise<{ error: Error | null }>;
-  signIn: (data: { email: string; password: string }) => Promise<{ error: Error | null }>;
-  signOut: () => Promise<{ error: Error | null }>;
+  signUp: (data: { email: string; password: string; options?: any }) => Promise<{ error: any }>;
+  signIn: (data: { email: string; password: string }) => Promise<{ error: any }>;
+  signOut: () => Promise<{ error: any }>;
   loading: boolean;
 }
 
@@ -25,69 +26,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const fetchSession = async () => {
-      const { session, error } = await getSession();
-      
-      if (error) {
-        console.error('Error fetching session:', error);
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
-      
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-    };
+    });
 
-    fetchSession();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Custom sign up function
-  const handleSignUp = async ({ 
-    email, 
-    password, 
-    firstName, 
-    lastName 
-  }: { 
-    email: string; 
-    password: string; 
-    firstName?: string; 
-    lastName?: string 
-  }) => {
-    const { error } = await signUp({ email, password, firstName, lastName });
-    return { error };
+  const signUp = async ({ email, password, options }: { email: string; password: string; options?: any }) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
   };
 
-  // Custom sign in function
-  const handleSignIn = async ({ email, password }: { email: string; password: string }) => {
-    const { session: newSession, error } = await signIn({ email, password });
-    
-    if (newSession && !error) {
-      setSession(newSession);
-      setUser(newSession.user);
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
     }
-    
-    return { error };
   };
 
-  // Custom sign out function
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    
-    if (!error) {
-      setSession(null);
-      setUser(null);
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      return { error };
     }
-    
-    return { error };
   };
 
   const value = {
     session,
     user,
-    signUp: handleSignUp,
-    signIn: handleSignIn,
-    signOut: handleSignOut,
+    signUp,
+    signIn,
+    signOut,
     loading,
   };
 

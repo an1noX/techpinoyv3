@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -9,8 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { SettingsIcon, BellIcon, LogOutIcon, UserIcon, KeyIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { query } from '@/services/db';
 
 interface ProfileData {
   first_name: string | null;
@@ -45,13 +46,18 @@ export default function Profile() {
       
       try {
         setLoading(true);
-        const profiles = await query<any[]>(
-          'SELECT first_name, last_name, department, role FROM profiles WHERE id = ?',
-          [user.id]
-        );
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, department, role')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (error) {
+          throw error;
+        }
         
-        if (profiles.length > 0) {
-          setProfileData(profiles[0]);
+        if (data) {
+          setProfileData(data);
         }
       } catch (error: any) {
         console.error('Error fetching profile:', error.message);

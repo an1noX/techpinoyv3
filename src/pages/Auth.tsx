@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { PrinterIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { query } from '@/services/db';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -17,41 +17,39 @@ export default function Auth() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  useEffect(() => {
-    if (user) {
-      // Check user role
+  React.useEffect(() => {
+    if (session) {
+      // Check user role after session is established
       const checkUserRole = async () => {
-        try {
-          const profiles = await query<any[]>('SELECT role FROM profiles WHERE id = ?', [user.id]);
-          
-          if (profiles.length > 0) {
-            const userRole = profiles[0].role;
-            
-            if (userRole === 'admin') {
-              navigate('/');
-            } else {
-              navigate('/printers');
-            }
-          } else {
-            navigate('/printers');
-          }
-        } catch (error) {
-          console.error('Error checking user role:', error);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
           toast({
             title: "Error checking user role",
-            description: error instanceof Error ? error.message : "Unknown error occurred",
+            description: error.message,
             variant: "destructive"
           });
+          return;
+        }
+
+        if (data?.role === 'admin') {
+          navigate('/');
+        } else if (data?.role) {
+          navigate('/printers');
         }
       };
 
       checkUserRole();
     }
-  }, [user, navigate, toast]);
+  }, [session, navigate, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +72,6 @@ export default function Auth() {
         });
       }
     } catch (error: any) {
-      console.error('Sign in error:', error);
       toast({
         title: "An error occurred",
         description: error.message || "Could not sign in. Please try again.",
@@ -93,8 +90,12 @@ export default function Auth() {
       const { error } = await signUp({ 
         email, 
         password, 
-        firstName, 
-        lastName
+        options: {
+          data: { 
+            first_name: firstName, 
+            last_name: lastName 
+          }
+        }
       });
       
       if (error) {
@@ -106,11 +107,10 @@ export default function Auth() {
       } else {
         toast({
           title: "Account created",
-          description: "Please log in with your new account.",
+          description: "Please check your email to confirm your account.",
         });
       }
     } catch (error: any) {
-      console.error('Sign up error:', error);
       toast({
         title: "An error occurred",
         description: error.message || "Could not create account. Please try again.",
