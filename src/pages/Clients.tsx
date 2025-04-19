@@ -1,29 +1,37 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search, Filter, Printer, Mail, Phone } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
-import { getClients, createClient, Client } from '@/services/clients';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { getClients, createClient, getClientWithPrinters, Client } from '@/services/clients';
+import { useToast } from '@/hooks/use-toast';
+import { Printer } from '@/types';
 
 export default function Clients() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientPrinters, setClientPrinters] = useState<Printer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [openAddClientDialog, setOpenAddClientDialog] = useState(false);
-  const [openAssignDialog, setOpenAssignDialog] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [openClientDetail, setOpenClientDetail] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    company: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: ''
+  });
   
   useEffect(() => {
     fetchClients();
@@ -33,19 +41,12 @@ export default function Clients() {
     try {
       setLoading(true);
       const clientsData = await getClients();
-      
-      // Temporary transformation until we implement the full client-printer relationship
-      const clientsWithPrinters = clientsData.map(client => ({
-        ...client,
-        printers: [] // This will be populated with actual data from a separate query
-      }));
-      
-      setClients(clientsWithPrinters);
-    } catch (error: any) {
+      setClients(clientsData);
+    } catch (error) {
       console.error('Error fetching clients:', error);
       toast({
         title: "Error fetching clients",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive"
       });
     } finally {
@@ -63,49 +64,83 @@ export default function Clients() {
     (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
-  const handleAddClient = () => {
-    setOpenAddClientDialog(true);
-  };
-
-  const handleAssignPrinter = (client: Client & { printers: any[] }) => {
-    setSelectedClient(client);
-    setOpenAssignDialog(true);
-  };
-
-  const handleViewClientDetails = (client: Client & { printers: any[] }) => {
-    setSelectedClient(client);
-    setOpenClientDetail(true);
-  };
-
-  const handleSaveClient = async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleOpenDetail = async (client: Client) => {
     try {
-      await createClient(clientData);
+      setSelectedClient(client);
       
+      // Fetch client with their printers
+      const clientWithPrinters = await getClientWithPrinters(client.id);
+      setSelectedClient(clientWithPrinters.client);
+      setClientPrinters(clientWithPrinters.printers);
+      
+      setIsDetailOpen(true);
+    } catch (error) {
+      console.error('Error fetching client details:', error);
       toast({
-        title: "Success",
-        description: "Client added successfully"
-      });
-
-      setOpenAddClientDialog(false);
-      fetchClients();
-    } catch (error: any) {
-      console.error('Error adding client:', error);
-      toast({
-        title: "Error adding client",
-        description: error.message,
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to load client details',
         variant: "destructive"
       });
     }
   };
   
+  const handleCreateClient = async () => {
+    try {
+      if (!newClient.name) {
+        toast({
+          title: "Error",
+          description: "Client name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const created = await createClient({
+        name: newClient.name,
+        company: newClient.company || null,
+        email: newClient.email || null,
+        phone: newClient.phone || null,
+        address: newClient.address || null,
+        notes: newClient.notes || null
+      });
+      
+      toast({
+        title: "Success",
+        description: `Client ${created.name} created successfully`,
+      });
+      
+      setIsCreateDialogOpen(false);
+      setNewClient({
+        name: '',
+        company: '',
+        email: '',
+        phone: '',
+        address: '',
+        notes: ''
+      });
+      
+      // Refresh clients list
+      await fetchClients();
+    } catch (error) {
+      console.error('Error creating client:', error);
+      toast({
+        title: "Error creating client",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleClientDetailClose = () => {
+    setIsDetailOpen(false);
+    setSelectedClient(null);
+    setClientPrinters([]);
+  };
+  
   return (
     <MobileLayout
       fab={
-        <Fab 
-          icon={<Plus size={24} />} 
-          aria-label="Add client" 
-          onClick={handleAddClient}
-        />
+        <Fab icon={<Plus size={24} />} aria-label="Add client" onClick={() => setIsCreateDialogOpen(true)} />
       }
     >
       <div className="container px-4 py-4">
@@ -125,7 +160,11 @@ export default function Clients() {
             />
           </div>
           <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-            <Filter className="h-4 w-4" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 7h18" />
+              <path d="M6 12h12" />
+              <path d="M9 17h6" />
+            </svg>
           </Button>
         </div>
         
@@ -136,7 +175,6 @@ export default function Clients() {
         ) : filteredClients.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">No clients found</p>
-            <Button className="mt-4" onClick={handleAddClient}>Add Client</Button>
           </div>
         ) : (
           <div className="space-y-4">
@@ -144,152 +182,103 @@ export default function Clients() {
               <Card key={client.id} className="overflow-hidden">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-lg">{client.name}</CardTitle>
-                  {client.company && (
-                    <p className="text-sm text-muted-foreground">{client.company}</p>
-                  )}
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <div className="flex flex-col gap-2">
-                    {client.email && (
-                      <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{client.email}</span>
-                      </div>
-                    )}
-                    {client.phone && (
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{client.phone}</span>
-                      </div>
-                    )}
-                    <div className="mt-2">
-                      <p className="text-sm font-medium">Assigned Printers:</p>
-                      {client.printers && client.printers.length > 0 ? (
-                        <div className="text-sm space-y-1 mt-1">
-                          {client.printers.map((printer, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <Printer className="h-4 w-4 text-muted-foreground" />
-                              <span>{printer.make} {printer.model}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground mt-1">No printers assigned</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="px-4 py-3 bg-gray-50 flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewClientDetails(client as Client & { printers: any[] })}
-                  >
+                  <p className="text-sm text-muted-foreground">
+                    {client.company}
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => handleOpenDetail(client)}>
                     View Details
                   </Button>
-                  <Button 
-                    size="sm"
-                    onClick={() => handleAssignPrinter(client as Client & { printers: any[] })}
-                  >
-                    Assign Printer
-                  </Button>
-                </CardFooter>
+                </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
-
-      {/* Add Client Dialog */}
-      <Dialog open={openAddClientDialog} onOpenChange={setOpenAddClientDialog}>
+      
+      <ClientDetailSheet
+        open={isDetailOpen}
+        onOpenChange={handleClientDetailClose}
+        client={selectedClient}
+        printers={clientPrinters}
+      />
+      
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Client</DialogTitle>
+            <DialogTitle>Create New Client</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Name*</label>
-              <Input id="name" placeholder="Client name" />
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                placeholder="Client Name" 
+                value={newClient.name}
+                onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Company</label>
-              <Input id="company" placeholder="Company name" />
+              <Label htmlFor="company">Company</Label>
+              <Input 
+                id="company" 
+                placeholder="Company Name" 
+                value={newClient.company}
+                onChange={(e) => setNewClient({ ...newClient, company: e.target.value })}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input id="email" type="email" placeholder="email@example.com" />
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email"
+                placeholder="Email Address" 
+                value={newClient.email}
+                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Phone</label>
-              <Input id="phone" placeholder="Phone number" />
+              <Label htmlFor="phone">Phone</Label>
+              <Input 
+                id="phone" 
+                placeholder="Phone Number" 
+                value={newClient.phone}
+                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Address</label>
-              <Input id="address" placeholder="Address" />
+              <Label htmlFor="address">Address</Label>
+              <Input 
+                id="address" 
+                placeholder="Street Address" 
+                value={newClient.address}
+                onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+              />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Notes</label>
-              <Input id="notes" placeholder="Additional notes" />
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea 
+                id="notes" 
+                placeholder="Additional Notes" 
+                value={newClient.notes}
+                onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+              />
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAddClientDialog(false)}>Cancel</Button>
-            <Button onClick={() => {
-              const nameInput = document.getElementById('name') as HTMLInputElement;
-              const companyInput = document.getElementById('company') as HTMLInputElement;
-              const emailInput = document.getElementById('email') as HTMLInputElement;
-              const phoneInput = document.getElementById('phone') as HTMLInputElement;
-              const addressInput = document.getElementById('address') as HTMLInputElement;
-              const notesInput = document.getElementById('notes') as HTMLInputElement;
-              
-              if (!nameInput.value) {
-                toast({
-                  title: "Error",
-                  description: "Name is required",
-                  variant: "destructive"
-                });
-                return;
-              }
-              
-              handleSaveClient({
-                name: nameInput.value,
-                company: companyInput.value || null,
-                email: emailInput.value || null,
-                phone: phoneInput.value || null,
-                address: addressInput.value || null,
-                notes: notesInput.value || null
-              });
-            }}>Save</Button>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateClient}>Create Client</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Assign Printer Dialog */}
-      {selectedClient && (
-        <AssignPrinterDialog
-          open={openAssignDialog}
-          onOpenChange={setOpenAssignDialog}
-          client={selectedClient as any}
-          onAssignSuccess={fetchClients}
-        />
-      )}
-
-      {/* Client Detail Sheet */}
-      {selectedClient && (
-        <ClientDetailSheet
-          open={openClientDetail}
-          onOpenChange={setOpenClientDetail}
-          client={selectedClient as any}
-          onClientUpdated={fetchClients}
-        />
-      )}
     </MobileLayout>
   );
 }

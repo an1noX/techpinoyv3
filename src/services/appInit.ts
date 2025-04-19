@@ -1,10 +1,12 @@
 
-import { checkConnection, initializeDatabase } from './db';
+import { checkConnection } from './db';
+import { migrateDatabase, checkDatabaseHealth } from './migrateDatabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface InitializeAppResult {
   success: boolean;
   message: string;
+  details?: any;
 }
 
 // Function to initialize the app on startup
@@ -21,22 +23,30 @@ export async function initializeApp(): Promise<InitializeAppResult> {
       };
     }
     
-    // Initialize database schema if needed
-    const initialized = await initializeDatabase();
+    // Run database migration (schema and seed data)
+    const migrationResult = await migrateDatabase();
     
-    if (!initialized) {
-      console.error('Failed to initialize database schema');
+    if (!migrationResult.success) {
+      console.error('Failed to initialize database');
       return {
         success: false,
-        message: 'Failed to initialize database schema. Please check the logs for details.'
+        message: migrationResult.message,
+        details: migrationResult.details
       };
     }
     
-    console.log('App initialization complete: Database connected and schema initialized');
+    // Run a health check to ensure all tables are functioning
+    const healthCheckResult = await checkDatabaseHealth();
+    
+    console.log('App initialization complete: Database connected and initialized');
     
     return {
       success: true,
-      message: 'App initialized successfully. Database is connected and schema is loaded.'
+      message: 'App initialized successfully. Database is connected and schema is loaded.',
+      details: {
+        migration: migrationResult,
+        health: healthCheckResult
+      }
     };
   } catch (error) {
     console.error('Error during app initialization:', error);

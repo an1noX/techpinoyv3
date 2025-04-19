@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Printer, PrinterStatus } from '@/types';
+import { Printer as PrinterType, PrinterStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getPrinters, createPrinter } from '@/services/printers';
@@ -47,7 +47,7 @@ const getStatusEmoji = (status: PrinterStatus) => {
 export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [printers, setPrinters] = useState<Printer[]>([]);
+  const [printers, setPrinters] = useState<PrinterType[]>([]);
   const [wikiPrinters, setWikiPrinters] = useState<WikiPrinter[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingWiki, setLoadingWiki] = useState(false);
@@ -65,12 +65,30 @@ export default function Printers() {
     try {
       setLoading(true);
       const printersData = await getPrinters();
-      setPrinters(printersData);
-    } catch (error: any) {
+      
+      // Convert MariaDB printer objects to match the Printer type from @/types
+      const convertedPrinters: PrinterType[] = printersData.map(printer => ({
+        id: printer.id,
+        make: printer.make,
+        model: printer.model,
+        status: printer.status as PrinterStatus, // Cast to PrinterStatus type
+        ownedBy: printer.ownedBy,
+        assignedTo: printer.assignedTo || undefined,
+        series: printer.series,
+        department: printer.department || undefined,
+        location: printer.location || undefined,
+        isForRent: printer.isForRent,
+        createdAt: printer.createdAt,
+        updatedAt: printer.updatedAt,
+        clientId: printer.clientId
+      }));
+      
+      setPrinters(convertedPrinters);
+    } catch (error) {
       console.error('Error fetching printers:', error);
       toast({
         title: "Error fetching printers",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: "destructive"
       });
       

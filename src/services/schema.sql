@@ -1,4 +1,15 @@
 
+-- Drop tables if they exist for clean migration
+DROP TABLE IF EXISTS printer_client_assignments;
+DROP TABLE IF EXISTS rental_options;
+DROP TABLE IF EXISTS rentals;
+DROP TABLE IF EXISTS printer_wiki;
+DROP TABLE IF EXISTS printers;
+DROP TABLE IF EXISTS clients;
+DROP TABLE IF EXISTS profiles;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
+
 -- Users table for authentication
 CREATE TABLE IF NOT EXISTS users (
   id CHAR(36) PRIMARY KEY,
@@ -70,7 +81,8 @@ CREATE TABLE IF NOT EXISTS printer_wiki (
   specs JSON NULL,
   maintenance_tips TEXT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY printer_model_unique (make, model, series)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Rentals table
@@ -90,7 +102,8 @@ CREATE TABLE IF NOT EXISTS rentals (
   next_available_date DATE NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (printer_id) REFERENCES printers(id) ON DELETE SET NULL
+  FOREIGN KEY (printer_id) REFERENCES printers(id) ON DELETE SET NULL,
+  FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Rental Options table
@@ -139,12 +152,3 @@ CREATE TABLE IF NOT EXISTS toners (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Initial admin user creation
--- Note: Password is 'admin123' - this is for development only
--- In production, you should create users securely
-INSERT INTO users (id, email, password_hash, created_at, updated_at)
-VALUES ('00000000-0000-0000-0000-000000000001', 'admin@printpal.com', '$2a$10$kV7X.lfAVHoH5eSucBN8jOVXu/5xgkEAvPJSHtQOwoJ6bEBvA4DyS', NOW(), NOW());
-
-INSERT INTO profiles (id, first_name, last_name, role, created_at, updated_at)
-VALUES ('00000000-0000-0000-0000-000000000001', 'Admin', 'User', 'admin', NOW(), NOW());

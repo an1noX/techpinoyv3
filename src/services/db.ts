@@ -11,7 +11,9 @@ export const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  // Enable multiple statements to allow running migration scripts
+  multipleStatements: true
 });
 
 // Helper to execute queries
@@ -34,6 +36,7 @@ export async function closePool(): Promise<void> {
 export async function checkConnection(): Promise<boolean> {
   try {
     await pool.query('SELECT 1');
+    console.log('Database connection successful');
     return true;
   } catch (error) {
     console.error('Database connection error:', error);
@@ -44,18 +47,13 @@ export async function checkConnection(): Promise<boolean> {
 // Function to initialize the database with schema
 export async function initializeDatabase(): Promise<boolean> {
   try {
-    const fs = require('fs');
-    const path = require('path');
-    const schema = fs.readFileSync(path.join(process.cwd(), 'src/services/schema.sql'), 'utf8');
+    // Import the migrateDatabase function and run it
+    const { migrateDatabase } = require('./migrateDatabase');
+    const result = await migrateDatabase();
     
-    // Split the schema into individual statements
-    const statements = schema
-      .split(';')
-      .filter((statement: string) => statement.trim() !== '');
-    
-    // Execute each statement
-    for (const statement of statements) {
-      await pool.query(`${statement};`);
+    if (!result.success) {
+      console.error('Database initialization error:', result.message);
+      return false;
     }
     
     return true;
