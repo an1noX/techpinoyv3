@@ -17,6 +17,14 @@ export interface Session {
   expires_at: Date;
 }
 
+// Helper function to safely access localStorage
+const getLocalStorage = () => {
+  if (typeof window !== 'undefined') {
+    return window.localStorage;
+  }
+  return null;
+};
+
 // Register a new user
 export async function signUp({ 
   email, 
@@ -117,7 +125,10 @@ export async function signIn({
     };
     
     // Store token in localStorage
-    localStorage.setItem('auth_token', token);
+    const localStorage = getLocalStorage();
+    if (localStorage) {
+      localStorage.setItem('auth_token', token);
+    }
     
     return { session, error: null };
   } catch (error) {
@@ -128,14 +139,17 @@ export async function signIn({
 // Sign out a user
 export async function signOut(): Promise<{ error: Error | null }> {
   try {
-    const token = localStorage.getItem('auth_token');
+    const localStorage = getLocalStorage();
+    const token = localStorage ? localStorage.getItem('auth_token') : null;
     
     if (token) {
       // Remove token from database
       await query('DELETE FROM sessions WHERE token = ?', [token]);
       
       // Remove token from localStorage
-      localStorage.removeItem('auth_token');
+      if (localStorage) {
+        localStorage.removeItem('auth_token');
+      }
     }
     
     return { error: null };
@@ -147,7 +161,8 @@ export async function signOut(): Promise<{ error: Error | null }> {
 // Get current session
 export async function getSession(): Promise<{ session: Session | null; error: Error | null }> {
   try {
-    const token = localStorage.getItem('auth_token');
+    const localStorage = getLocalStorage();
+    const token = localStorage ? localStorage.getItem('auth_token') : null;
     
     if (!token) {
       return { session: null, error: null };
@@ -164,7 +179,9 @@ export async function getSession(): Promise<{ session: Session | null; error: Er
     );
     
     if (sessions.length === 0) {
-      localStorage.removeItem('auth_token');
+      if (localStorage) {
+        localStorage.removeItem('auth_token');
+      }
       return { session: null, error: null };
     }
     
