@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -204,6 +203,17 @@ export default function Printers() {
   const forRentToggleEnabled = (printer: PrinterType) =>
     printer.status === "available" && printer.owned_by === "system";
 
+  // Helper for ownership label and displaying client
+  const getOwnershipLabel = (printer: PrinterType) =>
+    printer.owned_by === "client" ? "Client Owned" : "System Unit";
+
+  // For display: show client if owned_by is "client", nothing otherwise
+  const getClientDisplay = (printer: PrinterType) =>
+    printer.owned_by === "client" && printer.assigned_to ? `(${printer.assigned_to})` : "";
+
+  // Placeholder function for toner name (you can update if real toner data is mapped)
+  const getTonerName = (printer: PrinterType) => "TONER NAME";
+
   return (
     <MobileLayout
       fab={
@@ -260,31 +270,48 @@ export default function Printers() {
               <Card key={printer.id} className="overflow-hidden">
                 <CardHeader className="p-4 pb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {printer.department || printer.assigned_to} • {printer.location}
-                    </p>
+                    <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center gap-0.5">
+                      <span>
+                        {printer.make} {printer.model} {getClientDisplay(printer)}
+                      </span>
+                      <span className="text-xs ml-2 px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
+                        {getOwnershipLabel(printer)}
+                      </span>
+                    </CardTitle>
+                    <div className="mt-1 flex gap-4 items-center flex-wrap">
+                      <span className="text-xs text-muted-foreground font-semibold">{getTonerName(printer)}</span>
+                      {printer.department && (
+                        <span className="text-xs font-medium capitalize text-gray-800">{printer.department}</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {printer.location && (
+                        <span className="mr-2">Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <PrinterStatusBadge status={printer.status} />
-                    <div className="flex items-center ml-3">
-                      <span className="mr-1 text-xs text-muted-foreground font-medium">For Rent</span>
-                      <button
-                        className={`relative w-9 h-5 focus:outline-none rounded-full border ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? 'bg-green-500 border-green-500' : 'bg-gray-200 border-gray-200') : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'}`}
-                        style={{ transition: 'background 0.2s' }}
-                        disabled={!forRentToggleEnabled(printer)}
-                        aria-pressed={printer.is_for_rent}
-                        onClick={() => {
-                          if (forRentToggleEnabled(printer)) {
-                            handleToggleForRent(printer, !printer.is_for_rent);
-                          }
-                        }}
-                        tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? 'translate-x-4' : ''}`}
-                        ></span>
-                      </button>
+                  <div className="flex flex-col items-end gap-2 min-w-fit">
+                    <div className="flex items-center mb-1">
+                      {/* For Rent Toggle in front of status */}
+                      <div className="mr-2 flex items-center">
+                        <button
+                          className={`relative w-9 h-5 focus:outline-none rounded-full border ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? 'bg-green-500 border-green-500' : 'bg-gray-200 border-gray-200') : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'}`}
+                          style={{ transition: 'background 0.2s' }}
+                          disabled={!forRentToggleEnabled(printer)}
+                          aria-pressed={printer.is_for_rent}
+                          onClick={() => {
+                            if (forRentToggleEnabled(printer)) {
+                              handleToggleForRent(printer, !printer.is_for_rent);
+                            }
+                          }}
+                          tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? 'translate-x-4' : ''}`}
+                          ></span>
+                        </button>
+                      </div>
+                      <PrinterStatusBadge status={printer.status} />
                     </div>
                   </div>
                 </CardHeader>
@@ -322,21 +349,12 @@ export default function Printers() {
                         size="sm"
                         variant="outline"
                         className="flex items-center gap-1"
-                        onClick={() => openMarkRepairedDialog(printer)}
-                        disabled={printer.status !== "for_repair" && printer.status !== "maintenance"}
-                      >
-                        <Check className="h-4 w-4" />
-                        Repaired
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
                         onClick={() => openHistoryDialog(printer)}
                       >
                         <History className="h-4 w-4" />
                         History
                       </Button>
+                      {/* Repaired button removed */}
                     </div>
                   </div>
                 </CardContent>
@@ -357,21 +375,12 @@ export default function Printers() {
             }}
             printer={selectedPrinter}
             onSuccess={fetchPrinters}
+            isStatusOnly
           />
           <GenerateServiceReportDialog
             open={serviceReportDialogOpen}
             onOpenChange={(open) => {
               setServiceReportDialogOpen(open);
-              if (!open) setSelectedPrinter(null);
-              if (!open) fetchPrinters();
-            }}
-            printer={selectedPrinter}
-            onSuccess={fetchPrinters}
-          />
-          <MarkRepairedDialog
-            open={markRepairedDialogOpen}
-            onOpenChange={(open) => {
-              setMarkRepairedDialogOpen(open);
               if (!open) setSelectedPrinter(null);
               if (!open) fetchPrinters();
             }}
@@ -385,6 +394,7 @@ export default function Printers() {
               if (!open) setSelectedPrinter(null);
             }}
             printer={selectedPrinter}
+            // Extend to pass inline edit logic if used
           />
           <PrinterHistoryDialog
             open={historyDialogOpen}
@@ -400,7 +410,7 @@ export default function Printers() {
               setTransferDialogOpen(open);
               if (!open) setSelectedPrinter(null);
             }}
-            printer={selectedPrinter as any} // Type assertion to avoid TypeScript error
+            printer={selectedPrinter as any}
             onTransferSuccess={fetchPrinters}
           />
         </>

@@ -1,9 +1,9 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "@/types/printers";
-import { Info } from "lucide-react";
+import { Info, Edit } from "lucide-react";
 
 interface PrinterDetailsDialogProps {
   open: boolean;
@@ -16,53 +16,134 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
   onOpenChange,
   printer,
 }) => {
+  // EDIT MODE state & update logic for serial, ownership, client, department
+  const [editMode, setEditMode] = useState(false);
+  const [serial, setSerial] = useState(printer.serialNumber || "");
+  const [ownership, setOwnership] = useState(printer.owned_by);
+  const [assignedTo, setAssignedTo] = useState(printer.assigned_to || "");
+  const [department, setDepartment] = useState(printer.department || "");
+
+  // When changing ownership, refresh assignment fields
+  const handleOwnershipChange = (val: "client" | "system") => {
+    setOwnership(val);
+    if (val === "client") {
+      setDepartment("");
+    } else {
+      setAssignedTo("");
+    }
+  };
+
+  // On Save (simulate API call, will use props update in real API)
+  const handleSave = () => {
+    // Simulate save action
+    setEditMode(false);
+    // would call parent's onUpdate or a mutation here
+  };
+
+  // Toner name (placeholder until mapped from real data)
+  const tonerName = "TONER NAME";
+
+  // Ownership label for display
+  const getOwnershipLabel = (val: "client" | "system") =>
+    val === "client" ? "Client Owned" : "System Unit";
+
   return (
     <BaseDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Printer Details - ${printer.make} ${printer.model}`}
+      title={`Printer Details – ${printer.make} ${printer.model}`}
       size="sm"
       footer={
-        <div className="flex justify-end">
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+        <div className="flex justify-between items-center">
+          {editMode ? (
+            <>
+              <Button variant="outline" onClick={() => setEditMode(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>Save</Button>
+            </>
+          ) : (
+            <Button onClick={() => onOpenChange(false)}>Close</Button>
+          )}
         </div>
       }
     >
       <div className="space-y-5">
-        <div className="border rounded-md p-4 bg-gray-50">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Make & Model</p>
-              <p className="font-medium">{`${printer.make} ${printer.model}`}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Status</p>
-              <p className="capitalize font-medium">{printer.status}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Serial Number</p>
-              <p>{printer.serialNumber || "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Ownership</p>
-              <p>{printer.owned_by === "client" ? "Client Owned" : "System Unit"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Series</p>
-              <p>{printer.series || "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Assigned To</p>
-              <p>{printer.assigned_to || "Unassigned"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Location</p>
-              <p>{printer.location || "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Department</p>
-              <p>{printer.department || "N/A"}</p>
-            </div>
+        <div className="flex justify-between items-center">
+          <h2 className="text-base font-semibold">
+            {printer.make} {printer.model}
+            <span className="ml-2 text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+              {getOwnershipLabel(ownership)}
+            </span>
+          </h2>
+          {!editMode && (
+            <Button
+              size="icon"
+              variant="outline"
+              className="ml-2"
+              onClick={() => setEditMode(true)}
+              title="Edit"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 border rounded-md p-4 bg-gray-50">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Serial Number</p>
+            {editMode ? (
+              <input
+                value={serial}
+                onChange={e => setSerial(e.target.value)}
+                className="border rounded px-2 py-0.5 w-full text-sm"
+              />
+            ) : (
+              <p>{serial || "N/A"}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Toner Name</p>
+            <p>{tonerName}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Ownership</p>
+            {editMode ? (
+              <select
+                value={ownership}
+                onChange={e => handleOwnershipChange(e.target.value as "client" | "system")}
+                className="border rounded px-2 py-0.5 w-full text-sm"
+              >
+                <option value="system">System Unit</option>
+                <option value="client">Client Owned</option>
+              </select>
+            ) : (
+              <p>{getOwnershipLabel(ownership)}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Department</p>
+            {editMode && ownership === "system" ? (
+              <input
+                value={department}
+                onChange={e => setDepartment(e.target.value)}
+                className="border rounded px-2 py-0.5 w-full text-sm capitalize"
+              />
+            ) : (
+              <p className="capitalize">{department || "N/A"}</p>
+            )}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Client</p>
+            {editMode && ownership === "client" ? (
+              <input
+                value={assignedTo}
+                onChange={e => setAssignedTo(e.target.value)}
+                className="border rounded px-2 py-0.5 w-full text-sm capitalize"
+              />
+            ) : (
+              <p className="capitalize">{assignedTo || "N/A"}</p>
+            )}
           </div>
         </div>
 

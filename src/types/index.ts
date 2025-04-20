@@ -4,7 +4,7 @@ export interface Printer {
   series: string;
   model: string;
   status: PrinterStatus;
-  owned_by: string;
+  owned_by: string; // Handle "system" or "client"
   assigned_to?: string;
   department?: string;
   location?: string;
@@ -12,6 +12,8 @@ export interface Printer {
   updated_at: string;
   is_for_rent?: boolean;
   client_id?: string;
+  serialNumber?: string; // synced with types/printers.ts
+  notes?: string;
 }
 
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
