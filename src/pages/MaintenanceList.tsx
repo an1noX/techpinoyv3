@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { AdminLayout } from '@/components/layout/AdminLayout';
+import AdminLayout from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -34,7 +33,7 @@ export default function MaintenanceList() {
   const [maintenanceRecords, setMaintenanceRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<MaintenanceStatusType | 'all'>('all');
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [printerDetailsMap, setPrinterDetailsMap] = useState<{[key: string]: any}>({});
   
@@ -60,7 +59,6 @@ export default function MaintenanceList() {
       
       if (error) throw error;
       
-      // Fetch printer details for all records
       const printerIds = [...new Set((data || []).map((record) => record.printer_id))];
       await fetchPrinterDetails(printerIds);
       
@@ -157,7 +155,10 @@ export default function MaintenanceList() {
               </div>
               <div className="flex space-x-2">
                 <div className="w-48">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <Select 
+                    value={statusFilter} 
+                    onValueChange={(value) => setStatusFilter(value as MaintenanceStatusType | 'all')}
+                  >
                     <SelectTrigger>
                       <div className="flex items-center">
                         <Filter className="h-4 w-4 mr-2" />
