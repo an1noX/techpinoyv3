@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -13,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImportPrinterDialog } from '@/components/ImportPrinterDialog';
 import { PrinterTransferDialog } from '@/components/PrinterTransferDialog';
-// Import modal dialogs from Maintenance section
 import { MaintenanceQuickUpdateDialog } from '@/components/printers/MaintenanceQuickUpdateDialog';
 import { GenerateServiceReportDialog } from '@/components/printers/GenerateServiceReportDialog';
 import { MarkRepairedDialog } from '@/components/printers/MarkRepairedDialog';
@@ -38,6 +36,16 @@ const getStatusEmoji = (status: PrinterStatus) => {
   }
 };
 
+const toOwnershipType = (val: any): OwnershipType =>
+  val === 'system' ? 'system' : 'client';
+
+const toPrinterStatus = (val: any): PrinterStatus => {
+  const allowed: PrinterStatus[] = [
+    'available', 'rented', 'maintenance', 'for_repair', 'deployed'
+  ];
+  return allowed.includes(val) ? val : 'available';
+};
+
 export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -48,12 +56,34 @@ export default function Printers() {
   const [selectedPrinter, setSelectedPrinter] = useState<PrinterType | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
-  // State for new unified modal dialogs
   const [quickUpdateDialogOpen, setQuickUpdateDialogOpen] = useState(false);
   const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
   const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
+  const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('printers')
+        .update({ is_for_rent: value, updated_at: new Date().toISOString() })
+        .eq('id', printer.id);
+
+      if (error) throw error;
+
+      toast({
+        title: value ? "Marked as For Rent" : "Removed from Rental List",
+        description: `${printer.make} ${printer.model} is now ${value ? "available for rent" : "not for rent"}.`
+      });
+      fetchPrinters();
+    } catch (error: any) {
+      toast({
+        title: "Error updating For Rent status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
 
   useEffect(() => {
     fetchPrinters();
@@ -71,10 +101,11 @@ export default function Printers() {
         throw error;
       }
 
-      // Convert string owned_by to OwnershipType
-      const typedPrinters = data?.map(printer => ({
+      const typedPrinters = data?.map((printer: any) => ({
         ...printer,
-        owned_by: printer.owned_by as OwnershipType
+        owned_by: toOwnershipType(printer.owned_by),
+        status: toPrinterStatus(printer.status),
+        is_for_rent: !!printer.is_for_rent,
       })) as PrinterType[];
 
       setPrinters(typedPrinters);
@@ -85,12 +116,11 @@ export default function Printers() {
         variant: "destructive"
       });
 
-      // Mock data for development
       const mockPrinters: PrinterType[] = [
-        { 
-          id: '1', 
-          make: 'HP', 
-          series: 'LaserJet', 
+        {
+          id: '1',
+          make: 'HP',
+          series: 'LaserJet',
           model: 'Pro MFP M428fdn',
           status: 'available',
           owned_by: 'system',
@@ -100,10 +130,10 @@ export default function Printers() {
           updated_at: new Date().toISOString(),
           is_for_rent: false,
         },
-        { 
-          id: '2', 
-          make: 'Brother', 
-          series: 'MFC', 
+        {
+          id: '2',
+          make: 'Brother',
+          series: 'MFC',
           model: 'L8900CDW',
           status: 'rented',
           owned_by: 'system',
@@ -114,10 +144,10 @@ export default function Printers() {
           updated_at: new Date().toISOString(),
           is_for_rent: false,
         },
-        { 
-          id: '3', 
-          make: 'Canon', 
-          series: 'imageRUNNER', 
+        {
+          id: '3',
+          make: 'Canon',
+          series: 'imageRUNNER',
           model: '1643i',
           status: 'maintenance',
           owned_by: 'client',
@@ -156,27 +186,39 @@ export default function Printers() {
     setTransferDialogOpen(true);
   };
 
-  // Handlers for unified modals
   const openQuickUpdateDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setQuickUpdateDialogOpen(true);
   };
+
   const openServiceReportDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setServiceReportDialogOpen(true);
   };
+
   const openMarkRepairedDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setMarkRepairedDialogOpen(true);
   };
+
   const openDetailsDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setDetailsDialogOpen(true);
   };
+
   const openHistoryDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setHistoryDialogOpen(true);
   };
+
+  const getAssignTransferLabel = (printer: PrinterType) => {
+    if (!printer.assigned_to && !printer.client_id && printer.owned_by === "system")
+      return "Assign";
+    return "Transfer";
+  };
+
+  const forRentToggleEnabled = (printer: PrinterType) =>
+    printer.status === "available" && printer.owned_by === "system";
 
   return (
     <MobileLayout
@@ -232,20 +274,40 @@ export default function Printers() {
           <div className="space-y-4">
             {filteredPrinters.map((printer) => (
               <Card key={printer.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
-                  <div>
+                <CardHeader className="p-4 pb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex-1">
                     <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
                       {printer.department || printer.assigned_to} • {printer.location}
                     </p>
                   </div>
-                  <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
-                    {getStatusEmoji(printer.status)} {printer.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
+                      {getStatusEmoji(printer.status)} {printer.status}
+                    </Badge>
+                    <div className="flex items-center ml-3">
+                      <span className="mr-1 text-xs text-muted-foreground font-medium">For Rent</span>
+                      <button
+                        className={`relative w-9 h-5 focus:outline-none rounded-full border ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? 'bg-green-500 border-green-500' : 'bg-gray-200 border-gray-200') : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'}`}
+                        style={{ transition: 'background 0.2s' }}
+                        disabled={!forRentToggleEnabled(printer)}
+                        aria-pressed={printer.is_for_rent}
+                        onClick={() => {
+                          if (forRentToggleEnabled(printer)) {
+                            handleToggleForRent(printer, !printer.is_for_rent);
+                          }
+                        }}
+                        tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? 'translate-x-4' : ''}`}
+                        ></span>
+                      </button>
+                    </div>
+                  </div>
                 </CardHeader>
-                <CardContent className="p-4 pt-0">
+                <CardContent className="py-4">
                   <div className="flex flex-wrap gap-2 mt-2 justify-between">
-                    {/* Unified button set, styled and ordered as in Maintenance module */}
                     <div className="flex gap-2 flex-wrap w-full">
                       <Button 
                         size="sm"
@@ -263,25 +325,7 @@ export default function Printers() {
                         onClick={() => openQuickUpdateDialog(printer)}
                       >
                         <Wrench className="h-4 w-4" />
-                        Quick Update
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => openServiceReportDialog(printer)}
-                      >
-                        <FileText className="h-4 w-4" />
-                        Generate Report
-                      </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => openMarkRepairedDialog(printer)}
-                      >
-                        <Check className="h-4 w-4" />
-                        Repaired
+                        Update Status
                       </Button>
                       <Button 
                         size="sm"
@@ -290,7 +334,17 @@ export default function Printers() {
                         onClick={() => handleOpenTransferDialog(printer)}
                       >
                         <ArrowUpDown className="h-4 w-4" />
-                        Transfers
+                        {getAssignTransferLabel(printer)}
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openMarkRepairedDialog(printer)}
+                        disabled={printer.status !== "for_repair" && printer.status !== "maintenance"}
+                      >
+                        <Check className="h-4 w-4" />
+                        Repaired
                       </Button>
                       <Button 
                         size="sm"
@@ -310,7 +364,6 @@ export default function Printers() {
         )}
       </div>
 
-      {/* Unified dialogs for Inventory actions (reuse Maintenance dialogs) */}
       {selectedPrinter && (
         <>
           <MaintenanceQuickUpdateDialog
