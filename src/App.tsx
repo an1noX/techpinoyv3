@@ -19,6 +19,7 @@ import Clients from "./pages/Clients";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Toners from "./pages/Toners";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/rentals/new" element={<PrivateRoute><RentalCreate /></PrivateRoute>} />
             <Route path="/clients" element={<PrivateRoute><Clients /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/toners" element={<PrivateRoute><Toners /></PrivateRoute>} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

@@ -1,18 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search, Import } from 'lucide-react';
+import { Plus, Search, Import, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Printer, PrinterStatus, WikiPrinter } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImportPrinterDialog } from '@/components/ImportPrinterDialog';
+import { PrinterTransferDialog } from '@/components/PrinterTransferDialog';
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
@@ -36,11 +36,11 @@ export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [printers, setPrinters] = useState<Printer[]>([]);
-  const [wikiPrinters, setWikiPrinters] = useState<WikiPrinter[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingWiki, setLoadingWiki] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+  const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   
   useEffect(() => {
     fetchPrinters();
@@ -116,30 +116,6 @@ export default function Printers() {
       setLoading(false);
     }
   };
-
-  const fetchWikiPrinters = async () => {
-    try {
-      setLoadingWiki(true);
-      
-      const { data, error } = await supabase
-        .from('printer_wiki')
-        .select('*');
-      
-      if (error) {
-        throw error;
-      }
-      
-      setWikiPrinters(data as WikiPrinter[]);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching wiki printers",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoadingWiki(false);
-    }
-  };
   
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -152,12 +128,13 @@ export default function Printers() {
     printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const handleAssignPrinter = async (printerId: string) => {
-    navigate(`/printers/${printerId}`);
-  };
-
   const handleOpenImportDialog = () => {
     setImportDialogOpen(true);
+  };
+
+  const handleTransferPrinter = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setTransferDialogOpen(true);
   };
   
   return (
@@ -218,7 +195,7 @@ export default function Printers() {
                   <div>
                     <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {printer.department} • {printer.location}
+                      {printer.department || printer.assigned_to} • {printer.location}
                     </p>
                   </div>
                   <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
@@ -239,9 +216,9 @@ export default function Printers() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
-                      onClick={() => handleAssignPrinter(printer.id)}
+                      onClick={() => handleTransferPrinter(printer)}
                     >
-                      Assign
+                      <ArrowUpDown className="h-4 w-4 mr-1" /> Transfer
                     </Button>
                   </div>
                 </CardContent>
@@ -256,6 +233,15 @@ export default function Printers() {
         onOpenChange={setImportDialogOpen}
         onImportSuccess={fetchPrinters}
       />
+
+      {selectedPrinter && (
+        <PrinterTransferDialog
+          open={transferDialogOpen}
+          onOpenChange={setTransferDialogOpen}
+          printer={selectedPrinter}
+          onTransferSuccess={fetchPrinters}
+        />
+      )}
     </MobileLayout>
   );
 }

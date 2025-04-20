@@ -1,99 +1,79 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle,
-  SheetDescription,
-  SheetFooter
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent } from '@/components/ui/card';
+import { EditIcon, Trash2Icon, PlusIcon, Save, XCircle } from 'lucide-react';
+import { Client, PrinterSummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Printer, Mail, Phone, MapPin, Building, ClipboardList, Calendar } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface ClientDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  client: any;
+  client: Client;
   onClientUpdated: () => void;
 }
 
-export function ClientDetailSheet({ 
-  open, 
-  onOpenChange, 
+export function ClientDetailSheet({
+  open,
+  onOpenChange,
   client,
   onClientUpdated
 }: ClientDetailSheetProps) {
   const { toast } = useToast();
   const [editMode, setEditMode] = useState(false);
-  const [name, setName] = useState(client?.name || '');
-  const [company, setCompany] = useState(client?.company || '');
-  const [email, setEmail] = useState(client?.email || '');
-  const [phone, setPhone] = useState(client?.phone || '');
-  const [address, setAddress] = useState(client?.address || '');
-  const [notes, setNotes] = useState(client?.notes || '');
-  const [printerAssignments, setPrinterAssignments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  useEffect(() => {
-    if (open && client?.id) {
-      fetchPrinterAssignmentHistory();
-    }
-  }, [open, client?.id]);
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [newDepartment, setNewDepartment] = useState('');
+  const [addingDepartment, setAddingDepartment] = useState(false);
+  const [formData, setFormData] = useState({
+    name: client.name,
+    company: client.company || '',
+    email: client.email || '',
+    phone: client.phone || '',
+    address: client.address || '',
+    notes: client.notes || ''
+  });
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
-    // Update form values when client changes
     if (client) {
-      setName(client.name || '');
-      setCompany(client.company || '');
-      setEmail(client.email || '');
-      setPhone(client.phone || '');
-      setAddress(client.address || '');
-      setNotes(client.notes || '');
+      setFormData({
+        name: client.name,
+        company: client.company || '',
+        email: client.email || '',
+        phone: client.phone || '',
+        address: client.address || '',
+        notes: client.notes || ''
+      });
+      
+      // Extract departments from printers
+      if (client.printers) {
+        const depts = client.printers
+          .map(printer => printer.location || '')
+          .filter(loc => loc.trim() !== '');
+        
+        setDepartments([...new Set(depts)]);
+      }
     }
   }, [client]);
 
-  const fetchPrinterAssignmentHistory = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('printer_client_assignments')
-        .select(`
-          *,
-          printer:printers(id, make, model, series)
-        `)
-        .eq('client_id', client.id)
-        .order('assigned_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      setPrinterAssignments(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Error fetching assignment history",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
-  const handleSave = async () => {
+  const handleSaveClient = async () => {
     try {
-      if (!name.trim()) {
+      if (!formData.name.trim()) {
         toast({
-          title: "Error",
-          description: "Name is required",
+          title: "Validation Error",
+          description: "Client name is required",
           variant: "destructive"
         });
         return;
@@ -102,12 +82,12 @@ export function ClientDetailSheet({
       const { error } = await supabase
         .from('clients')
         .update({
-          name,
-          company: company || null,
-          email: email || null,
-          phone: phone || null,
-          address: address || null,
-          notes: notes || null,
+          name: formData.name,
+          company: formData.company || null,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null,
+          notes: formData.notes || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', client.id);
@@ -118,9 +98,9 @@ export function ClientDetailSheet({
 
       toast({
         title: "Success",
-        description: "Client information updated successfully"
+        description: "Client updated successfully"
       });
-
+      
       setEditMode(false);
       onClientUpdated();
     } catch (error: any) {
@@ -132,263 +112,354 @@ export function ClientDetailSheet({
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  };
-
-  const handleUnassignPrinter = async (printerId: string, assignmentId: string) => {
+  const handleAddDepartment = async () => {
     try {
-      // Update the printer status
-      const { error: printerError } = await supabase
-        .from('printers')
-        .update({ 
-          status: 'available', 
-          assigned_to: null,
-          client_id: null
-        })
-        .eq('id', printerId);
-
-      if (printerError) {
-        throw printerError;
+      if (!newDepartment.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "Department name is required",
+          variant: "destructive"
+        });
+        return;
       }
 
-      // Update the assignment record
-      const { error: assignmentError } = await supabase
-        .from('printer_client_assignments')
-        .update({
-          unassigned_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', assignmentId);
-
-      if (assignmentError) {
-        throw assignmentError;
-      }
-
+      // In a real application, we would update the assigned printers or create a departments table
+      // For this demo, we'll just add it to our local state
+      setDepartments(prev => [...prev, newDepartment]);
+      setNewDepartment('');
+      setAddingDepartment(false);
+      
       toast({
         title: "Success",
-        description: "Printer unassigned successfully",
+        description: "Department added successfully"
       });
-
-      fetchPrinterAssignmentHistory();
-      onClientUpdated();
     } catch (error: any) {
       toast({
-        title: "Error unassigning printer",
+        title: "Error adding department",
         description: error.message,
         variant: "destructive"
       });
     }
   };
 
+  const handleDeleteClient = async () => {
+    try {
+      // Check if client has assigned printers
+      if (client.printers && client.printers.length > 0) {
+        // Get all printer IDs
+        const printerIds = client.printers.map(printer => printer.id);
+        
+        // Update all printers to remove the client
+        const { error: updateError } = await supabase
+          .from('printers')
+          .update({
+            client_id: null,
+            assigned_to: null,
+            status: 'available',
+            updated_at: new Date().toISOString()
+          })
+          .in('id', printerIds);
+        
+        if (updateError) {
+          throw updateError;
+        }
+        
+        // Delete any printer assignments
+        const { error: assignmentError } = await supabase
+          .from('printer_client_assignments')
+          .delete()
+          .eq('client_id', client.id);
+        
+        if (assignmentError) {
+          throw assignmentError;
+        }
+      }
+      
+      // Delete the client
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', client.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Success",
+        description: "Client deleted successfully"
+      });
+      
+      onOpenChange(false);
+      onClientUpdated();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting client",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setConfirmDeleteOpen(false);
+    }
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{editMode ? 'Edit Client' : client?.name}</SheetTitle>
-          {!editMode && client?.company && (
-            <SheetDescription>{client.company}</SheetDescription>
-          )}
-        </SheetHeader>
-
-        <Tabs defaultValue="details" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="history">Printer History</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details" className="mt-4">
+    <>
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+          <SheetHeader className="mb-4">
+            <SheetTitle className="flex justify-between items-center">
+              {editMode ? 'Edit Client' : 'Client Details'}
+              <div className="flex space-x-2">
+                {editMode ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setFormData({
+                          name: client.name,
+                          company: client.company || '',
+                          email: client.email || '',
+                          phone: client.phone || '',
+                          address: client.address || '',
+                          notes: client.notes || ''
+                        });
+                        setEditMode(false);
+                      }}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="icon"
+                      onClick={handleSaveClient}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setEditMode(true)}
+                    >
+                      <EditIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => setConfirmDeleteOpen(true)}
+                    >
+                      <Trash2Icon className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </SheetTitle>
+          </SheetHeader>
+          
+          <div className="space-y-6">
             {editMode ? (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Name*</label>
-                  <Input 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
                     placeholder="Client name"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Company</label>
-                  <Input 
-                    value={company} 
-                    onChange={(e) => setCompany(e.target.value)}
+                  <Input
+                    id="company"
+                    value={formData.company}
+                    onChange={handleInputChange}
                     placeholder="Company name"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Email</label>
-                  <Input 
+                  <Input
+                    id="email"
                     type="email"
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="email@example.com"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Email address"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Phone</label>
-                  <Input 
-                    value={phone} 
-                    onChange={(e) => setPhone(e.target.value)}
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
                     placeholder="Phone number"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Address</label>
-                  <Input 
-                    value={address} 
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Address"
+                  <Input
+                    id="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    placeholder="Physical address"
                   />
                 </div>
                 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Notes</label>
-                  <Textarea 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)}
+                  <Input
+                    id="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
                     placeholder="Additional notes"
                   />
                 </div>
-
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button variant="outline" onClick={() => setEditMode(false)}>Cancel</Button>
-                  <Button onClick={handleSave}>Save Changes</Button>
-                </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  {client?.email && (
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <span>{client.email}</span>
-                    </div>
-                  )}
-                  
-                  {client?.phone && (
-                    <div className="flex items-center space-x-3">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <span>{client.phone}</span>
-                    </div>
-                  )}
-                  
-                  {client?.address && (
-                    <div className="flex items-center space-x-3">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
-                      <span>{client.address}</span>
-                    </div>
-                  )}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Name</h3>
+                  <p className="text-base">{client.name}</p>
                 </div>
                 
-                {client?.notes && (
+                {client.company && (
                   <div>
-                    <h3 className="text-sm font-medium mb-2 flex items-center">
-                      <ClipboardList className="h-4 w-4 mr-2" />
-                      Notes
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{client.notes}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground">Company</h3>
+                    <p className="text-base">{client.company}</p>
                   </div>
                 )}
                 
-                <div>
-                  <h3 className="text-sm font-medium mb-2 flex items-center">
-                    <Printer className="h-4 w-4 mr-2" />
-                    Current Printers
-                  </h3>
-                  {client?.printers && client.printers.length > 0 ? (
-                    <ul className="text-sm space-y-2">
-                      {client.printers.map((printer: any, index: number) => (
-                        <li key={index} className="flex justify-between items-center p-2 border rounded">
-                          <div>
-                            <span className="font-medium">{printer.make} {printer.model}</span>
-                            <p className="text-xs text-muted-foreground">
-                              Status: <span className="capitalize">{printer.status}</span>
-                              {printer.location && ` • Location: ${printer.location}`}
-                            </p>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              // Find the assignment record for this printer
-                              const assignment = printerAssignments.find(
-                                a => a.printer?.id === printer.id && !a.unassigned_at
-                              );
-                              if (assignment) {
-                                handleUnassignPrinter(printer.id, assignment.id);
-                              }
-                            }}
-                          >
-                            Unassign
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No printers currently assigned</p>
-                  )}
-                </div>
+                {client.email && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Email</h3>
+                    <p className="text-base">{client.email}</p>
+                  </div>
+                )}
                 
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => setEditMode(true)}>Edit Client</Button>
-                </div>
+                {client.phone && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Phone</h3>
+                    <p className="text-base">{client.phone}</p>
+                  </div>
+                )}
+                
+                {client.address && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
+                    <p className="text-base">{client.address}</p>
+                  </div>
+                )}
+                
+                {client.notes && (
+                  <div>
+                    <h3 className="text-sm font-medium text-muted-foreground">Notes</h3>
+                    <p className="text-base">{client.notes}</p>
+                  </div>
+                )}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="history" className="mt-4">
-            <h3 className="text-sm font-medium mb-3">Printer Assignment History</h3>
             
-            {loading ? (
-              <div className="flex justify-center py-4">
-                <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-base font-medium">Departments/Locations</h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAddingDepartment(true)}
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Add
+                </Button>
               </div>
-            ) : printerAssignments.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No assignment history found</p>
-            ) : (
-              <div className="border rounded overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Printer</TableHead>
-                      <TableHead>Assigned</TableHead>
-                      <TableHead>Returned</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {printerAssignments.map((assignment) => (
-                      <TableRow key={assignment.id}>
-                        <TableCell className="font-medium">
-                          {assignment.printer?.make} {assignment.printer?.model}
-                        </TableCell>
-                        <TableCell>{formatDate(assignment.assigned_at)}</TableCell>
-                        <TableCell>
-                          {assignment.unassigned_at 
-                            ? formatDate(assignment.unassigned_at)
-                            : <span className="text-green-600 font-medium">Active</span>
-                          }
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              
+              {addingDepartment ? (
+                <div className="flex items-center mb-3 space-x-2">
+                  <Input
+                    placeholder="Department name"
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={handleAddDepartment}>Save</Button>
+                  <Button size="sm" variant="outline" onClick={() => {
+                    setAddingDepartment(false);
+                    setNewDepartment('');
+                  }}>Cancel</Button>
+                </div>
+              ) : null}
+              
+              {departments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No departments/locations found</p>
+              ) : (
+                <div className="space-y-2">
+                  {departments.map((dept, index) => (
+                    <Card key={index}>
+                      <CardContent className="p-3 flex justify-between items-center">
+                        <span>{dept}</span>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="text-base font-medium mb-3">Assigned Printers</h3>
+              {!client.printers || client.printers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No printers assigned</p>
+              ) : (
+                <div className="space-y-2">
+                  {client.printers.map((printer, index) => (
+                    <Card key={index}>
+                      <CardContent className="p-3">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{printer.make} {printer.model}</p>
+                            <p className="text-sm text-muted-foreground">{printer.location}</p>
+                          </div>
+                          <Badge className={printer.status === 'available' ? 'bg-green-500' : printer.status === 'maintenance' ? 'bg-red-500' : 'bg-yellow-500'}>
+                            {printer.status}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+      
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you sure you want to delete this client? This action cannot be undone.</p>
+            {client.printers && client.printers.length > 0 && (
+              <p className="mt-2 text-amber-600">
+                Warning: This client has {client.printers.length} printer(s) assigned to them. 
+                Deleting this client will unassign all printers.
+              </p>
             )}
-          </TabsContent>
-        </Tabs>
-      </SheetContent>
-    </Sheet>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteClient}>Delete Client</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
