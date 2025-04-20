@@ -22,7 +22,8 @@ export default function Auth() {
   
   useEffect(() => {
     if (session) {
-      navigate('/');
+      // If session exists, navigate to dashboard
+      navigate('/dashboard');
     }
   }, [session, navigate]);
 
@@ -39,6 +40,16 @@ export default function Auth() {
           description: error.message,
           variant: "destructive"
         });
+      } else {
+        toast({
+          title: "Login successful",
+          description: "You have been logged in successfully.",
+        });
+        
+        // Navigate on successful login with a slight delay to allow toast to show
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 500);
       }
     } catch (error: any) {
       toast({

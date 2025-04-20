@@ -1,47 +1,59 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-
-type StatusType = 'active' | 'inactive' | 'maintenance' | 'decommissioned';
+import { PrinterStatus as PrinterStatusType } from '@/types/printers';
 
 interface PrinterStatusProps {
-  status: StatusType;
+  status: PrinterStatusType;
+  showIcon?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function PrinterStatus({ status }: PrinterStatusProps) {
-  const getStatusStyles = () => {
+export function PrinterStatus({ status, showIcon = true, size = 'md' }: PrinterStatusProps) {
+  const getStatusColor = (status: PrinterStatusType) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-      case 'maintenance':
-        return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400';
-      case 'decommissioned':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      case 'available': return 'bg-green-500 text-white';
+      case 'rented': return 'bg-yellow-500 text-black';
+      case 'maintenance': return 'bg-blue-500 text-white';
+      case 'for_repair': return 'bg-red-500 text-white';
+      case 'unknown': return 'bg-gray-500 text-white';
+      case 'deployed': return 'bg-purple-500 text-white';
+      case 'retired': return 'bg-gray-700 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
-  const getStatusLabel = () => {
+  const getStatusEmoji = (status: PrinterStatusType) => {
     switch (status) {
-      case 'active':
-        return 'Active';
-      case 'inactive':
-        return 'Inactive';
-      case 'maintenance':
-        return 'Maintenance';
-      case 'decommissioned':
-        return 'Decommissioned';
-      default:
-        return 'Unknown';
+      case 'available': return '🟢';
+      case 'rented': return '🟡';
+      case 'maintenance': return '🔧';
+      case 'for_repair': return '🔴';
+      case 'unknown': return '❓';
+      case 'deployed': return '📍';
+      case 'retired': return '⚫';
+      default: return '⚪';
     }
   };
+
+  const sizeClass = {
+    sm: 'text-xs px-2 py-0.5',
+    md: 'text-sm px-2.5 py-0.5',
+    lg: 'px-3 py-1'
+  }[size];
+
+  // Format status by replacing underscores with spaces and capitalizing
+  const formattedStatus = status.replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 
   return (
-    <Badge variant="outline" className={`${getStatusStyles()} capitalize`}>
-      {getStatusLabel()}
+    <Badge className={`${getStatusColor(status)} ${sizeClass}`}>
+      {showIcon && <span className="mr-1">{getStatusEmoji(status)}</span>}
+      {formattedStatus}
     </Badge>
   );
 }
+
+export default PrinterStatus;

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { StoreSettings, StoreInfo } from '@/types/settings';
@@ -45,7 +44,7 @@ export const useSettingsState = () => {
       };
 
       const { error: insertError } = await supabase
-        .from('store_information')
+        .from('system_settings')
         .insert(settingsData);
 
       if (insertError) {
@@ -110,7 +109,7 @@ export const useSettingsState = () => {
       setError(null);
       
       const { data, error } = await supabase
-        .from('store_information')
+        .from('system_settings')
         .select('*')
         .order('created_at', { ascending: true })
         .limit(1)
@@ -120,7 +119,7 @@ export const useSettingsState = () => {
         if (error.code === 'PGRST116') {
           await createInitialSettings();
           const { data: newData, error: newError } = await supabase
-            .from('store_information')
+            .from('system_settings')
             .select('*')
             .order('created_at', { ascending: true })
             .limit(1)
@@ -169,7 +168,7 @@ export const useSettingsState = () => {
       };
       
       const { error: saveError } = await supabase
-        .from('store_information')
+        .from('system_settings')
         .upsert(settingsToSave);
         
       if (saveError) {
