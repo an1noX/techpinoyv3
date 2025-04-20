@@ -1,9 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
   Printer, 
@@ -18,12 +18,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { MaintenanceStatus } from '@/components/printers/MaintenanceStatus';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { MaintenanceStatus as MaintenanceStatusType } from '@/types/printers';
 
 export default function MaintenanceDetail() {
   const { id } = useParams();
@@ -71,18 +73,7 @@ export default function MaintenanceDetail() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500 text-white';
-      case 'in_progress': return 'bg-blue-500 text-white';
-      case 'pending': return 'bg-yellow-500 text-black';
-      case 'unrepairable': return 'bg-red-500 text-white';
-      case 'decommissioned': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
-  const updateMaintenanceStatus = async (status: "pending" | "in_progress" | "completed" | "unrepairable" | "decommissioned") => {
+  const updateMaintenanceStatus = async (status: MaintenanceStatusType) => {
     try {
       const { error } = await supabase
         .from('maintenance_records')
@@ -255,9 +246,7 @@ export default function MaintenanceDetail() {
         <Card className="mb-6">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Status</CardTitle>
-            <Badge className={getStatusColor(record.status)}>
-              {record.status?.replace('_', ' ')}
-            </Badge>
+            <MaintenanceStatus status={record.status} />
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">

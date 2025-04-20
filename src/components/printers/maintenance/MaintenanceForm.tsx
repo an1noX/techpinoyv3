@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Printer } from '@/types/printers';
-import { supabase } from '@/integrations/supabase/client';
+import { MaintenanceStatus } from '@/types/printers';
 
 const maintenanceSchema = z.object({
   printerId: z.string().uuid("Invalid printer ID"),

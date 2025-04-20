@@ -5,7 +5,6 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Search, Filter, Plus, Calendar, Printer, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { MaintenanceStatus } from '@/components/printers/MaintenanceStatus';
+import { PrinterStatus } from '@/components/printers/PrinterStatus';
+import { MaintenanceStatus as MaintenanceStatusType } from '@/types/printers';
 
 export default function MaintenanceList() {
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ export default function MaintenanceList() {
   const [searchTerm, setSearchTerm] = useState('');
   
   // Filters
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<MaintenanceStatusType[]>([]);
   const [needsAttention, setNeedsAttention] = useState(false);
   
   // For "New Record" dropdown
@@ -84,17 +86,6 @@ export default function MaintenanceList() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500 text-white';
-      case 'in_progress': return 'bg-blue-500 text-white';
-      case 'pending': return 'bg-yellow-500 text-black';
-      case 'unrepairable': return 'bg-red-500 text-white';
-      case 'decommissioned': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -131,7 +122,6 @@ export default function MaintenanceList() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Repair & Maintenance</h1>
           
-          {/* Dropdown to create new record */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button>
@@ -305,9 +295,7 @@ export default function MaintenanceList() {
                       )}
                     </div>
                   </div>
-                  <Badge className={getStatusColor(record.status)}>
-                    {record.status?.replace('_', ' ')}
-                  </Badge>
+                  <MaintenanceStatus status={record.status} />
                 </div>
                 <p className="mt-2 text-sm line-clamp-2">
                   {record.issue_description}

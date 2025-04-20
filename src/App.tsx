@@ -1,84 +1,64 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
-import { PrivateRoute } from "@/components/PrivateRoute";
-import Index from "./pages/Index";
-import Wiki from "./pages/Wiki";
-import WikiDetail from "./pages/WikiDetail";
-import WikiCreateEdit from "./pages/WikiCreateEdit";
-import Printers from "./pages/Printers";
-import PrinterDetail from "./pages/PrinterDetail";
-import Rentals from "./pages/Rentals";
-import RentalDetail from "./pages/RentalDetail";
-import RentalCreate from "./pages/RentalCreate";
-import Clients from "./pages/Clients";
-import Profile from "./pages/Profile";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import TonerProducts from "./pages/TonerProducts";
-import Store from "./pages/Store";
-import Products from "./pages/Products";
-import SystemSettings from "./pages/SystemSettings";
-import MaintenanceList from "./pages/MaintenanceList";
-import MaintenanceDetail from "./pages/MaintenanceDetail";
-import MaintenanceEdit from "./pages/MaintenanceEdit";
-import React from "react";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Index from './pages/Index';
+import NotFound from './pages/NotFound';
+import Printers from './pages/Printers';
+import PrinterDetail from './pages/PrinterDetail';
+import Clients from './pages/Clients';
+import Auth from './pages/Auth';
+import PrivateRoute from './components/PrivateRoute';
+import Profile from './pages/Profile';
+import Products from './pages/Products';
+import Store from './pages/Store';
+import TonerProducts from './pages/TonerProducts';
+import Toners from './pages/Toners';
+import Wiki from './pages/Wiki';
+import WikiDetail from './pages/WikiDetail';
+import WikiCreateEdit from './pages/WikiCreateEdit';
+import Rentals from './pages/Rentals';
+import RentalDetail from './pages/RentalDetail';
+import RentalCreate from './pages/RentalCreate';
+import SystemSettings from './pages/SystemSettings';
+import MaintenanceList from './pages/MaintenanceList';
+import MaintenanceDetail from './pages/MaintenanceDetail';
+import MaintenanceEdit from './pages/MaintenanceEdit';
 
-const queryClient = new QueryClient();
-
-const ProtectedLayout = ({ children }: { children: React.ReactNode }) => (
-  <AuthProvider>
-    <PrivateRoute>
-      {children}
-    </PrivateRoute>
-  </AuthProvider>
-);
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/store" element={<Store />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<Products />} />
-            <Route path="/brands/:brand" element={<Products />} />
-            <Route path="/categories/:category" element={<Products />} />
-            
-            <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
-            <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
-            <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
-            <Route path="/wiki/new" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
-            <Route path="/wiki/edit/:id" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
-            <Route path="/printers" element={<ProtectedLayout><Printers /></ProtectedLayout>} />
-            <Route path="/printers/:id" element={<ProtectedLayout><PrinterDetail /></ProtectedLayout>} />
-            <Route path="/rentals" element={<ProtectedLayout><Rentals /></ProtectedLayout>} />
-            <Route path="/rentals/:id" element={<ProtectedLayout><RentalDetail /></ProtectedLayout>} />
-            <Route path="/rentals/new" element={<ProtectedLayout><RentalCreate /></ProtectedLayout>} />
-            <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
-            <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
-            <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
-            <Route path="/system-settings" element={<ProtectedLayout><SystemSettings /></ProtectedLayout>} />
-            <Route path="/maintenance" element={<ProtectedLayout><MaintenanceList /></ProtectedLayout>} />
-            <Route path="/maintenance/:id" element={<ProtectedLayout><MaintenanceDetail /></ProtectedLayout>} />
-            <Route path="/maintenance/new" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
-            <Route path="/maintenance/new/:printerId" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
-            <Route path="/maintenance/edit/:id" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </TooltipProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/store" element={<Store />} />
+        <Route path="/products" element={<Products />} />
+        
+        <Route element={<PrivateRoute />}>
+          <Route path="/printers" element={<Printers />} />
+          <Route path="/printers/:id" element={<PrinterDetail />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/toner-products" element={<TonerProducts />} />
+          <Route path="/toners" element={<Toners />} />
+          <Route path="/wiki" element={<Wiki />} />
+          <Route path="/wiki/:id" element={<WikiDetail />} />
+          <Route path="/wiki/new" element={<WikiCreateEdit />} />
+          <Route path="/wiki/edit/:id" element={<WikiCreateEdit />} />
+          <Route path="/rentals" element={<Rentals />} />
+          <Route path="/rentals/:id" element={<RentalDetail />} />
+          <Route path="/rentals/new" element={<RentalCreate />} />
+          <Route path="/settings" element={<SystemSettings />} />
+          <Route path="/maintenance" element={<MaintenanceList />} />
+          <Route path="/maintenance/:id" element={<MaintenanceDetail />} />
+          <Route path="/maintenance/new" element={<MaintenanceEdit />} />
+          <Route path="/maintenance/new/:printerId" element={<MaintenanceEdit />} />
+          <Route path="/maintenance/edit/:id" element={<MaintenanceEdit />} />
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  );
+}
 
 export default App;

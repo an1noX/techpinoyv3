@@ -1,21 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-
-// Update the type to include all possible statuses
-export type PrinterStatusType = 
-  | 'available' 
-  | 'rented' 
-  | 'maintenance' 
-  | 'for_repair' 
-  | 'unknown' 
-  | 'deployed' 
-  | 'retired'
-  | 'pending'
-  | 'in_progress'
-  | 'completed'
-  | 'unrepairable'
-  | 'decommissioned';
+import { PrinterStatus as PrinterStatusType } from '@/types/printers';
 
 interface PrinterStatusProps {
   status: PrinterStatusType;
@@ -33,11 +19,6 @@ export function PrinterStatus({ status, showIcon = true, size = 'md' }: PrinterS
       case 'unknown': return 'bg-gray-500 text-white';
       case 'deployed': return 'bg-purple-500 text-white';
       case 'retired': return 'bg-gray-700 text-white';
-      case 'pending': return 'bg-yellow-500 text-black';
-      case 'in_progress': return 'bg-blue-500 text-white';
-      case 'completed': return 'bg-green-500 text-white';
-      case 'unrepairable': return 'bg-red-500 text-white';
-      case 'decommissioned': return 'bg-gray-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
   };
@@ -51,11 +32,6 @@ export function PrinterStatus({ status, showIcon = true, size = 'md' }: PrinterS
       case 'unknown': return '❓';
       case 'deployed': return '📍';
       case 'retired': return '⚫';
-      case 'pending': return '⏳';
-      case 'in_progress': return '🔧';
-      case 'completed': return '✅';
-      case 'unrepairable': return '❌';
-      case 'decommissioned': return '⚫';
       default: return '⚪';
     }
   };
