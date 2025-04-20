@@ -80,7 +80,7 @@ export default function Maintenance() {
               </CardHeader>
               <CardContent className="p-4 pt-1">
                 <div className="text-xs text-muted-foreground flex flex-wrap gap-4 mb-3">
-                  <span>SN: {printer.serialNumber ?? printer.serial_number ?? "N/A"}</span>
+                  <span>SN: {printer.serialNumber ?? "N/A"}</span>
                   <span>
                     Owner: {printer.owned_by === "client" ? 
                       `Client (${printer.assigned_to || "Unassigned"})` : 
@@ -142,3 +142,4 @@ export default function Maintenance() {
     </div>
   );
 }
+
