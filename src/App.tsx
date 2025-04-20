@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +22,6 @@ import NotFound from "./pages/NotFound";
 import TonerProducts from "./pages/TonerProducts";
 import Store from "./pages/Store";
 import Products from "./pages/Products";
-import StoreSettings from "./pages/StoreSettings";
 import React from "react";
 
 const queryClient = new QueryClient();

@@ -1,14 +1,14 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, Phone, HelpCircle, Menu } from "lucide-react";
+import { ShoppingCart, Search, Phone, HelpCircle, Menu, User } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { FloatingNav } from "./FloatingNav";
 import { HeaderTopBar } from "./header/HeaderTopBar";
-import { useSettings } from "@/context/SettingsContext";
-import { AuthProvider } from "@/components/AuthProvider";
+import { useAuth } from "@/hooks/useAuth";
 
 interface HeaderConfig {
   logoUrl?: string;
@@ -98,5 +98,28 @@ export function HomeHeader({ config }: HomeHeaderProps) {
         </div>
       </div>
     </header>
+  );
+}
+
+// Define MobileSidebar component (wasn't defined in the original code)
+function MobileSidebar({ navigation }: { navigation: { title: string; href: string }[] }) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left">
+        <div className="flex flex-col gap-4 mt-4">
+          {navigation.map((item) => (
+            <Link key={item.href} to={item.href} className="text-lg font-medium">
+              {item.title}
+            </Link>
+          ))}
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
