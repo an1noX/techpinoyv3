@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -14,7 +13,7 @@ import {
   ClipboardList, 
   Wrench,
   FileText,
-  Tool
+  Wrench as WrenchIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -241,7 +240,7 @@ export default function MaintenanceDetail() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => navigate(`/maintenance/edit/${id}`)}>
-                  <Wrench className="mr-2 h-4 w-4" />
+                  <WrenchIcon className="mr-2 h-4 w-4" />
                   Edit Record
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={generateServiceReport}>
@@ -490,7 +489,7 @@ export default function MaintenanceDetail() {
             onClick={() => navigate(`/maintenance/edit/${id}`)}
             className="w-full"
           >
-            <Wrench className="h-4 w-4 mr-2" />
+            <WrenchIcon className="h-4 w-4 mr-2" />
             Edit Maintenance Record
           </Button>
 

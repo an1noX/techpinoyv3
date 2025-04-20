@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,18 +29,33 @@ const generalSettingsSchema = z.object({
   logoUrl: z.string().optional(),
 });
 
-const maintenanceSettingsSchema = z.object({
-  enableScheduledMaintenance: z.boolean().default(false),
-  defaultMaintenancePeriod: z.number().min(1).optional(),
-  notifyBeforeDays: z.number().min(1).optional(),
-  defaultTechnicians: z.string().optional(),
-  autoGenerateReports: z.boolean().default(false),
-  maintenanceInstructions: z.string().optional(),
-});
+interface MaintenanceSettings {
+  enableScheduledMaintenance: boolean;
+  defaultMaintenancePeriod: number;
+  notifyBeforeDays: number;
+  defaultTechnicians: string;
+  autoGenerateReports: boolean;
+  maintenanceInstructions: string;
+}
+
+interface SystemSettingsType {
+  id?: string;
+  store_name: string;
+  email?: string;
+  phone_number?: string;
+  address?: string;
+  tagline?: string;
+  office_hours?: string;
+  live_chat?: any;
+  social_media?: any;
+  created_at?: string;
+  updated_at?: string;
+  maintenance_settings?: MaintenanceSettings;
+}
 
 export default function SystemSettings() {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<any>(null);
+  const [settings, setSettings] = useState<SystemSettingsType | null>(null);
   const [loading, setLoading] = useState(true);
 
   const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
@@ -86,7 +100,7 @@ export default function SystemSettings() {
       }
 
       if (data) {
-        setSettings(data);
+        setSettings(data as SystemSettingsType);
         generalForm.reset({
           companyName: data.store_name || '',
           email: data.email || '',
@@ -95,7 +109,6 @@ export default function SystemSettings() {
           logoUrl: '',
         });
 
-        // If maintenance settings exist in the data, populate those fields
         if (data.maintenance_settings) {
           maintenanceForm.reset({
             enableScheduledMaintenance: data.maintenance_settings.enableScheduledMaintenance || false,
@@ -129,13 +142,11 @@ export default function SystemSettings() {
 
       let operation;
       if (settings?.id) {
-        // Update existing settings
         operation = supabase
           .from('system_settings')
           .update(updatedSettings)
           .eq('id', settings.id);
       } else {
-        // Insert new settings
         operation = supabase
           .from('system_settings')
           .insert([updatedSettings]);
@@ -160,25 +171,34 @@ export default function SystemSettings() {
 
   const handleMaintenanceSubmit = async (values: z.infer<typeof maintenanceSettingsSchema>) => {
     try {
-      const updatedSettings = {
-        maintenance_settings: values,
+      const maintenanceSettings: MaintenanceSettings = {
+        enableScheduledMaintenance: values.enableScheduledMaintenance,
+        defaultMaintenancePeriod: values.defaultMaintenancePeriod || 90,
+        notifyBeforeDays: values.notifyBeforeDays || 7, 
+        defaultTechnicians: values.defaultTechnicians || '',
+        autoGenerateReports: values.autoGenerateReports,
+        maintenanceInstructions: values.maintenanceInstructions || '',
       };
 
       let operation;
       if (settings?.id) {
-        // Update existing settings
+        const updatedData: any = {
+          maintenance_settings: maintenanceSettings
+        };
+
         operation = supabase
           .from('system_settings')
-          .update(updatedSettings)
+          .update(updatedData)
           .eq('id', settings.id);
       } else {
-        // Insert new settings with maintenance settings
+        const newData: any = {
+          store_name: 'Default Company',
+          maintenance_settings: maintenanceSettings
+        };
+        
         operation = supabase
           .from('system_settings')
-          .insert([{
-            store_name: 'Default Company',
-            ...updatedSettings
-          }]);
+          .insert([newData]);
       }
 
       const { error } = await operation;
