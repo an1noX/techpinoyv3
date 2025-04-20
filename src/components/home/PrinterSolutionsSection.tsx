@@ -4,59 +4,75 @@ import { Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { useRentablePrinters } from "@/hooks/useRentablePrinters";
 
-function TonerInfo({ toners }: { toners?: string[] }) {
-  if (!toners || toners.length === 0) return null;
-  return (
-    <div className="mb-3">
-      <p className="text-xs text-gray-500 mb-1">Compatible Toner:</p>
-      <div className="flex flex-wrap gap-1">
-        {toners.map((toner, idx) => (
-          <span key={idx} className="text-xs bg-gray-100 border border-gray-200 rounded px-2 py-1">
-            {toner}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
+interface PrinterSolutionProps {
+  brand: string;
+  type: string;
+  model: string;
+  description: string;
+  purchasePrice: string;
+  rentalPrice: string;
+  compatibleToners: string[];
+  imageUrl?: string;
 }
 
-function PrinterCard({ printer }: { printer: any }) {
+const PrinterSolution = ({
+  brand,
+  type,
+  model,
+  description,
+  purchasePrice,
+  rentalPrice,
+  compatibleToners,
+  imageUrl
+}: PrinterSolutionProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all hover:shadow-md flex flex-col">
-      <div className="relative h-44 overflow-hidden bg-gray-100 flex items-center justify-center">
-        {printer.make && (
-          <span className="absolute top-2 left-2 text-xs font-semibold uppercase bg-gray-800 text-white px-2 py-1 rounded">
-            {printer.make}
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 transition-all hover:shadow-md">
+      <div className="relative h-48 overflow-hidden bg-gray-100">
+        <div className="absolute top-2 left-2 flex space-x-1">
+          <span className="text-xs font-semibold uppercase bg-gray-800 text-white px-2 py-1 rounded">
+            {brand}
           </span>
-        )}
-        {printer.type && (
-          <span className="absolute top-2 right-2 text-xs font-semibold uppercase bg-blue-600 text-white px-2 py-1 rounded">
-            {printer.type}
+          <span className="text-xs font-semibold uppercase bg-blue-600 text-white px-2 py-1 rounded">
+            {type}
           </span>
-        )}
-        <img
-          src={printer.image_url || "/placeholder.svg"}
-          alt={printer.model}
+        </div>
+        <img 
+          src={imageUrl} 
+          alt={model} 
           className="w-full h-full object-contain"
         />
       </div>
-      <div className="p-4 flex-1 flex flex-col">
-        <div className="flex items-center gap-2 mb-1">
-          <h3 className="font-semibold text-lg">{printer.model}</h3>
-          <span className="text-xs ml-2 px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
-            System Unit
-          </span>
-        </div>
-        <div className="text-xs text-gray-700 mb-2">{printer.series}</div>
-        {printer.location && (
-          <div className="text-xs text-muted-foreground mb-2">
-            <span>Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
+      
+      <div className="p-4">
+        <h3 className="font-semibold text-lg mb-1">{model}</h3>
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{description}</p>
+        
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <p className="text-xs text-gray-500">Purchase Price:</p>
+            <p className="font-bold text-gray-900">{purchasePrice}</p>
           </div>
-        )}
-        <TonerInfo toners={printer.toners ?? []} />
-        <div className="grid grid-cols-2 gap-2 mt-auto">
+          <div>
+            <p className="text-xs text-gray-500">Rental:</p>
+            <p className="font-bold text-blue-600">{rentalPrice}/month</p>
+          </div>
+        </div>
+        
+        <div className="mb-3">
+          <p className="text-xs text-gray-500 mb-1">Compatible Toner:</p>
+          <div className="flex flex-wrap gap-1">
+            {compatibleToners.map((toner, index) => (
+              <span key={index} className="text-xs bg-gray-100 border border-gray-200 rounded px-2 py-1">
+                {toner}
+              </span>
+            ))}
+          </div>
+        </div>
+        
+        <p className="text-xs text-blue-600 mb-3">Save up to 40% with our compatible toner cartridges</p>
+        
+        <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" className="h-9 text-xs">
             View Details
           </Button>
@@ -67,28 +83,60 @@ function PrinterCard({ printer }: { printer: any }) {
       </div>
     </div>
   );
-}
+};
 
 export function PrinterSolutionsSection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All Printers");
   const navigate = useNavigate();
-  const { printers, loading } = useRentablePrinters();
-
-  const filters = ["All Printers"];
-  const filteredPrinters = printers.filter(printer => {
-    const q = searchQuery.toLowerCase();
-    return (
-      printer.model.toLowerCase().includes(q) ||
-      (printer.make || "").toLowerCase().includes(q) ||
-      (printer.series || "").toLowerCase().includes(q)
-    );
-  });
-
+  
+  const filters = ["All Printers", "Laser", "Inkjet", "Multifunction"];
+  
+  const handleFilterClick = (filter: string) => {
+    setActiveFilter(filter);
+  };
+  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/printers/search/${encodeURIComponent(searchQuery)}`);
+    }
   };
-
+  
+  // Updated printer data with real images
+  const printers = [
+    {
+      brand: "HP",
+      type: "Laser",
+      model: "HP LaserJet Pro M402dn",
+      description: "Fast and efficient monochrome laser printer ideal for small to medium businesses. Print up to 40 pages per minute with automatic duplex printing.",
+      purchasePrice: "₱14999.00",
+      rentalPrice: "₱999.00",
+      compatibleToners: ["26A", "26X"],
+      imageUrl: "https://ssl-product-images.www8-hp.com/digmedialib/prodimg/lowres/c05584913.png"
+    },
+    {
+      brand: "Brother",
+      type: "Laser",
+      model: "Brother DCP-L2540DW",
+      description: "All-in-one monochrome laser printer with print, copy, and scan capabilities. Features built-in connectivity and mobile device printing.",
+      purchasePrice: "₱12999.00",
+      rentalPrice: "₱899.00",
+      compatibleToners: ["TN-2380", "TN-2360"],
+      imageUrl: "https://www.brother.com.ph/-/media/ap/products/dcp/dcp-l2540dw/dcp-l2540dw_main.png"
+    },
+    {
+      brand: "Canon",
+      type: "Laser",
+      model: "Canon imageCLASS MF445dw",
+      description: "Advanced multifunction laser printer with print, copy, scan, and fax capabilities. Features a 5-inch color touchscreen and automatic duplex printing.",
+      purchasePrice: "₱19999.00",
+      rentalPrice: "₱1299.00",
+      compatibleToners: ["057", "057H"],
+      imageUrl: "https://ph.canon/media/image/2019/07/17/0250d47e7dfa40aab5c717e05479ff39_MF445dw_default-2-246x185.jpg"
+    }
+  ];
+  
   return (
     <section className="py-12 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -98,29 +146,31 @@ export function PrinterSolutionsSection() {
             Find the perfect printer for your business or home office. Available for purchase or rent with maintenance included.
           </p>
         </div>
+        
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-medium text-gray-700">Filter by:</span>
-            {filters.map(filter => (
+            {filters.map((filter) => (
               <button
                 key={filter}
                 className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                  activeFilter === filter
-                    ? "bg-teal-600 text-white"
+                  activeFilter === filter 
+                    ? "bg-teal-600 text-white" 
                     : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-100"
                 }`}
-                onClick={() => setActiveFilter(filter)}
+                onClick={() => handleFilterClick(filter)}
               >
                 {filter}
               </button>
             ))}
           </div>
+          
           <form onSubmit={handleSearch} className="relative w-full md:w-auto">
             <Input
               type="text"
               placeholder="Search printers..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-10 w-full md:w-64"
             />
             <button
@@ -131,23 +181,23 @@ export function PrinterSolutionsSection() {
             </button>
           </form>
         </div>
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          </div>
-        ) : filteredPrinters.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-lg text-muted-foreground mb-2">
-              No printers available for rent at the moment.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {filteredPrinters.map(printer => (
-              <PrinterCard key={printer.id} printer={printer} />
-            ))}
-          </div>
-        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {printers.map((printer, index) => (
+            <PrinterSolution
+              key={index}
+              brand={printer.brand}
+              type={printer.type}
+              model={printer.model}
+              description={printer.description}
+              purchasePrice={printer.purchasePrice}
+              rentalPrice={printer.rentalPrice}
+              compatibleToners={printer.compatibleToners}
+              imageUrl={printer.imageUrl}
+            />
+          ))}
+        </div>
+        
         <div className="flex justify-center mt-8">
           <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2">
             View All Printers <ArrowRight className="h-4 w-4" />
