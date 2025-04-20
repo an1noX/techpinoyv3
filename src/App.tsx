@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,7 +30,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <Routes>
+            {/* Public route */}
             <Route path="/auth" element={<Auth />} />
+            
+            {/* Protected routes */}
             <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
             <Route path="/wiki" element={<PrivateRoute><Wiki /></PrivateRoute>} />
             <Route path="/wiki/:id" element={<PrivateRoute><WikiDetail /></PrivateRoute>} />
@@ -42,6 +46,8 @@ const App = () => (
             <Route path="/rentals/new" element={<PrivateRoute><RentalCreate /></PrivateRoute>} />
             <Route path="/clients" element={<PrivateRoute><Clients /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            
+            {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>

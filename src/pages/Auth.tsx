@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { PrinterIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -20,7 +20,7 @@ export default function Auth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (session) {
       navigate('/');
     }
