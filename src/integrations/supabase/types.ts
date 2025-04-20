@@ -362,6 +362,59 @@ export type Database = {
           },
         ]
       }
+      printer_rental_settings: {
+        Row: {
+          created_at: string
+          custom_description: string | null
+          discount_percentage: number | null
+          id: string
+          printer_id: string
+          promotion_enabled: boolean | null
+          promotion_text: string | null
+          purchase_price: number | null
+          rental_base_rate: number | null
+          rental_daily_rate: number | null
+          rental_monthly_rate: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          printer_id: string
+          promotion_enabled?: boolean | null
+          promotion_text?: string | null
+          purchase_price?: number | null
+          rental_base_rate?: number | null
+          rental_daily_rate?: number | null
+          rental_monthly_rate?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_description?: string | null
+          discount_percentage?: number | null
+          id?: string
+          printer_id?: string
+          promotion_enabled?: boolean | null
+          promotion_text?: string | null
+          purchase_price?: number | null
+          rental_base_rate?: number | null
+          rental_daily_rate?: number | null
+          rental_monthly_rate?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_rental_settings_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: true
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_toner_compatibility: {
         Row: {
           created_at: string
