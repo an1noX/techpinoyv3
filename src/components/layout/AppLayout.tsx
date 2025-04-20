@@ -2,7 +2,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import UserNavbar from './UserNavbar';
-import BottomNavigation from './BottomNavigation';
+import { BottomNavigation } from './BottomNavigation';
 
 const AppLayout: React.FC = () => {
   return (

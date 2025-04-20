@@ -1,6 +1,8 @@
 
 import { Json } from "@/integrations/supabase/types";
 
+export { Json };
+
 export interface Product {
   id: string;
   name: string;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Edit2, X, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,8 +77,12 @@ export function TonerList() {
           ? toner.variant_details 
           : null;
         
+        // Add name property derived from brand and model
+        const name = `${toner.brand} ${toner.model}${toner.variant_name ? ` ${toner.variant_name}` : ''}`;
+        
         return {
           ...toner,
+          name,
           aliases,
           compatible_printers,
           variant_details

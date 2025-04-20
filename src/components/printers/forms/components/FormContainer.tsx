@@ -1,7 +1,12 @@
 
-import React, { ReactNode } from 'react';
-import { Card } from "@/components/ui/card";
-import { utils } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,41 +19,59 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface FormContainerProps {
-  children: ReactNode;
+  children: React.ReactNode;
   open: boolean;
-  isAlertDialogOpen: boolean;
   title: string;
   description: string;
+  className?: string;
+  isAlertDialogOpen: boolean;
   onCloseAlert: () => void;
   onConfirmCancel: () => void;
 }
 
-export function FormContainer({ 
-  children, 
-  open, 
-  isAlertDialogOpen, 
+export function FormContainer({
+  children,
+  open,
   title,
   description,
+  className,
+  isAlertDialogOpen,
   onCloseAlert,
-  onConfirmCancel 
+  onConfirmCancel,
 }: FormContainerProps) {
   return (
-    <AlertDialog open={isAlertDialogOpen}>
-      <Card className={utils.cn("w-full max-w-2xl", !open ? "hidden" : "fixed inset-0 top-auto mx-auto h-[calc(100vh-4rem)] max-h-[90vh] rounded-2xl border bg-popover text-popover-foreground shadow-md animate-in fade-in-50 zoom-in-95 data-[state=open]:animate-out data-[state=open]:fade-out-50 data-[state=open]:zoom-out-95 sm:border md:max-h-[75vh]")}>
-        {children}
+    <>
+      <Dialog open={open}>
+        <DialogContent 
+          className={cn(
+            "flex flex-col max-h-[90vh] p-0 gap-0", 
+            className
+          )}
+        >
+          <DialogHeader className="px-6 pt-6 pb-0">
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          {children}
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={isAlertDialogOpen} onOpenChange={onCloseAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Leaving will discard them.
+              You have unsaved changes. Are you sure you want to cancel?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={onCloseAlert}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmCancel}>Continue</AlertDialogAction>
+            <AlertDialogCancel>Resume Editing</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmCancel}>
+              Discard Changes
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </Card>
-    </AlertDialog>
+      </AlertDialog>
+    </>
   );
 }

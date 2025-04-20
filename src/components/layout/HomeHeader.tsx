@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, User, Menu } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { MobileSidebar } from './MobileSidebar';
 import { Input } from '@/components/ui/input';
 
@@ -26,6 +27,20 @@ interface HomeHeaderProps {
 export function HomeHeader({ config }: HomeHeaderProps) {
   const { user } = useAuth();
   const isLoggedIn = !!user;
+  
+  // Provide default config if none provided
+  const defaultConfig: HeaderConfig = {
+    showSearchBar: true,
+    showCart: true,
+    showAccount: true,
+    couponButton: {
+      enabled: false,
+      text: "View Coupons",
+      url: "/coupons"
+    }
+  };
+  
+  const headerConfig = { ...defaultConfig, ...config };
 
   return (
     <header className="bg-background sticky top-0 z-40 w-full border-b">
@@ -42,29 +57,29 @@ export function HomeHeader({ config }: HomeHeaderProps) {
         </Sheet>
         
         <Link to="/" className="flex items-center font-semibold">
-          {config?.logoUrl ? (
-            <img src={config.logoUrl} alt="Logo" className="h-8 w-auto mr-2" />
+          {headerConfig.logoUrl ? (
+            <img src={headerConfig.logoUrl} alt="Logo" className="h-8 w-auto mr-2" />
           ) : (
             "Acme Corp"
           )}
         </Link>
         
-        {config?.showSearchBar && (
+        {headerConfig.showSearchBar && (
           <div className="hidden md:flex flex-1 items-center space-x-2">
             <Input type="search" placeholder="Search..." className="max-w-md" />
           </div>
         )}
         
         <div className="flex items-center space-x-4">
-          {config?.couponButton?.enabled && (
+          {headerConfig.couponButton?.enabled && (
             <Button asChild variant="secondary">
-              <Link to={config.couponButton.url || "#"}>
-                {config.couponButton.text || "View Coupons"}
+              <Link to={headerConfig.couponButton.url || "#"}>
+                {headerConfig.couponButton.text || "View Coupons"}
               </Link>
             </Button>
           )}
           
-          {config?.showCart && (
+          {headerConfig.showCart && (
             <Button variant="ghost" size="sm" asChild>
               <Link to="/cart">
                 <ShoppingCart className="h-5 w-5" />
@@ -72,7 +87,7 @@ export function HomeHeader({ config }: HomeHeaderProps) {
             </Button>
           )}
           
-          {config?.showAccount && (
+          {headerConfig.showAccount && (
             <Button variant="ghost" size="sm" asChild>
               <Link to={isLoggedIn ? "/profile" : "/auth"}>
                 <User className="h-5 w-5" />

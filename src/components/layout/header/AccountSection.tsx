@@ -7,10 +7,11 @@ import { UserProfile } from "@/components/auth/UserProfile";
 
 export function AccountSection() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { user, signOut } = useAuth();
+  const isAuthenticated = !!user;
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/');
   };
 

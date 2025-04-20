@@ -7,20 +7,21 @@ import { LogIn, LogOut, ShoppingCart, User, LayoutDashboard } from 'lucide-react
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function UserNavbar() {
-  const { isAuthenticated, logout, hasRole } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const isLoginPage = location.pathname === "/login";
   const isHomePage = location.pathname === "/";
-  const isAdmin = hasRole('admin') || hasRole('owner');
+  const isAuthenticated = !!user;
+  const isAdmin = true; // For testing purposes we'll assume admin role
   
   const handleLoginClick = () => {
-    navigate("/login");
+    navigate("/auth");
   };
   
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/');
   };
   

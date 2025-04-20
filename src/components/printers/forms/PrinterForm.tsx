@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PrinterType, TonerType, PrinterStatusType, PrinterOwnershipType } from "@/types/types";
+import { PrinterType, TonerType } from "@/types/types";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { FormContainer } from "./components/FormContainer";
@@ -55,15 +54,9 @@ export function PrinterForm({
   const { makes, series, addNewMake, addNewSeries } = usePrinterMakesAndSeries();
 
   const onSubmitData = (data: PrinterFormValues) => {
-    // Generate printer name from make, series, model
-    const makeName = makes.find(m => m.id === data.make)?.name || data.make;
-    const seriesName = series.find(s => s.id === data.series)?.name || data.series;
-    const printerName = [makeName, seriesName, data.model].filter(Boolean).join(" ");
-    
     // Create printer data with the form values and selected toners
     const printerData: PrinterType = {
       id: printer?.id || crypto.randomUUID(),
-      name: printerName,
       model: data.model,
       series: data.series,
       type: data.type,
@@ -88,7 +81,7 @@ export function PrinterForm({
 
     onSubmit(printerData);
     onClose();
-    toast.success(`${printerName} has been saved!`);
+    toast.success(`Printer has been saved!`);
   };
 
   return (

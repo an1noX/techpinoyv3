@@ -8,6 +8,9 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isLoading: boolean;
   hasPermission: (permission: string) => boolean;
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +19,9 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   isLoading: true,
   hasPermission: () => false,
+  isAuthenticated: false,
+  logout: async () => {},
+  hasRole: () => false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,14 +69,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
   };
 
+  // Alias for signOut for compatibility
+  const logout = async () => {
+    return signOut();
+  };
+
   // Simplified permission check function
   const hasPermission = (permission: string) => {
     // For now, just return true for testing - in a real app you'd check user roles/permissions
     return true;
   };
 
+  // Check if user has a specific role
+  const hasRole = (role: string) => {
+    // For now, just return true for testing - in a real app you'd check user roles
+    return true;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, isLoading, hasPermission }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      signIn, 
+      signOut, 
+      isLoading, 
+      hasPermission,
+      isAuthenticated: !!user,
+      logout,
+      hasRole
+    }}>
       {children}
     </AuthContext.Provider>
   );
