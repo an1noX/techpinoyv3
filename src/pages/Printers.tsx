@@ -3,16 +3,22 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search, Import, ArrowUpDown } from 'lucide-react';
+import { Import, Search, ArrowUpDown, Printer, FileText, Wrench, Check, Info, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Printer, PrinterStatus, WikiPrinter } from '@/types';
+import { Printer as PrinterType, PrinterStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImportPrinterDialog } from '@/components/ImportPrinterDialog';
 import { PrinterTransferDialog } from '@/components/PrinterTransferDialog';
+// Import modal dialogs from Maintenance section
+import { MaintenanceQuickUpdateDialog } from '@/components/printers/MaintenanceQuickUpdateDialog';
+import { GenerateServiceReportDialog } from '@/components/printers/GenerateServiceReportDialog';
+import { MarkRepairedDialog } from '@/components/printers/MarkRepairedDialog';
+import { PrinterDetailsDialog } from '@/components/printers/PrinterDetailsDialog';
+import { PrinterHistoryDialog } from '@/components/printers/PrinterHistoryDialog';
 
 const getStatusColor = (status: PrinterStatus) => {
   switch (status) {
@@ -35,39 +41,46 @@ const getStatusEmoji = (status: PrinterStatus) => {
 export default function Printers() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [printers, setPrinters] = useState<Printer[]>([]);
+  const [printers, setPrinters] = useState<PrinterType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+  const [selectedPrinter, setSelectedPrinter] = useState<PrinterType | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
-  
+
+  // State for new unified modal dialogs
+  const [quickUpdateDialogOpen, setQuickUpdateDialogOpen] = useState(false);
+  const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
+  const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+
   useEffect(() => {
     fetchPrinters();
   }, []);
-  
+
   const fetchPrinters = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('printers')
         .select('*');
-      
+
       if (error) {
         throw error;
       }
-      
-      setPrinters(data as Printer[]);
+
+      setPrinters(data as PrinterType[]);
     } catch (error: any) {
       toast({
         title: "Error fetching printers",
         description: error.message,
         variant: "destructive"
       });
-      
+
       // Mock data for development
-      const mockPrinters: Printer[] = [
+      const mockPrinters: PrinterType[] = [
         { 
           id: '1', 
           make: 'HP', 
@@ -110,33 +123,55 @@ export default function Printers() {
           is_for_rent: false,
         },
       ];
-      
+
       setPrinters(mockPrinters);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-  
+
   const filteredPrinters = printers.filter(printer => 
     printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const handleOpenImportDialog = () => {
     setImportDialogOpen(true);
   };
 
-  const handleTransferPrinter = (printer: Printer) => {
+  const handleOpenTransferDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setTransferDialogOpen(true);
   };
-  
+
+  // Handlers for unified modals
+  const openQuickUpdateDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setQuickUpdateDialogOpen(true);
+  };
+  const openServiceReportDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setServiceReportDialogOpen(true);
+  };
+  const openMarkRepairedDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setMarkRepairedDialogOpen(true);
+  };
+  const openDetailsDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setDetailsDialogOpen(true);
+  };
+  const openHistoryDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setHistoryDialogOpen(true);
+  };
+
   return (
     <MobileLayout
       fab={
@@ -177,7 +212,7 @@ export default function Printers() {
             </svg>
           </Button>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -203,23 +238,64 @@ export default function Printers() {
                   </Badge>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
-                  <div className="flex justify-between mt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1 mr-2"
-                      onClick={() => navigate(`/printers/${printer.id}`)}
-                    >
-                      Details
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => handleTransferPrinter(printer)}
-                    >
-                      <ArrowUpDown className="h-4 w-4 mr-1" /> Transfer
-                    </Button>
+                  <div className="flex flex-wrap gap-2 mt-2 justify-between">
+                    {/* Unified button set, styled and ordered as in Maintenance module */}
+                    <div className="flex gap-2 flex-wrap w-full">
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openDetailsDialog(printer)}
+                      >
+                        <Info className="h-4 w-4" />
+                        Details
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openQuickUpdateDialog(printer)}
+                      >
+                        <Wrench className="h-4 w-4" />
+                        Quick Update
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openServiceReportDialog(printer)}
+                      >
+                        <FileText className="h-4 w-4" />
+                        Generate Report
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openMarkRepairedDialog(printer)}
+                      >
+                        <Check className="h-4 w-4" />
+                        Repaired
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => handleOpenTransferDialog(printer)}
+                      >
+                        <ArrowUpDown className="h-4 w-4" />
+                        Transfers
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openHistoryDialog(printer)}
+                      >
+                        <History className="h-4 w-4" />
+                        History
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -228,20 +304,72 @@ export default function Printers() {
         )}
       </div>
 
+      {/* Unified dialogs for Inventory actions (reuse Maintenance dialogs) */}
+      {selectedPrinter && (
+        <>
+          <MaintenanceQuickUpdateDialog
+            open={quickUpdateDialogOpen}
+            onOpenChange={(open) => {
+              setQuickUpdateDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) fetchPrinters();
+            }}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
+          />
+          <GenerateServiceReportDialog
+            open={serviceReportDialogOpen}
+            onOpenChange={(open) => {
+              setServiceReportDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) fetchPrinters();
+            }}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
+          />
+          <MarkRepairedDialog
+            open={markRepairedDialogOpen}
+            onOpenChange={(open) => {
+              setMarkRepairedDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) fetchPrinters();
+            }}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
+          />
+          <PrinterDetailsDialog
+            open={detailsDialogOpen}
+            onOpenChange={(open) => {
+              setDetailsDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+            }}
+            printer={selectedPrinter}
+          />
+          <PrinterHistoryDialog
+            open={historyDialogOpen}
+            onOpenChange={(open) => {
+              setHistoryDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+            }}
+            printer={selectedPrinter}
+          />
+          <PrinterTransferDialog
+            open={transferDialogOpen}
+            onOpenChange={(open) => {
+              setTransferDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+            }}
+            printer={selectedPrinter}
+            onTransferSuccess={fetchPrinters}
+          />
+        </>
+      )}
+
       <ImportPrinterDialog
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImportSuccess={fetchPrinters}
       />
-
-      {selectedPrinter && (
-        <PrinterTransferDialog
-          open={transferDialogOpen}
-          onOpenChange={setTransferDialogOpen}
-          printer={selectedPrinter}
-          onTransferSuccess={fetchPrinters}
-        />
-      )}
     </MobileLayout>
   );
 }
