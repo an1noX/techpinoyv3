@@ -1,7 +1,4 @@
-//do not remove any of these imports
-//ensure these are check throughly in each project folders and subfolders
-//these components just neededs update or add entry in db if missing or need to fix the interface
-//ensure that this components layout,style will not be touched changed or modified
+
 import { useState, useEffect } from "react";
 import { ProductDetailsDialog } from "@/components/products/ProductDetailsDialog";
 import { HomeHeader } from "@/components/layout/HomeHeader";
@@ -15,125 +12,47 @@ import { FAQSection } from "@/components/home/FAQSection";
 import { AdditionalInfoSection } from "@/components/home/AdditionalInfoSection";
 import { NewsletterSection } from "@/components/home/NewsletterSection";
 import { HomeFooter } from "@/components/home/HomeFooter";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StaticSettingsProvider, useStaticSettings } from "@/context/StaticSettingsContext";
-import { seedTonerProducts } from "@/utils/seedToners";
+import { supabase } from "@/integrations/supabase/client";
 
-// Static product interface
+// Enhanced static product interface, now matching the DB
 export interface EnhancedTonerType {
   id: string;
   name: string;
   price: number;
-  manufacturer: string;
-  type: "toner" | "ink" | "other";
+  manufacturer?: string;
+  type?: "toner" | "ink" | "other";
   stock: number;
   imageUrl: string;
   category: string;
   brand: string;
   quantityInStock: number;
+  description?: string;
+  sold_count?: number;
+  created_at?: string;
+  sku?: string;
 }
 
-// Static product data - Using original brand names to match HomePage.tsx
-const staticProducts: EnhancedTonerType[] = [
-  {
-    id: "1",
-    name: "HP 26A Black Toner",
-    price: 1899.99,
-    manufacturer: "HP",
-    type: "toner",
-    stock: 25,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=HP 26A',
-    category: "toner",
-    brand: "HP",
-    quantityInStock: 25
-  },
-  {
-    id: "2",
-    name: "Canon PGI-280 Black Ink",
-    price: 1299.99,
-    manufacturer: "Canon",
-    type: "ink",
-    stock: 18,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Canon 280',
-    category: "ink",
-    brand: "Canon",
-    quantityInStock: 18
-  },
-  {
-    id: "3",
-    name: "Brother TN-760 High Yield Toner",
-    price: 1599.99,
-    manufacturer: "Brother",
-    type: "toner",
-    stock: 15,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Brother 760',
-    category: "toner",
-    brand: "Brother",
-    quantityInStock: 15
-  },
-  {
-    id: "4",
-    name: "Epson 702 Cyan Ink",
-    price: 1099.99,
-    manufacturer: "Epson",
-    type: "ink",
-    stock: 30,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Epson 702',
-    category: "ink",
-    brand: "Epson",
-    quantityInStock: 30
-  },
-  {
-    id: "5",
-    name: "Samsung MLT-D111S Black Toner",
-    price: 1799.99,
-    manufacturer: "Samsung",
-    type: "toner",
-    stock: 12,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Samsung D111S',
-    category: "toner",
-    brand: "Samsung",
-    quantityInStock: 12
-  },
-  {
-    id: "6",
-    name: "Lexmark 71B10K0 Black Toner",
-    price: 2199.99,
-    manufacturer: "Lexmark",
-    type: "toner",
-    stock: 8,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Lexmark 71B',
-    category: "toner",
-    brand: "Lexmark",
-    quantityInStock: 8
-  },
-  {
-    id: "7",
-    name: "Xerox 106R03745 Cyan Toner",
-    price: 2299.99,
-    manufacturer: "Xerox",
-    type: "toner",
-    stock: 9,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=Xerox 106R',
-    category: "toner",
-    brand: "Xerox",
-    quantityInStock: 9
-  },
-  {
-    id: "8",
-    name: "HP 63XL Tri-color Ink",
-    price: 1499.99,
-    manufacturer: "HP",
-    type: "ink",
-    stock: 22,
-    imageUrl: 'https://placehold.co/200x200/e6f7ff/333?text=HP 63XL',
-    category: "ink",
-    brand: "HP",
-    quantityInStock: 22
-  }
-];
+// Map DB item to EnhancedTonerType
+const mapDbToToner = (item: any): EnhancedTonerType => ({
+  id: item.id,
+  name: item.name,
+  price: Number(item.price),
+  manufacturer: item.toner?.brand ?? item.brand ?? "",
+  type: Array.isArray(item.category) && item.category[0] ? item.category[0] : "toner",
+  stock: item.stock_level ?? 0,
+  imageUrl: item.image_url || "https://placehold.co/200x200/e6f7ff/333?text=Toner",
+  category: Array.isArray(item.category) && item.category.length > 0 ? item.category[0] : "",
+  brand: item.toner?.brand || item.brand || "",
+  quantityInStock: item.stock_level ?? 0,
+  description: item.description ?? "",
+  sold_count: item.sold_count ?? 0,
+  created_at: item.created_at,
+  sku: item.sku,
+});
 
 const StoreContent = () => {
   const [selectedProduct, setSelectedProduct] = useState<EnhancedTonerType | null>(null);
@@ -141,18 +60,62 @@ const StoreContent = () => {
   const { settings, isLoading: isLoadingSettings } = useStaticSettings();
   const isMobile = useIsMobile();
 
-  // Get static products for display sections
-  const popularProducts = staticProducts.slice(0, 4);
-  const newReleases = staticProducts.slice(4, 8);
+  // Store products state
+  const [products, setProducts] = useState<EnhancedTonerType[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Handle product click 
+  // Fetch products from DB on mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoadingProducts(true);
+      try {
+        // Assumes a "sold_count" field exists (if not, will display as 0)
+        const { data, error } = await supabase
+          .from("commercial_toner_products")
+          .select(`
+            *,
+            toner:toners (
+              brand
+            )
+          `)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+
+        // Map for the UI
+        const mapped = (data ?? []).map(mapDbToToner);
+        setProducts(mapped);
+      } catch (err: any) {
+        toast.error(err?.message ?? "Failed to fetch products");
+        setProducts([]);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // Most sold products for Popular section
+  const popularProducts = [...products]
+    .sort((a, b) => (b.sold_count ?? 0) - (a.sold_count ?? 0))
+    .slice(0, 4);
+
+  // Newly added products for New Releases section
+  const newReleases = [...products]
+    .sort((a, b) => {
+      if (a.created_at && b.created_at) {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+      return 0;
+    })
+    .slice(0, 4);
+
+  // Handle product click to open dialog
   const handleProductClick = (product: EnhancedTonerType) => {
     setSelectedProduct(product);
     setIsProductDetailsOpen(true);
   };
-  
-  // Show a loading skeleton while settings are being loaded
-  if (isLoadingSettings) {
+
+  if (isLoadingSettings || loadingProducts) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Skeleton className="h-16 w-full" />
@@ -171,58 +134,32 @@ const StoreContent = () => {
     );
   }
 
-  useEffect(() => {
-    // Seed on initial load (one-time; safe to call repeatedly due to skip logic)
-    seedTonerProducts();
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden">
-      {/* Toast notifications */}
       <Toaster position={isMobile ? "top-center" : "top-right"} />
-      
-      {/* Use the HomeHeader component */}
+
       <HomeHeader />
 
-      {/* Hero Section with Slider and Printer Finder */}
       <HeroSection />
 
       <main className="flex-1">
-        {/* Popular Products */}
         <PopularProductsSection 
           products={popularProducts} 
           onViewProductDetails={handleProductClick} 
         />
-        
-        {/* New Releases */}
         <NewReleasesSection 
-          products={newReleases} 
+          products={newReleases}
           onProductClick={handleProductClick} 
         />
-
-        {/* Printer Solutions Section */}
         <PrinterSolutionsSection />
-
-        {/* About TechPinoy */}
         <AboutSection />
-
-        {/* Shop by Brand */}
         <ShopByBrandSection />
-
-        {/* FAQ Section */}
         <FAQSection />
-
-        {/* Additional information sections */}
         <AdditionalInfoSection />
-
-        {/* Newsletter Signup */}
         <NewsletterSection />
       </main>
-
-      {/* Footer */}
       <HomeFooter />
-      
-      {/* Product Details Dialog */}
+
       {selectedProduct && (
         <ProductDetailsDialog
           open={isProductDetailsOpen}
@@ -234,7 +171,7 @@ const StoreContent = () => {
   );
 };
 
-// Wrap the store content with StaticSettingsProvider to avoid auth context
+// Wrap the store content with StaticSettingsProvider
 const Store = () => (
   <StaticSettingsProvider>
     <StoreContent />
