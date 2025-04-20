@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users } from 'lucide-react';
+import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users, Package, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNavigation() {
@@ -18,6 +17,16 @@ export function BottomNavigation() {
       name: 'Printers', 
       path: '/printers', 
       icon: PrinterIcon 
+    },
+    { 
+      name: 'Products', 
+      path: '/toner-products', 
+      icon: Package 
+    },
+    { 
+      name: 'Store', 
+      path: '/store-settings', 
+      icon: Settings 
     },
     { 
       name: 'Rentals', 
