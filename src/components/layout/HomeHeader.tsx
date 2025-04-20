@@ -1,12 +1,14 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Menu } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ShoppingCart, Search, Phone, HelpCircle, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { MobileSidebar } from './MobileSidebar';
-import { Input } from '@/components/ui/input';
+import { HeaderNavLinks } from "./header/HeaderNavLinks";
+import { FloatingNav } from "./FloatingNav";
+import { HeaderTopBar } from "./header/HeaderTopBar";
+import { useSettings } from "@/context/SettingsContext";
+import { AuthProvider } from "@/components/AuthProvider";
 
 interface HeaderConfig {
   logoUrl?: string;
