@@ -23,6 +23,8 @@ const getStatusColor = (status: PrinterStatus) => {
     case 'available': return 'bg-status-available text-white';
     case 'rented': return 'bg-status-rented text-black';
     case 'maintenance': return 'bg-status-maintenance text-white';
+    case 'for_repair': return 'bg-status-maintenance text-white';
+    case 'deployed': return 'bg-status-rented text-black';
     default: return 'bg-gray-500 text-white';
   }
 };
@@ -32,6 +34,8 @@ const getStatusEmoji = (status: PrinterStatus) => {
     case 'available': return '🟢';
     case 'rented': return '🟡';
     case 'maintenance': return '🔴';
+    case 'for_repair': return '🔴';
+    case 'deployed': return '🟡';
     default: return '⚪';
   }
 };
@@ -43,7 +47,7 @@ const toPrinterStatus = (val: any): PrinterStatus => {
   const allowed: PrinterStatus[] = [
     'available', 'rented', 'maintenance', 'for_repair', 'deployed'
   ];
-  return allowed.includes(val) ? val : 'available';
+  return allowed.includes(val as PrinterStatus) ? (val as PrinterStatus) : 'available';
 };
 
 export default function Printers() {
