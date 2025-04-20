@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -30,20 +31,24 @@ export interface StoreInfo {
   socialMedia: SocialMedia;
 }
 
-export interface HeaderConfig {
-  logo?: string;
-  searchPlaceholder?: string;
-  showContactSection?: boolean;
-  showHelpSection?: boolean;
-  showCart?: boolean;
-  navigationLinks?: Array<{ label: string; link: string; }>;
+export interface StoreSettings {
+  id: string;
+  store_name: string;
+  tagline: string;
+  phone_number: string;
+  email: string;
+  office_hours: string;
+  address: string;
+  live_chat: LiveChat;
+  social_media: SocialMedia;
+  updated_at: string;
+  storeInfo?: StoreInfo;
 }
 
-export interface FrontendSettings {
-  companyName: string;
-  mainMenuItems: any[];
-  footerSections: any[];
-  showUnderConstructionModal: boolean;
-  headerConfig?: HeaderConfig;
-  storeInfo?: StoreInfo;
+export interface SettingsContextType {
+  settings: StoreSettings | null;
+  isLoading: boolean;
+  saveSettings: (settings: StoreSettings) => Promise<void>;
+  error: string | null;
+  updateStoreInfo?: (storeInfo: StoreInfo) => Promise<void>;
 }

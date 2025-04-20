@@ -3,7 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TonerType } from "@/types/types";
-import { PrinterFormValues } from "../printer-form-schema";
+import { PrinterFormValues } from "@/components/printers/forms/printer-form-schema";
 import { TonerSelector } from "@/components/toners/TonerSelector";
 
 interface TonerSectionProps {
