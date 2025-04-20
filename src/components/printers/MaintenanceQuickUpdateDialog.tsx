@@ -72,7 +72,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
           ? customError
           : PREDEFINED_ERRORS.find((e) => e.key === selectedError)?.label,
       repair_notes: getSolution(),
-      status: "completed" as const, // Use type assertion to match the enum type
+      status: "completed" as const, // Using type assertion to match enum type
     };
 
     const { error } = await supabase.from("maintenance_records").insert(maintenanceData);
