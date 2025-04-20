@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { BaseDialog } from "@/components/common/BaseDialog";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BulkActionDialogProps {
   open: boolean;

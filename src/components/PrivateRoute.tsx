@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();

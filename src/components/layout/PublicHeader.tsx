@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { AccountSection } from "./header/AccountSection";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { FloatingNav } from "./FloatingNav";
-import { AuthProvider } from "@/components/AuthProvider";
+import { AuthProvider } from "@/context/AuthContext";
 
 export function PublicHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

@@ -1,6 +1,6 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { UserProfile } from "@/components/auth/UserProfile";
 import { Button } from "@/components/ui/button";
 import { LogIn, LogOut, ShoppingCart, User, LayoutDashboard } from 'lucide-react';
