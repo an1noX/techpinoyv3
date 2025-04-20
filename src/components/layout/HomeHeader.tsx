@@ -7,14 +7,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { FloatingNav } from "./FloatingNav";
 import { HeaderTopBar } from "./header/HeaderTopBar";
-//import { useSettings } from "@/context/SettingsContext";
-//import { AuthProvider } from "@/components/AuthProvider";
+
 
 export function HomeHeader() {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const { settings } = useSettings();
-  const headerConfig = settings.headerConfig || {};
+
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
