@@ -4,10 +4,14 @@ import { Printer } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Printer as PrinterIcon, FileText, Check } from "lucide-react";
+import { Wrench, Printer as PrinterIcon, FileText, Check, Info, History } from "lucide-react";
 import { BottomNavigation } from "@/components/navigation/BottomNavigation";
 import { MaintenanceQuickUpdateDialog } from "@/components/printers/MaintenanceQuickUpdateDialog";
 import { usePrintersWithStatus } from "@/hooks/usePrintersWithStatus";
+import { GenerateServiceReportDialog } from "@/components/printers/GenerateServiceReportDialog";
+import { MarkRepairedDialog } from "@/components/printers/MarkRepairedDialog";
+import { PrinterDetailsDialog } from "@/components/printers/PrinterDetailsDialog";
+import { PrinterHistoryDialog } from "@/components/printers/PrinterHistoryDialog";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   "pending": { label: "Pending", color: "bg-amber-100 text-amber-800" },
@@ -19,13 +23,38 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 export default function Maintenance() {
   const { printers, loading, refetch } = usePrintersWithStatus();
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogTab, setDialogTab] = useState<string>("quick-update");
+  
+  // Dialog state management
+  const [quickUpdateDialogOpen, setQuickUpdateDialogOpen] = useState(false);
+  const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
+  const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
-  const openDialog = (printer: Printer, tab: string) => {
+  // Open dialog functions
+  const openQuickUpdateDialog = (printer: Printer) => {
     setSelectedPrinter(printer);
-    setDialogTab(tab);
-    setDialogOpen(true);
+    setQuickUpdateDialogOpen(true);
+  };
+
+  const openServiceReportDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setServiceReportDialogOpen(true);
+  };
+
+  const openMarkRepairedDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setMarkRepairedDialogOpen(true);
+  };
+
+  const openDetailsDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setDetailsDialogOpen(true);
+  };
+
+  const openHistoryDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setHistoryDialogOpen(true);
   };
 
   // Filter printers to only show those with maintenance or for_repair status
@@ -93,7 +122,7 @@ export default function Maintenance() {
                     size="sm" 
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openDialog(printer, "quick-update")}
+                    onClick={() => openQuickUpdateDialog(printer)}
                   >
                     <Wrench className="h-4 w-4" />
                     <span>Quick Update</span>
@@ -102,19 +131,37 @@ export default function Maintenance() {
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openDialog(printer, "generate-report")}
+                    onClick={() => openServiceReportDialog(printer)}
                   >
                     <FileText className="h-4 w-4" />
-                    <span>Generate Service Report</span>
+                    <span>Generate Report</span>
                   </Button>
                   <Button 
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openDialog(printer, "mark-repaired")}
+                    onClick={() => openMarkRepairedDialog(printer)}
                   >
                     <Check className="h-4 w-4" />
                     <span>Repaired</span>
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                    onClick={() => openDetailsDialog(printer)}
+                  >
+                    <Info className="h-4 w-4" />
+                    <span>Details</span>
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                    onClick={() => openHistoryDialog(printer)}
+                  >
+                    <History className="h-4 w-4" />
+                    <span>History</span>
                   </Button>
                 </div>
               </CardContent>
@@ -123,23 +170,63 @@ export default function Maintenance() {
         </div>
       )}
 
-      {/* Dialog for Maintenance Management */}
+      {/* Dialogs for Maintenance Management */}
       {selectedPrinter && (
-        <MaintenanceQuickUpdateDialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) setSelectedPrinter(null);
-            if (!open) refetch();
-          }}
-          printer={selectedPrinter}
-          onSuccess={refetch}
-          initialTab={dialogTab}
-        />
+        <>
+          <MaintenanceQuickUpdateDialog
+            open={quickUpdateDialogOpen}
+            onOpenChange={(open) => {
+              setQuickUpdateDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) refetch();
+            }}
+            printer={selectedPrinter}
+            onSuccess={refetch}
+          />
+
+          <GenerateServiceReportDialog
+            open={serviceReportDialogOpen}
+            onOpenChange={(open) => {
+              setServiceReportDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) refetch();
+            }}
+            printer={selectedPrinter}
+            onSuccess={refetch}
+          />
+
+          <MarkRepairedDialog
+            open={markRepairedDialogOpen}
+            onOpenChange={(open) => {
+              setMarkRepairedDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) refetch();
+            }}
+            printer={selectedPrinter}
+            onSuccess={refetch}
+          />
+
+          <PrinterDetailsDialog
+            open={detailsDialogOpen}
+            onOpenChange={(open) => {
+              setDetailsDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+            }}
+            printer={selectedPrinter}
+          />
+
+          <PrinterHistoryDialog
+            open={historyDialogOpen}
+            onOpenChange={(open) => {
+              setHistoryDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+            }}
+            printer={selectedPrinter}
+          />
+        </>
       )}
 
       <BottomNavigation />
     </div>
   );
 }
-
