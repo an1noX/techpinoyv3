@@ -56,25 +56,28 @@ export function HomeHeader({ config }: HomeHeaderProps) {
     <header className="bg-background sticky top-0 z-40 w-full border-b">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" asChild>
-            <SheetTrigger>
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Open menu</span>
+          {/* IMPORTANT: Must properly wrap SheetTrigger within Sheet component */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Open menu</span>
+              </Button>
             </SheetTrigger>
-          </Button>
-          <SheetContent side="left">
-            <nav className="flex flex-col gap-4 mt-8">
-              {navigationItems.map((item) => (
-                <Link 
-                  key={item.href} 
-                  to={item.href}
-                  className="text-lg hover:text-primary transition-colors"
-                >
-                  {item.title}
-                </Link>
-              ))}
-            </nav>
-          </SheetContent>
+            <SheetContent side="left">
+              <nav className="flex flex-col gap-4 mt-8">
+                {navigationItems.map((item) => (
+                  <Link 
+                    key={item.href} 
+                    to={item.href}
+                    className="text-lg hover:text-primary transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
         
         <Link to="/" className="flex items-center font-semibold">
