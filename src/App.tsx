@@ -26,7 +26,6 @@ import React from "react";
 
 const queryClient = new QueryClient();
 
-// Layout component for protected routes
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthProvider>
     <PrivateRoute>
@@ -42,7 +41,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-          {/* Public routes */}
           <Route path="/auth" element={
             <AuthProvider>
               <Auth />
@@ -54,7 +52,6 @@ const App = () => (
           <Route path="/brands/:brand" element={<Products />} />
           <Route path="/categories/:category" element={<Products />} />
           
-          {/* Protected admin routes */}
           <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
           <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
           <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
@@ -68,9 +65,7 @@ const App = () => (
           <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
           <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
-          <Route path="/store-settings" element={<ProtectedLayout><StoreSettings /></ProtectedLayout>} />
           
-          {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>
