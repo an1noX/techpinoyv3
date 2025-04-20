@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 const formSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
@@ -82,7 +84,14 @@ export function TonerProductDialog({
         .order('brand', { ascending: true });
 
       if (error) throw error;
-      setOEMToners(data || []);
+      
+      // Process data to ensure aliases is always an array
+      const processedData = (data || []).map(toner => ({
+        ...toner,
+        aliases: Array.isArray(toner.aliases) ? toner.aliases : []
+      }));
+      
+      setOEMToners(processedData);
     } catch (error: any) {
       toast({
         title: "Error fetching OEM toners",
@@ -299,7 +308,7 @@ export function TonerProductDialog({
               <Button type="submit" disabled={loading}>
                 {loading ? (
                   <>
-                    <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                    <LoadingSpinner size={16} className="mr-2" />
                     {isEditing ? 'Updating...' : 'Creating...'}
                   </>
                 ) : (

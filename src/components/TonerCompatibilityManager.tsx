@@ -1,3 +1,4 @@
+
 /**
  * TonerCompatibilityManager
  * 
@@ -18,18 +19,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
-interface TonerBase {
+interface TonerType {
+  id: string;
   brand: string;
   model: string;
   color: string;
   oem_code?: string | null;
   page_yield: number;
-  aliases?: string[];
-}
-
-interface Toner extends TonerBase {
-  id: string;
+  aliases?: string[] | null;
 }
 
 interface TonerCompatibilityManagerProps {
@@ -38,10 +37,10 @@ interface TonerCompatibilityManagerProps {
 
 export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManagerProps) {
   const { toast } = useToast();
-  const [compatibleToners, setCompatibleToners] = useState<Toner[]>([]);
+  const [compatibleToners, setCompatibleToners] = useState<TonerType[]>([]);
   const [loading, setLoading] = useState(true);
   const [addTonerDialogOpen, setAddTonerDialogOpen] = useState(false);
-  const [availableToners, setAvailableToners] = useState<Toner[]>([]);
+  const [availableToners, setAvailableToners] = useState<TonerType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -68,14 +67,15 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
 
       if (error) throw error;
 
-      const toners = data.map(item => {
-        if (!item.toners) return null;
-        const toner = item.toners as unknown as Toner;
-        return {
-          ...toner,
-          aliases: Array.isArray(toner.aliases) ? toner.aliases : []
-        };
-      }).filter((toner): toner is Toner => toner !== null);
+      const toners = data
+        .filter(item => item.toners !== null)
+        .map(item => {
+          const toner = item.toners as TonerType;
+          return {
+            ...toner,
+            aliases: Array.isArray(toner.aliases) ? toner.aliases : []
+          };
+        });
 
       setCompatibleToners(toners);
     } catch (error: any) {
@@ -93,12 +93,15 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
     try {
       const { data, error } = await supabase
         .from('toners')
-        .select('*')
-        .not('id', 'in', `(${compatibleToners.map(t => t.id).join(',')})`);
+        .select('*');
 
       if (error) throw error;
 
-      const processedData = (data || []).map(toner => ({
+      // Filter out toners that are already in the compatible list
+      const compatibleTonerIds = compatibleToners.map(t => t.id);
+      const filteredData = data.filter(toner => !compatibleTonerIds.includes(toner.id));
+
+      const processedData = filteredData.map(toner => ({
         ...toner,
         aliases: Array.isArray(toner.aliases) ? toner.aliases : []
       }));
@@ -114,7 +117,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
     }
   };
 
-  const handleAddToner = async (toner: Toner) => {
+  const handleAddToner = async (toner: TonerType) => {
     try {
       const { error } = await supabase
         .from('printer_toner_compatibility')
@@ -171,10 +174,10 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
   const filteredToners = availableToners.filter(toner =>
     toner.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
     toner.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    toner.oem_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (toner.aliases || []).some(alias => 
-      alias.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    (toner.oem_code && toner.oem_code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (toner.aliases && toner.aliases.some(alias => 
+      typeof alias === 'string' && alias.toLowerCase().includes(searchTerm.toLowerCase())
+    ))
   );
 
   return (
@@ -193,7 +196,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       <CardContent>
         {loading ? (
           <div className="flex justify-center py-4">
-            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            <LoadingSpinner size={24} />
           </div>
         ) : compatibleToners.length === 0 ? (
           <p className="text-center text-muted-foreground py-4">

@@ -1,3 +1,4 @@
+
 export interface Printer {
   id: string;
   make: string;
@@ -146,13 +147,13 @@ export interface TonerProduct {
 }
 
 // Base type for shared toner properties
-interface TonerBase {
+export interface TonerBase {
   brand: string;
   model: string;
   color: string;
   oem_code?: string | null;
   page_yield: number;
-  aliases?: string[];
+  aliases?: string[] | null;
   variant_group_id?: string | null;
   is_base_model?: boolean;
   variant_name?: string | null;
@@ -162,14 +163,8 @@ interface TonerBase {
 }
 
 // OEM Toner Reference (Wiki entry)
-export interface OEMToner {
+export interface OEMToner extends TonerBase {
   id: string;
-  brand: string;
-  model: string;
-  color: string;
-  oem_code?: string | null;
-  page_yield: number;
-  aliases?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -205,7 +200,7 @@ export interface NewOEMToner {
   color: string;
   oem_code?: string | null;
   page_yield: number;
-  aliases?: string[];
+  aliases?: string[] | null;
 }
 
 // For creating new commercial products
@@ -223,16 +218,9 @@ export interface NewCommercialProduct {
 }
 
 // OEM Toner Reference - Used for printer compatibility tracking only, not inventory
-export interface Toner {
+export interface Toner extends TonerBase {
   id: string;
-  brand: string;
-  model: string;
-  color: string;
-  oem_code?: string | null;
-  page_yield: number;
-  aliases?: string[];
   // Variant support
-  variant_group_id?: string | null;
   is_base_model?: boolean;
   base_model_reference?: string | null;
   variant_details?: Record<string, any> | null;
@@ -248,24 +236,6 @@ export interface Toner {
   compatible_printers?: string[];
   created_at: string;
   updated_at: string;
-}
-
-// Frontend view of commercial toner products
-export interface CommercialTonerProduct {
-  id: string;
-  sku: string;
-  name: string;
-  description?: string;
-  price: number;
-  stock_level: number;
-  reorder_point: number;
-  category: string[];
-  image_url?: string;
-  is_active: boolean;
-  compatible_printers: string[];
-  created_at: string;
-  updated_at: string;
-  toner_id: string;
 }
 
 // For use in edit forms

@@ -17,33 +17,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
-
-// OEM Toner Reference Data - Used for printer compatibility tracking only, not inventory
-interface TonerBase {
-  brand: string;
-  model: string;
-  color: string;
-  oem_code?: string | null;
-  aliases?: string[];
-  page_yield: number;
-  is_base_model?: boolean;
-  base_model_reference?: string | null;
-  variant_name?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface Toner extends TonerBase {
-  id: string;
-}
-
-interface EditableToner extends Toner {
-  isEditing?: boolean;
-}
-
-interface NewToner extends TonerBase {
-  id?: string;
-}
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { EditableToner, TonerBase } from '@/types';
 
 export function TonerList() {
   const { toast } = useToast();
@@ -54,7 +29,7 @@ export function TonerList() {
   const [editingToner, setEditingToner] = useState<EditableToner | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tonerToDelete, setTonerToDelete] = useState<EditableToner | null>(null);
-  const [formData, setFormData] = useState<NewToner>({
+  const [formData, setFormData] = useState<TonerBase & {id?: string}>({
     brand: '',
     model: '',
     color: 'black',
@@ -140,9 +115,9 @@ export function TonerList() {
         return;
       }
 
-      const newToner: NewToner = {
+      const newToner = {
         ...formData,
-        aliases: formData.aliases.filter(alias => alias.trim() !== ''),
+        aliases: formData.aliases?.filter(alias => typeof alias === 'string' && alias.trim() !== '') || [],
         updated_at: new Date().toISOString(),
       };
 
@@ -239,7 +214,7 @@ export function TonerList() {
     } else {
       setFormData(prev => ({
         ...prev,
-        aliases: [...prev.aliases, '']
+        aliases: [...(prev.aliases || []), '']
       }));
     }
   };
@@ -253,7 +228,7 @@ export function TonerList() {
         aliases: updatedAliases
       });
     } else {
-      const updatedAliases = [...formData.aliases];
+      const updatedAliases = [...(formData.aliases || [])];
       updatedAliases.splice(index, 1);
       setFormData(prev => ({
         ...prev,
@@ -271,7 +246,7 @@ export function TonerList() {
         aliases: updatedAliases
       });
     } else {
-      const updatedAliases = [...formData.aliases];
+      const updatedAliases = [...(formData.aliases || [])];
       updatedAliases[index] = value;
       setFormData(prev => ({
         ...prev,
@@ -317,10 +292,10 @@ export function TonerList() {
     toner.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
     toner.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
     toner.color.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    toner.oem_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (toner.aliases || []).some(alias => 
-      alias.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    (toner.oem_code && toner.oem_code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (toner.aliases && toner.aliases.some(alias => 
+      typeof alias === 'string' && alias.toLowerCase().includes(searchTerm.toLowerCase())
+    ))
   );
 
   return (
@@ -347,7 +322,7 @@ export function TonerList() {
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          <LoadingSpinner size={32} />
         </div>
       ) : filteredToners.length === 0 ? (
         <div className="text-center py-8">
@@ -432,7 +407,7 @@ export function TonerList() {
                                 value={editingToner.base_model_reference || ''} 
                                 onValueChange={(value) => setEditingToner(prev => prev ? ({
                                   ...prev,
-                                  base_model_reference: value
+                                  base_model_reference: value || null
                                 }) : null)}
                               >
                                 <SelectTrigger>
@@ -593,7 +568,7 @@ export function TonerList() {
               <Input 
                 id="oem_code" 
                 placeholder="Manufacturer's code"
-                value={formData.oem_code}
+                value={formData.oem_code || ''}
                 onChange={handleInputChange}
               />
             </div>
@@ -644,7 +619,7 @@ export function TonerList() {
                       value={formData.base_model_reference || ''} 
                       onValueChange={(value) => setFormData(prev => ({
                         ...prev,
-                        base_model_reference: value
+                        base_model_reference: value || null
                       }))}
                     >
                       <SelectTrigger>
@@ -677,7 +652,7 @@ export function TonerList() {
 
             <div className="space-y-2">
               <Label>Aliases (Alternative Names)</Label>
-              {formData.aliases.map((alias, index) => (
+              {(formData.aliases || []).map((alias, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
                     value={alias}
@@ -711,7 +686,6 @@ export function TonerList() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
