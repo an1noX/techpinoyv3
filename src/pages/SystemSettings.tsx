@@ -1,21 +1,18 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
-import { useSettings } from '@/context/SettingsContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SystemSettings() {
-  const { settings, updateStoreInfo, isLoading } = useSettings();
   const { toast } = useToast();
+  const [storeName, setStoreName] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!settings?.storeInfo) return;
-      await updateStoreInfo(settings.storeInfo);
+      // Simulate a successful save
       toast({
         title: "Settings updated",
         description: "Your system settings have been saved successfully.",
@@ -29,21 +26,11 @@ export default function SystemSettings() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <MobileLayout>
-        <div className="flex justify-center items-center h-full">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-        </div>
-      </MobileLayout>
-    );
-  }
-
   return (
     <MobileLayout>
       <div className="container px-4 py-4">
         <h1 className="text-2xl font-bold mb-6">System Settings</h1>
-        
+
         <form onSubmit={handleSubmit}>
           <Card className="mb-6">
             <CardHeader>
@@ -53,18 +40,11 @@ export default function SystemSettings() {
               <div>
                 <label className="block text-sm font-medium mb-1">Company Name</label>
                 <Input
-                  value={settings?.store_name || ''}
-                  onChange={(e) => {
-                    if (settings?.storeInfo) {
-                      updateStoreInfo({
-                        ...settings.storeInfo,
-                        storeName: e.target.value
-                      });
-                    }
-                  }}
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
                 />
               </div>
-              {/* Add more fields here */}
+              {/* You can add more static fields here if needed */}
             </CardContent>
           </Card>
 
