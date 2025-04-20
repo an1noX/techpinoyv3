@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { WikiPrinter } from '@/types';
+import { WikiPrinter, PrinterStatus } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,18 +40,7 @@ export function ImportPrinterDialog({ open, onOpenChange, onImportSuccess }: Imp
         throw error;
       }
       
-      const transformedWikiPrinters: WikiPrinter[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        maintenanceTips: printer.maintenance_tips || undefined,
-        specs: printer.specs as Record<string, string> || {},
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at
-      }));
-      
-      setWikiPrinters(transformedWikiPrinters);
+      setWikiPrinters(data as WikiPrinter[]);
     } catch (error: any) {
       toast({
         title: "Error fetching wiki printers",
@@ -86,7 +75,7 @@ export function ImportPrinterDialog({ open, onOpenChange, onImportSuccess }: Imp
           make: selectedPrinter.make,
           series: selectedPrinter.series,
           model: selectedPrinter.model,
-          status: 'available',
+          status: 'available' as PrinterStatus,
           owned_by: 'system',
           department: department || null,
           location: location || null,
