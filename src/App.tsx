@@ -62,6 +62,9 @@ const App = () => (
             <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
             <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
             <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
+            <Route path="/system-settings" element={<ProtectedLayout><SystemSettings /></ProtectedLayout>} />
+            <Route path="/maintenance" element={<ProtectedLayout><MaintenanceList /></ProtectedLayout>} />
+            <Route path="/maintenance/:id" element={<ProtectedLayout><MaintenanceDetail /></ProtectedLayout>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
