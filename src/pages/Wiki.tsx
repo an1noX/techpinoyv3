@@ -6,7 +6,7 @@ import { Fab } from '@/components/ui/fab';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WikiPrinter } from '@/types';
@@ -34,18 +34,7 @@ export default function Wiki() {
         throw error;
       }
       
-      const transformedPrinters: WikiPrinter[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        maintenanceTips: printer.maintenance_tips || undefined,
-        specs: printer.specs as Record<string, string> || {},
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at
-      }));
-      
-      setPrinters(transformedPrinters);
+      setPrinters(data as WikiPrinter[]);
     } catch (error: any) {
       toast({
         title: "Error fetching printer wiki",
@@ -53,10 +42,38 @@ export default function Wiki() {
         variant: "destructive"
       });
       
+      // Mock data for development
       const mockPrinters: WikiPrinter[] = [
-        { id: '1', make: 'HP', series: 'LaserJet', model: 'Pro MFP M428fdn', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: '2', make: 'Brother', series: 'MFC', model: 'L8900CDW', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: '3', make: 'Canon', series: 'imageRUNNER', model: '1643i', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { 
+          id: '1', 
+          make: 'HP', 
+          series: 'LaserJet', 
+          model: 'Pro MFP M428fdn',
+          maintenance_tips: 'Clean monthly with compressed air. Replace toner when indicated.',
+          specs: { resolution: '1200x1200 dpi', speed: '40 ppm', connectivity: 'USB, Ethernet, Wi-Fi' },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { 
+          id: '2', 
+          make: 'Brother', 
+          series: 'MFC', 
+          model: 'L8900CDW',
+          maintenance_tips: 'Check drum units every 3 months. Clean paper path when jams occur.',
+          specs: { resolution: '2400x600 dpi', speed: '33 ppm', connectivity: 'USB, Ethernet, Wi-Fi, NFC' },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { 
+          id: '3', 
+          make: 'Canon', 
+          series: 'imageRUNNER', 
+          model: '1643i',
+          maintenance_tips: 'Replace toner according to manufacturer guidelines. Clean scanner glass daily.',
+          specs: { resolution: '600x600 dpi', speed: '45 ppm', connectivity: 'USB, Ethernet' },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
       ];
       
       setPrinters(mockPrinters);

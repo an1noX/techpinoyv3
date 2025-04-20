@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -104,23 +103,7 @@ export default function RentalCreate() {
         throw error;
       }
       
-      // Transform to match our Printer type
-      const transformedPrinters: Printer[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        status: printer.status as 'available' | 'rented' | 'maintenance',
-        ownedBy: printer.owned_by,
-        assignedTo: printer.assigned_to,
-        department: printer.department,
-        location: printer.location,
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at,
-        isForRent: true,
-      }));
-      
-      setPrinters(transformedPrinters);
+      setPrinters(data as Printer[]);
     } catch (error: any) {
       toast({
         title: "Error loading printers",
@@ -136,12 +119,12 @@ export default function RentalCreate() {
           series: 'LaserJet',
           model: 'Pro MFP M428fdn',
           status: 'available',
-          ownedBy: 'system',
+          owned_by: 'system',
           department: 'Marketing',
           location: 'Floor 2',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isForRent: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_for_rent: true,
         },
         {
           id: '2',
@@ -149,12 +132,12 @@ export default function RentalCreate() {
           series: 'MFC',
           model: 'L8900CDW',
           status: 'available',
-          ownedBy: 'system',
+          owned_by: 'system',
           department: 'Sales',
           location: 'Floor 1',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isForRent: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_for_rent: true,
         },
       ];
       

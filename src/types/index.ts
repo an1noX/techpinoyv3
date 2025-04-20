@@ -38,6 +38,7 @@ export interface Client {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  printers?: Printer[]; // Adding this for the join query result
 }
 
 export interface Profile {

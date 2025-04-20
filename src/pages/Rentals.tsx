@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -17,10 +16,10 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';  // Corrected import path
+import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Switch } from '@/components/ui/switch';
-import { Rental, Printer, RentalOptions } from '@/types';
+import { Rental, Printer, RentalOption } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -98,27 +97,7 @@ export default function Rentals() {
         throw error;
       }
       
-      // Transform the data to match our Rental type
-      const transformedRentals: Rental[] = (data || []).map(rental => ({
-        id: rental.id,
-        printerId: rental.printer_id,
-        clientId: rental.client_id,
-        client: rental.client,
-        printer: rental.printer,
-        startDate: rental.start_date,
-        endDate: rental.end_date,
-        status: rental.status as 'active' | 'completed' | 'cancelled' | 'upcoming',
-        signatureUrl: rental.signature_url,
-        agreementUrl: rental.agreement_url,
-        // Mock data for inquiries and bookings
-        inquiryCount: Math.floor(Math.random() * 5),
-        bookingCount: Math.floor(Math.random() * 3),
-        nextAvailableDate: new Date(
-          new Date(rental.end_date).getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      }));
-      
-      setRentals(transformedRentals);
+      setRentals(data as Rental[]);
     } catch (error: any) {
       toast({
         title: "Error fetching rentals",
@@ -130,48 +109,60 @@ export default function Rentals() {
       const mockRentals: Rental[] = [
         { 
           id: '1',
-          printerId: '1',
-          clientId: 'client1',
+          printer_id: '1',
+          client_id: 'client1',
           client: 'Acme Corp',
           printer: 'HP LaserJet Pro MFP M428fdn',
-          startDate: '2023-04-10',
-          endDate: '2023-06-10',
+          start_date: '2023-04-10',
+          end_date: '2023-06-10',
           status: 'active',
-          signatureUrl: null,
-          agreementUrl: null,
-          inquiryCount: 3,
-          bookingCount: 2,
-          nextAvailableDate: '2023-06-15',
+          signature_url: null,
+          agreement_url: null,
+          inquiry_count: 3,
+          booking_count: 2,
+          next_available_date: '2023-06-15',
+          created_at: '2023-04-10',
+          updated_at: '2023-04-10',
+          created_by: null,
+          notes: null
         },
         { 
           id: '2',
-          printerId: '2',
-          clientId: 'client2',
+          printer_id: '2',
+          client_id: 'client2',
           client: 'TechSolutions Inc',
           printer: 'Brother MFC-L8900CDW',
-          startDate: '2023-03-15',
-          endDate: '2023-05-15',
+          start_date: '2023-03-15',
+          end_date: '2023-05-15',
           status: 'active',
-          signatureUrl: null,
-          agreementUrl: null,
-          inquiryCount: 1,
-          bookingCount: 1,
-          nextAvailableDate: '2023-05-20',
+          signature_url: null,
+          agreement_url: null,
+          inquiry_count: 1,
+          booking_count: 1,
+          next_available_date: '2023-05-20',
+          created_at: '2023-03-15',
+          updated_at: '2023-03-15',
+          created_by: null,
+          notes: null
         },
         { 
           id: '3',
-          printerId: '3',
-          clientId: 'client3',
+          printer_id: '3',
+          client_id: 'client3',
           client: 'Global Services LLC',
           printer: 'Canon imageRUNNER 1643i',
-          startDate: '2023-02-01',
-          endDate: '2023-04-01',
+          start_date: '2023-02-01',
+          end_date: '2023-04-01',
           status: 'completed',
-          signatureUrl: null,
-          agreementUrl: null,
-          inquiryCount: 0,
-          bookingCount: 0,
-          nextAvailableDate: '2023-04-02',
+          signature_url: null,
+          agreement_url: null,
+          inquiry_count: 0,
+          booking_count: 0,
+          next_available_date: '2023-04-02',
+          created_at: '2023-02-01',
+          updated_at: '2023-04-01',
+          created_by: null,
+          notes: null
         },
       ];
       
@@ -193,23 +184,7 @@ export default function Rentals() {
         throw error;
       }
       
-      // Transform the data to match our Printer type
-      const printers: Printer[] = (data || []).map(printer => ({
-        id: printer.id,
-        make: printer.make,
-        series: printer.series,
-        model: printer.model,
-        status: printer.status as 'available' | 'rented' | 'maintenance',
-        ownedBy: printer.owned_by,
-        assignedTo: printer.assigned_to,
-        department: printer.department,
-        location: printer.location,
-        createdAt: printer.created_at,
-        updatedAt: printer.updated_at,
-        isForRent: true, // We're only fetching printers marked for rent
-      }));
-      
-      setAvailablePrinters(printers);
+      setAvailablePrinters(data as Printer[]);
     } catch (error: any) {
       toast({
         title: "Error fetching available printers",
@@ -225,12 +200,12 @@ export default function Rentals() {
           series: 'WorkCentre',
           model: '6515',
           status: 'available',
-          ownedBy: 'system',
+          owned_by: 'system',
           department: 'Sales',
           location: 'Floor 1',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isForRent: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_for_rent: true,
         },
         {
           id: '5',
@@ -238,12 +213,12 @@ export default function Rentals() {
           series: 'WorkForce',
           model: 'WF-7840',
           status: 'available',
-          ownedBy: 'system',
+          owned_by: 'system',
           department: 'Marketing',
           location: 'Floor 2',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isForRent: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_for_rent: true,
         },
       ];
       
@@ -500,9 +475,9 @@ export default function Rentals() {
                       </div>
                       <CardDescription className="text-sm flex items-center">
                         <span>{rental.printer}</span>
-                        {rental.inquiryCount > 0 && (
+                        {rental.inquiry_count > 0 && (
                           <Badge variant="outline" className="ml-2 text-xs">
-                            {rental.inquiryCount} {rental.inquiryCount === 1 ? 'inquiry' : 'inquiries'}
+                            {rental.inquiry_count} {rental.inquiry_count === 1 ? 'inquiry' : 'inquiries'}
                           </Badge>
                         )}
                       </CardDescription>
@@ -511,16 +486,16 @@ export default function Rentals() {
                       <div className="text-sm mb-3">
                         <div className="flex justify-between mb-1">
                           <span className="text-muted-foreground">Start:</span>
-                          <span className="font-medium">{new Date(rental.startDate).toLocaleDateString()}</span>
+                          <span className="font-medium">{new Date(rental.start_date).toLocaleDateString()}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">End:</span>
-                          <span className="font-medium">{new Date(rental.endDate).toLocaleDateString()}</span>
+                          <span className="font-medium">{new Date(rental.end_date).toLocaleDateString()}</span>
                         </div>
                         <div className="flex justify-between mt-1">
                           <span className="text-muted-foreground">Next Available:</span>
-                          <span className="font-medium">{rental.nextAvailableDate ? 
-                            new Date(rental.nextAvailableDate).toLocaleDateString() : 'TBD'}</span>
+                          <span className="font-medium">{rental.next_available_date ? 
+                            new Date(rental.next_available_date).toLocaleDateString() : 'TBD'}</span>
                         </div>
                       </div>
                       <div className="flex justify-between mt-2">
@@ -621,11 +596,11 @@ export default function Rentals() {
                         <div className="text-sm mb-3">
                           <div className="flex justify-between mb-1">
                             <span className="text-muted-foreground">Started:</span>
-                            <span className="font-medium">{new Date(rental.startDate).toLocaleDateString()}</span>
+                            <span className="font-medium">{new Date(rental.start_date).toLocaleDateString()}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Ended:</span>
-                            <span className="font-medium">{new Date(rental.endDate).toLocaleDateString()}</span>
+                            <span className="font-medium">{new Date(rental.end_date).toLocaleDateString()}</span>
                           </div>
                         </div>
                         <Button 
@@ -812,11 +787,11 @@ export default function Rentals() {
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Start Date</TableCell>
-                    <TableCell>{new Date(selectedRental.startDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(selectedRental.start_date).toLocaleDateString()}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">End Date</TableCell>
-                    <TableCell>{new Date(selectedRental.endDate).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(selectedRental.end_date).toLocaleDateString()}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
