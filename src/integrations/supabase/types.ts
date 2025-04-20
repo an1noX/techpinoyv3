@@ -128,6 +128,94 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_records: {
+        Row: {
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          id: string
+          issue_description: string | null
+          parts_used: Json | null
+          printer_id: string | null
+          repair_notes: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["maintenance_status"]
+          technician: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          issue_description?: string | null
+          parts_used?: Json | null
+          printer_id?: string | null
+          repair_notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          technician?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          id?: string
+          issue_description?: string | null
+          parts_used?: Json | null
+          printer_id?: string | null
+          repair_notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          technician?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_reports: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          maintenance_record_id: string | null
+          report_content: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          maintenance_record_id?: string | null
+          report_content: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          maintenance_record_id?: string | null
+          report_content?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_reports_maintenance_record_id_fkey"
+            columns: ["maintenance_record_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_client_assignments: {
         Row: {
           assigned_at: string
@@ -455,7 +543,7 @@ export type Database = {
           },
         ]
       }
-      store_information: {
+      system_settings: {
         Row: {
           address: string | null
           created_at: string | null
@@ -599,6 +687,12 @@ export type Database = {
     }
     Enums: {
       chat_type: "messenger" | "whatsapp" | "custom"
+      maintenance_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "unrepairable"
+        | "decommissioned"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -715,6 +809,13 @@ export const Constants = {
   public: {
     Enums: {
       chat_type: ["messenger", "whatsapp", "custom"],
+      maintenance_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "unrepairable",
+        "decommissioned",
+      ],
     },
   },
 } as const
