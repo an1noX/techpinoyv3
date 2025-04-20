@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Printer } from "@/types/printers";
+import { Printer, PrinterStatus } from "@/types/printers";
 
 export function useRentablePrinters() {
   const [printers, setPrinters] = useState<Printer[]>([]);
@@ -17,14 +17,24 @@ export function useRentablePrinters() {
         .eq("is_for_rent", true)
         .eq("status", "available")
         .eq("owned_by", "system");
+      
       if (!isMounted) return;
+      
       if (error) {
+        console.error("Error fetching rentable printers:", error);
         setPrinters([]);
       } else {
-        setPrinters(data || []);
+        // Transform the data to match the Printer type
+        const typedPrinters: Printer[] = (data || []).map(printer => ({
+          ...printer,
+          // Ensure status is properly typed as PrinterStatus
+          status: printer.status as PrinterStatus,
+        }));
+        setPrinters(typedPrinters);
       }
       setLoading(false);
     }
+    
     fetchPrinters();
     return () => { isMounted = false; };
   }, []);
