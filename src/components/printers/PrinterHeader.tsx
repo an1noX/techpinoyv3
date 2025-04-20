@@ -7,13 +7,19 @@ interface PrinterHeaderProps {
   description?: string;
   showViewAllButton?: boolean;
   onViewAll?: () => void;
+  buttonText?: string;
+  buttonIcon?: React.ReactNode;
+  buttonVariant?: "default" | "outline" | "ghost" | "link";
 }
 
 export function PrinterHeader({
   title,
   description,
   showViewAllButton = true,
-  onViewAll
+  onViewAll,
+  buttonText = "View All Printers",
+  buttonIcon = <ArrowRight className="h-4 w-4" />,
+  buttonVariant = "default"
 }: PrinterHeaderProps) {
   return (
     <div className="text-center mb-8">
@@ -28,9 +34,10 @@ export function PrinterHeader({
         <div className="flex justify-center mt-4">
           <Button 
             onClick={onViewAll} 
+            variant={buttonVariant}
             className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
           >
-            View All Printers <ArrowRight className="h-4 w-4" />
+            {buttonText} {buttonIcon}
           </Button>
         </div>
       )}
