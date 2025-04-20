@@ -14,7 +14,7 @@ export interface Printer {
   client_id?: string;
 }
 
-export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 
 export interface WikiPrinter {
   id: string;

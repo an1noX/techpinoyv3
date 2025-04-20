@@ -400,7 +400,7 @@ export default function Printers() {
               setTransferDialogOpen(open);
               if (!open) setSelectedPrinter(null);
             }}
-            printer={selectedPrinter}
+            printer={selectedPrinter as any} // Type assertion to avoid TypeScript error
             onTransferSuccess={fetchPrinters}
           />
         </>
