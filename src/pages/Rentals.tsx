@@ -33,7 +33,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDistanceToNow, format, addDays } from 'date-fns';
 
-// Config for filter options
 const LOCATIONS = ['Floor 1', 'Floor 2', 'Floor 3', 'Warehouse', 'Client Site'];
 const RENTAL_STATUSES = ['available', 'rented', 'maintenance'];
 const RATE_RANGES = [
@@ -47,7 +46,6 @@ export default function Rentals() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // State management
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [availablePrinters, setAvailablePrinters] = useState<Printer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,13 +65,11 @@ export default function Rentals() {
   const [newStatus, setNewStatus] = useState<'available' | 'maintenance'>('available');
   const [statusNote, setStatusNote] = useState('');
   
-  // Fetch data when component mounts or when activeTab changes
   useEffect(() => {
     fetchRentals();
     fetchAvailablePrinters();
   }, [activeTab]);
   
-  // Fetch rentals from the database
   const fetchRentals = async () => {
     try {
       setLoading(true);
@@ -82,7 +78,6 @@ export default function Rentals() {
         .from('rentals')
         .select('*');
       
-      // Filter by status based on active tab
       if (activeTab === 'active') {
         query = query.eq('status', 'active');
       } else if (activeTab === 'upcoming') {
@@ -105,7 +100,6 @@ export default function Rentals() {
         variant: "destructive"
       });
       
-      // Fallback to mock data if database isn't set up yet
       const mockRentals: Rental[] = [
         { 
           id: '1',
@@ -172,7 +166,6 @@ export default function Rentals() {
     }
   };
   
-  // Fetch available printers that are marked for rent
   const fetchAvailablePrinters = async () => {
     try {
       const { data, error } = await supabase
@@ -192,7 +185,6 @@ export default function Rentals() {
         variant: "destructive"
       });
       
-      // Mock data
       const mockPrinters: Printer[] = [
         {
           id: '4',
@@ -226,14 +218,12 @@ export default function Rentals() {
     }
   };
 
-  // Search and filter functions
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
   
   const getFilteredRentals = () => {
     return rentals.filter(rental => {
-      // Search term filter
       const matchesSearch = (
         (rental.client && rental.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (rental.printer && rental.printer.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -245,7 +235,6 @@ export default function Rentals() {
   
   const getFilteredPrinters = () => {
     return availablePrinters.filter(printer => {
-      // Search term filter
       const matchesSearch = (
         printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
         printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -253,21 +242,17 @@ export default function Rentals() {
         (printer.location && printer.location.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       
-      // Location filter
       const matchesLocation = !filterLocation || 
         (printer.location && printer.location.includes(filterLocation));
         
-      // Status filter
       const matchesStatus = !filterStatus || printer.status === filterStatus;
       
       return matchesSearch && matchesLocation && matchesStatus;
     });
   };
   
-  // Action handlers
   const handleApproveBooking = async (rentalId: string) => {
     try {
-      // Here you would update the status in the database
       toast({
         title: "Booking approved",
         description: "The booking has been approved successfully",
@@ -283,7 +268,6 @@ export default function Rentals() {
   
   const handleRejectBooking = async (rentalId: string) => {
     try {
-      // Here you would update the status in the database
       toast({
         title: "Booking rejected",
         description: "The booking has been rejected",
@@ -297,9 +281,8 @@ export default function Rentals() {
     }
   };
   
-  const handleStatusChange = async (printerId: string) => {
+  const handleStatusChange = async (printer_id: string) => {
     try {
-      // Here you would update the printer status in the database
       toast({
         title: "Printer status updated",
         description: `Printer has been marked as ${newStatus}`,
@@ -315,7 +298,6 @@ export default function Rentals() {
   };
   
   const handleExtendRental = async (rentalId: string) => {
-    // This would open a form/dialog to extend the rental
     toast({
       title: "Extend rental",
       description: "This feature will be implemented soon",
@@ -323,7 +305,6 @@ export default function Rentals() {
   };
   
   const handleViewRentalDetails = (rentalId: string) => {
-    // Navigate to rental details page
     navigate(`/rentals/${rentalId}`);
   };
   
@@ -526,7 +507,6 @@ export default function Rentals() {
           </TabsContent>
           
           <TabsContent value="upcoming" className="mt-4">
-            {/* Similar content to active tab but for upcoming rentals */}
             <div className="flex items-center space-x-2 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -554,7 +534,6 @@ export default function Rentals() {
           </TabsContent>
           
           <TabsContent value="completed" className="mt-4">
-            {/* Similar content to active tab but for completed rentals */}
             <div className="flex items-center space-x-2 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -763,7 +742,6 @@ export default function Rentals() {
         </Tabs>
       </div>
       
-      {/* Booking Request Dialog */}
       <Dialog open={showBookingDialog} onOpenChange={setShowBookingDialog}>
         <DialogContent>
           <DialogHeader>
@@ -820,7 +798,6 @@ export default function Rentals() {
         </DialogContent>
       </Dialog>
       
-      {/* Status Change Dialog */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
         <DialogContent>
           <DialogHeader>

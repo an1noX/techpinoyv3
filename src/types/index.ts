@@ -38,7 +38,17 @@ export interface Client {
   notes: string | null;
   created_at: string;
   updated_at: string;
-  printers?: Printer[]; // Adding this for the join query result
+  printers?: PrinterSummary[]; // Changed to PrinterSummary[] for join query results
+}
+
+// New type for simplified printer data returned in join queries
+export interface PrinterSummary {
+  id: string;
+  make: string;
+  model: string;
+  status: string;
+  location?: string;
+  series?: string;
 }
 
 export interface Profile {

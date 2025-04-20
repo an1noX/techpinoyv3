@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -13,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
-import { Client } from '@/types';
+import { Client, PrinterSummary } from '@/types';
 
 export default function Clients() {
   const navigate = useNavigate();
