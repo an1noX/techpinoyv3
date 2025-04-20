@@ -1,19 +1,19 @@
 
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
 
 export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { session } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!session) {
+    if (!isAuthenticated) {
       navigate('/auth');
     }
-  }, [session, navigate]);
+  }, [isAuthenticated, navigate]);
 
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
 
