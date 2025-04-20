@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import Printers from './pages/Printers';
@@ -32,6 +32,9 @@ function App() {
         <Route path="/auth" element={<Auth />} />
         <Route path="/store" element={<Store />} />
         <Route path="/products" element={<Products />} />
+        
+        {/* Dashboard is the default landing page after login */}
+        <Route path="/dashboard" element={<PrivateRoute><Printers /></PrivateRoute>} />
         
         <Route path="/printers" element={<PrivateRoute><Printers /></PrivateRoute>} />
         <Route path="/printers/:id" element={<PrivateRoute><PrinterDetail /></PrivateRoute>} />

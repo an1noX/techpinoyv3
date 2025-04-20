@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AdminLayoutProps {
@@ -13,16 +13,28 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
   requiredRoles = ['admin', 'owner'] 
 }) => {
   // Use the real authentication context instead of mocked values
-  const { isAuthenticated, hasRole } = useAuth();
+  const { isAuthenticated, hasRole, user } = useAuth();
+  const location = useLocation();
+
+  console.log("AdminLayout - Auth state:", { isAuthenticated, user, currentPath: location.pathname });
 
   // Check if user is authenticated
   if (!isAuthenticated) {
+    console.log("AdminLayout - User not authenticated, redirecting to /auth");
     return <Navigate to="/auth" />;
   }
 
   // Check if user has required role
   const hasRequiredRole = requiredRoles.some(role => hasRole(role));
+  
+  console.log("AdminLayout - Role check:", { 
+    requiredRoles, 
+    hasRequiredRole, 
+    userMetadata: user?.user_metadata 
+  });
+  
   if (!hasRequiredRole) {
+    console.log("AdminLayout - User lacks required role, redirecting to /dashboard");
     return <Navigate to="/dashboard" />;
   }
 
