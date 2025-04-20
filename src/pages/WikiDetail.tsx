@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -8,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Pencil, ArrowLeft, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { TonerCompatibilityManager } from '@/components/TonerCompatibilityManager';
 
 interface WikiPrinter {
   id: string;
@@ -179,10 +179,35 @@ export default function WikiDetail() {
               onValueChange={setActiveTab}
               className="mb-6"
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="specs">Specifications</TabsTrigger>
-                <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+                <TabsTrigger value="toners">Toners</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="details" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Printer Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Make:</span>
+                        <span className="font-medium">{printer.make}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Series:</span>
+                        <span className="font-medium">{printer.series}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Model:</span>
+                        <span className="font-medium">{printer.model}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
               <TabsContent value="specs" className="mt-4">
                 <Card>
@@ -208,36 +233,13 @@ export default function WikiDetail() {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="maintenance" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Maintenance Tips</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {printer.maintenance_tips ? (
-                      <div className="prose max-w-none">
-                        <p>{printer.maintenance_tips}</p>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No maintenance tips available for this printer.
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
+              <TabsContent value="toners" className="mt-4">
+                {printer ? (
+                  <TonerCompatibilityManager printerId={printer.id} />
+                ) : null}
               </TabsContent>
             </Tabs>
             
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Compatible Toners</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-4">
-                  Toner compatibility feature coming soon.
-                </p>
-              </CardContent>
-            </Card>
           </>
         ) : (
           <div className="text-center py-8">

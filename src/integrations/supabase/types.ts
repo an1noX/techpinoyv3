@@ -96,6 +96,45 @@ export type Database = {
           },
         ]
       }
+      printer_toner_compatibility: {
+        Row: {
+          created_at: string
+          id: string
+          printer_wiki_id: string
+          toner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          printer_wiki_id: string
+          toner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          printer_wiki_id?: string
+          toner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_toner_compatibility_printer_wiki_id_fkey"
+            columns: ["printer_wiki_id"]
+            isOneToOne: false
+            referencedRelation: "printer_wiki"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_toner_compatibility_toner_id_fkey"
+            columns: ["toner_id"]
+            isOneToOne: false
+            referencedRelation: "toners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_wiki: {
         Row: {
           created_at: string
