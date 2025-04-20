@@ -9,366 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      client_departments: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_departments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
           company: string | null
-          created_at: string
+          contact_person: string | null
+          created_at: string | null
           email: string | null
           id: string
           name: string
           notes: string | null
           phone: string | null
-          updated_at: string
         }
         Insert: {
           address?: string | null
           company?: string | null
-          created_at?: string
+          contact_person?: string | null
+          created_at?: string | null
           email?: string | null
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
-          updated_at?: string
         }
         Update: {
           address?: string | null
           company?: string | null
-          created_at?: string
+          contact_person?: string | null
+          created_at?: string | null
           email?: string | null
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
-      printer_client_assignments: {
+      printer_wiki_details: {
         Row: {
-          assigned_at: string
-          client_id: string
-          created_at: string
-          created_by: string | null
+          created_at: string | null
           id: string
-          notes: string | null
-          printer_id: string
-          unassigned_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          assigned_at?: string
-          client_id: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          printer_id: string
-          unassigned_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          assigned_at?: string
-          client_id?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          notes?: string | null
-          printer_id?: string
-          unassigned_at?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "printer_client_assignments_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "printer_client_assignments_printer_id_fkey"
-            columns: ["printer_id"]
-            isOneToOne: false
-            referencedRelation: "printers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      printer_wiki: {
-        Row: {
-          created_at: string
-          id: string
-          maintenance_tips: string | null
+          maintenance_recommendations: string | null
           make: string
           model: string
           series: string
-          specs: Json | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          maintenance_tips?: string | null
+          maintenance_recommendations?: string | null
           make: string
           model: string
           series: string
-          specs?: Json | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          maintenance_tips?: string | null
+          maintenance_recommendations?: string | null
           make?: string
           model?: string
           series?: string
-          specs?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      printers: {
-        Row: {
-          assigned_to: string | null
-          client_id: string | null
-          created_at: string
-          department: string | null
-          id: string
-          is_for_rent: boolean | null
-          location: string | null
-          make: string
-          model: string
-          owned_by: string
-          series: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          assigned_to?: string | null
-          client_id?: string | null
-          created_at?: string
-          department?: string | null
-          id?: string
-          is_for_rent?: boolean | null
-          location?: string | null
-          make: string
-          model: string
-          owned_by: string
-          series: string
-          status: string
-          updated_at?: string
-        }
-        Update: {
-          assigned_to?: string | null
-          client_id?: string | null
-          created_at?: string
-          department?: string | null
-          id?: string
-          is_for_rent?: boolean | null
-          location?: string | null
-          make?: string
-          model?: string
-          owned_by?: string
-          series?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "printers_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          department: string | null
-          first_name: string | null
-          id: string
-          last_name: string | null
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          department?: string | null
-          first_name?: string | null
-          id: string
-          last_name?: string | null
-          role?: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          department?: string | null
-          first_name?: string | null
-          id?: string
-          last_name?: string | null
-          role?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      rental_options: {
-        Row: {
-          availability: Json | null
-          cancellation_policy: string | null
-          created_at: string
-          duration_unit: string
-          id: string
-          is_for_rent: boolean | null
-          minimum_duration: number
-          printer_id: string
-          rate_unit: string
-          rental_rate: number
-          security_deposit: number
-          terms: string | null
-          updated_at: string
-        }
-        Insert: {
-          availability?: Json | null
-          cancellation_policy?: string | null
-          created_at?: string
-          duration_unit: string
-          id?: string
-          is_for_rent?: boolean | null
-          minimum_duration: number
-          printer_id: string
-          rate_unit: string
-          rental_rate: number
-          security_deposit: number
-          terms?: string | null
-          updated_at?: string
-        }
-        Update: {
-          availability?: Json | null
-          cancellation_policy?: string | null
-          created_at?: string
-          duration_unit?: string
-          id?: string
-          is_for_rent?: boolean | null
-          minimum_duration?: number
-          printer_id?: string
-          rate_unit?: string
-          rental_rate?: number
-          security_deposit?: number
-          terms?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rental_options_printer_id_fkey"
-            columns: ["printer_id"]
-            isOneToOne: false
-            referencedRelation: "printers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      rentals: {
-        Row: {
-          agreement_url: string | null
-          booking_count: number | null
-          client: string
-          client_id: string | null
-          created_at: string
-          end_date: string
-          id: string
-          inquiry_count: number | null
-          next_available_date: string | null
-          printer: string
-          printer_id: string | null
-          signature_url: string | null
-          start_date: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          agreement_url?: string | null
-          booking_count?: number | null
-          client: string
-          client_id?: string | null
-          created_at?: string
-          end_date: string
-          id?: string
-          inquiry_count?: number | null
-          next_available_date?: string | null
-          printer: string
-          printer_id?: string | null
-          signature_url?: string | null
-          start_date: string
-          status: string
-          updated_at?: string
-        }
-        Update: {
-          agreement_url?: string | null
-          booking_count?: number | null
-          client?: string
-          client_id?: string | null
-          created_at?: string
-          end_date?: string
-          id?: string
-          inquiry_count?: number | null
-          next_available_date?: string | null
-          printer?: string
-          printer_id?: string | null
-          signature_url?: string | null
-          start_date?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "rentals_printer_id_fkey"
-            columns: ["printer_id"]
-            isOneToOne: false
-            referencedRelation: "printers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      toners: {
-        Row: {
-          brand: string
-          color: string
-          compatible_printers: Json | null
-          created_at: string
-          id: string
-          model: string
-          page_yield: number
-          stock: number
-          threshold: number
-          updated_at: string
-        }
-        Insert: {
-          brand: string
-          color: string
-          compatible_printers?: Json | null
-          created_at?: string
-          id?: string
-          model: string
-          page_yield: number
-          stock?: number
-          threshold?: number
-          updated_at?: string
-        }
-        Update: {
-          brand?: string
-          color?: string
-          compatible_printers?: Json | null
-          created_at?: string
-          id?: string
-          model?: string
-          page_yield?: number
-          stock?: number
-          threshold?: number
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -380,7 +115,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role:
+        | "admin"
+        | "user"
+        | "client"
+        | "technician"
+        | "manager"
+        | "owner"
+        | "client_admin"
+        | "client_user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -495,6 +238,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: [
+        "admin",
+        "user",
+        "client",
+        "technician",
+        "manager",
+        "owner",
+        "client_admin",
+        "client_user",
+      ],
+    },
   },
 } as const
