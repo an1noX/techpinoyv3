@@ -53,8 +53,11 @@ export const AssignPrinterDialog: React.FC<AssignPrinterDialogProps> = ({
     if (!error && data) setDepartments(data);
   };
 
+  // Since we don't have client_id field in departments,
+  // we're using this as a placeholder until your database structure is updated
+  // In a real implementation, you would filter departments by client_id
   const filteredDepartments = selectedClient
-    ? departments.filter((d) => d.id === selectedClient)
+    ? departments
     : [];
 
   const handleAssign = async () => {
