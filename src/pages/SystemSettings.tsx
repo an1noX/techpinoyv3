@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +19,6 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Json, MaintenanceSettings } from '@/types/settings';
 
 const generalSettingsSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -28,15 +26,6 @@ const generalSettingsSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   logoUrl: z.string().optional(),
-});
-
-const maintenanceSettingsSchema = z.object({
-  enableScheduledMaintenance: z.boolean().default(false),
-  defaultMaintenancePeriod: z.number().min(1).default(90),
-  notifyBeforeDays: z.number().min(1).default(7),
-  defaultTechnicians: z.string().optional(),
-  autoGenerateReports: z.boolean().default(false),
-  maintenanceInstructions: z.string().optional(),
 });
 
 interface SystemSettingsType {
@@ -51,7 +40,6 @@ interface SystemSettingsType {
   social_media?: any;
   created_at?: string;
   updated_at?: string;
-  maintenance_settings?: MaintenanceSettings;
 }
 
 export default function SystemSettings() {
@@ -67,18 +55,6 @@ export default function SystemSettings() {
       phone: '',
       address: '',
       logoUrl: '',
-    },
-  });
-
-  const maintenanceForm = useForm<z.infer<typeof maintenanceSettingsSchema>>({
-    resolver: zodResolver(maintenanceSettingsSchema),
-    defaultValues: {
-      enableScheduledMaintenance: false,
-      defaultMaintenancePeriod: 90,
-      notifyBeforeDays: 7,
-      defaultTechnicians: '',
-      autoGenerateReports: false,
-      maintenanceInstructions: '',
     },
   });
 
@@ -109,17 +85,6 @@ export default function SystemSettings() {
           address: data.address || '',
           logoUrl: '',
         });
-
-        if (data.maintenance_settings) {
-          maintenanceForm.reset({
-            enableScheduledMaintenance: data.maintenance_settings.enableScheduledMaintenance || false,
-            defaultMaintenancePeriod: data.maintenance_settings.defaultMaintenancePeriod || 90,
-            notifyBeforeDays: data.maintenance_settings.notifyBeforeDays || 7,
-            defaultTechnicians: data.maintenance_settings.defaultTechnicians || '',
-            autoGenerateReports: data.maintenance_settings.autoGenerateReports || false,
-            maintenanceInstructions: data.maintenance_settings.maintenanceInstructions || '',
-          });
-        }
       }
     } catch (error: any) {
       toast({
@@ -170,55 +135,6 @@ export default function SystemSettings() {
     }
   };
 
-  const handleMaintenanceSubmit = async (values: z.infer<typeof maintenanceSettingsSchema>) => {
-    try {
-      const maintenanceSettings: MaintenanceSettings = {
-        enableScheduledMaintenance: values.enableScheduledMaintenance,
-        defaultMaintenancePeriod: values.defaultMaintenancePeriod || 90,
-        notifyBeforeDays: values.notifyBeforeDays || 7, 
-        defaultTechnicians: values.defaultTechnicians || '',
-        autoGenerateReports: values.autoGenerateReports,
-        maintenanceInstructions: values.maintenanceInstructions || '',
-      };
-
-      let operation;
-      if (settings?.id) {
-        const updatedData: Partial<SystemSettingsType> = {
-          maintenance_settings: maintenanceSettings
-        };
-
-        operation = supabase
-          .from('system_settings')
-          .update(updatedData)
-          .eq('id', settings.id);
-      } else {
-        const newData: SystemSettingsType = {
-          store_name: 'Default Company',
-          maintenance_settings: maintenanceSettings
-        };
-        
-        operation = supabase
-          .from('system_settings')
-          .insert([newData]);
-      }
-
-      const { error } = await operation;
-      if (error) throw error;
-
-      toast({
-        title: "Maintenance settings updated",
-        description: "Your maintenance settings have been saved successfully.",
-      });
-      fetchSettings();
-    } catch (error: any) {
-      toast({
-        title: "Error saving maintenance settings",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
   if (loading) {
     return (
       <MobileLayout>
@@ -237,9 +153,8 @@ export default function SystemSettings() {
         <h1 className="text-2xl font-bold mb-6">System Settings</h1>
 
         <Tabs defaultValue="general" className="mb-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="w-full">
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-4">
@@ -313,147 +228,6 @@ export default function SystemSettings() {
                 </Card>
 
                 <Button type="submit">Save General Settings</Button>
-              </form>
-            </Form>
-          </TabsContent>
-
-          <TabsContent value="maintenance" className="mt-4">
-            <Form {...maintenanceForm}>
-              <form onSubmit={maintenanceForm.handleSubmit(handleMaintenanceSubmit)} className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Maintenance Configuration</CardTitle>
-                    <CardDescription>Configure settings for printer maintenance and repairs.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={maintenanceForm.control}
-                      name="enableScheduledMaintenance"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Enable Scheduled Maintenance
-                            </FormLabel>
-                            <FormDescription>
-                              Automatically track and notify when printers need maintenance
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    {maintenanceForm.watch("enableScheduledMaintenance") && (
-                      <>
-                        <FormField
-                          control={maintenanceForm.control}
-                          name="defaultMaintenancePeriod"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Default Maintenance Period (days)</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                              </FormControl>
-                              <FormDescription>
-                                How often printers should be scheduled for maintenance by default
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={maintenanceForm.control}
-                          name="notifyBeforeDays"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Notification Lead Time (days)</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                              </FormControl>
-                              <FormDescription>
-                                Days before scheduled maintenance to send a notification
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </>
-                    )}
-
-                    <FormField
-                      control={maintenanceForm.control}
-                      name="defaultTechnicians"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default Technicians</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Enter technician names, separated by commas" 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            List of technicians available for maintenance assignments
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={maintenanceForm.control}
-                      name="autoGenerateReports"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              Auto-Generate Reports
-                            </FormLabel>
-                            <FormDescription>
-                              Automatically generate and save reports after maintenance is completed
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={maintenanceForm.control}
-                      name="maintenanceInstructions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default Maintenance Instructions</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Enter standard maintenance instructions or protocols" 
-                              className="min-h-[150px]"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Default instructions to be included in maintenance tasks
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Button type="submit">Save Maintenance Settings</Button>
               </form>
             </Form>
           </TabsContent>
