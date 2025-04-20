@@ -70,10 +70,15 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       const toners = data
         .filter(item => item.toners !== null)
         .map(item => {
-          const toner = item.toners as TonerType;
+          const toner = item.toners as any;
+          // Ensure aliases is always an array of strings
+          const aliases = Array.isArray(toner.aliases) 
+            ? toner.aliases.map((alias: any) => String(alias))
+            : [];
+          
           return {
             ...toner,
-            aliases: Array.isArray(toner.aliases) ? toner.aliases : []
+            aliases
           };
         });
 
@@ -101,10 +106,18 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       const compatibleTonerIds = compatibleToners.map(t => t.id);
       const filteredData = data.filter(toner => !compatibleTonerIds.includes(toner.id));
 
-      const processedData = filteredData.map(toner => ({
-        ...toner,
-        aliases: Array.isArray(toner.aliases) ? toner.aliases : []
-      }));
+      // Ensure all toner aliases are properly processed to be string arrays
+      const processedData = filteredData.map(toner => {
+        // Ensure aliases is always an array of strings
+        const aliases = Array.isArray(toner.aliases) 
+          ? toner.aliases.map((alias: any) => String(alias))
+          : [];
+        
+        return {
+          ...toner,
+          aliases
+        };
+      });
 
       setAvailableToners(processedData);
       setAddTonerDialogOpen(true);

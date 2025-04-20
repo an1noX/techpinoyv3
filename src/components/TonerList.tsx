@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Edit2, X, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -57,11 +58,24 @@ export function TonerList() {
 
       if (error) throw error;
 
-      // Ensure aliases is always an array
-      const processedData = (data || []).map(toner => ({
-        ...toner,
-        aliases: Array.isArray(toner.aliases) ? toner.aliases : []
-      }));
+      // Process data to ensure all fields are correctly typed
+      const processedData = (data || []).map(toner => {
+        // Ensure aliases is always an array of strings
+        const aliases = Array.isArray(toner.aliases) 
+          ? toner.aliases.map((alias: any) => String(alias))
+          : [];
+          
+        // Ensure variant_details is a proper record or null
+        const variant_details = typeof toner.variant_details === 'object' 
+          ? toner.variant_details 
+          : null;
+        
+        return {
+          ...toner,
+          aliases,
+          variant_details
+        };
+      });
 
       setToners(processedData);
     } catch (error: any) {

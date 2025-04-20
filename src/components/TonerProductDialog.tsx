@@ -85,11 +85,18 @@ export function TonerProductDialog({
 
       if (error) throw error;
       
-      // Process data to ensure aliases is always an array
-      const processedData = (data || []).map(toner => ({
-        ...toner,
-        aliases: Array.isArray(toner.aliases) ? toner.aliases : []
-      }));
+      // Process data to ensure all fields are correctly typed
+      const processedData = (data || []).map(toner => {
+        // Ensure aliases is always an array of strings
+        const aliases = Array.isArray(toner.aliases) 
+          ? toner.aliases.map((alias: any) => String(alias))
+          : [];
+        
+        return {
+          ...toner,
+          aliases
+        };
+      });
       
       setOEMToners(processedData);
     } catch (error: any) {
@@ -106,7 +113,14 @@ export function TonerProductDialog({
       setLoading(true);
       
       const productData = {
-        ...values,
+        sku: values.sku,
+        name: values.name,
+        description: values.description,
+        price: values.price,
+        stock_level: values.stock_level,
+        reorder_point: values.reorder_point,
+        category: values.category,
+        toner_id: values.toner_id,
         is_active: true
       };
 
