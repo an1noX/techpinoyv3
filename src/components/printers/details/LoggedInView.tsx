@@ -1,7 +1,7 @@
 
 import { PrinterType, TransferLogType, MaintenanceLogType, TonerType } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { PrinterDetailsTab } from "../tabs/details/PrinterDetailsTab";
 import { PrinterTransferTab } from "../tabs/PrinterTransferTab";
 import { PrinterHistoryTab } from "../tabs/PrinterHistoryTab";
