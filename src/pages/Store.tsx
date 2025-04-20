@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductDetailsDialog } from "@/components/products/ProductDetailsDialog";
 import { HomeHeader } from "@/components/layout/HomeHeader";
@@ -17,6 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StaticSettingsProvider, useStaticSettings } from "@/context/StaticSettingsContext";
 import { supabase } from "@/integrations/supabase/client";
+import { seedTonerProducts } from "@/utils/seedToners";
 
 // Enhanced static product interface, now matching the DB
 export interface EnhancedTonerType {
@@ -69,7 +69,10 @@ const StoreContent = () => {
     const fetchProducts = async () => {
       setLoadingProducts(true);
       try {
-        // Assumes a "sold_count" field exists (if not, will display as 0)
+        // Seed products if needed (for development)
+        await seedTonerProducts();
+        
+        // Fetch from commercial_toner_products table
         const { data, error } = await supabase
           .from("commercial_toner_products")
           .select(`
@@ -94,12 +97,12 @@ const StoreContent = () => {
     fetchProducts();
   }, []);
 
-  // Most sold products for Popular section
+  // Most sold products for Popular section - sort by sold_count
   const popularProducts = [...products]
     .sort((a, b) => (b.sold_count ?? 0) - (a.sold_count ?? 0))
     .slice(0, 4);
 
-  // Newly added products for New Releases section
+  // Newly added products for New Releases section - sort by created_at
   const newReleases = [...products]
     .sort((a, b) => {
       if (a.created_at && b.created_at) {

@@ -4,18 +4,70 @@ import { Search, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PrinterFinderCompact() {
   const [query, setQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const navigate = useNavigate();
   
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      // Using static content instead of navigation
-      toast.success(`Searching for "${query}" - This is a static demo`);
+    if (!query.trim()) return;
+    
+    setIsSearching(true);
+    
+    try {
+      // Search for printers in the Wiki
+      const { data: printerData, error: printerError } = await supabase
+        .from('printer_wiki')
+        .select('*')
+        .or(`make.ilike.%${query}%,model.ilike.%${query}%,series.ilike.%${query}%`)
+        .limit(3);
       
-      // Reset form
-      setQuery("");
+      if (printerError) throw printerError;
+      
+      // Search for toners by name or model
+      const { data: tonerData, error: tonerError } = await supabase
+        .from('commercial_toner_products')
+        .select(`
+          *,
+          toner:toners (
+            id,
+            brand,
+            model,
+            color
+          )
+        `)
+        .or(`name.ilike.%${query}%,sku.ilike.%${query}%`)
+        .limit(3);
+      
+      if (tonerError) throw tonerError;
+      
+      // Determine search result priority
+      if (printerData && printerData.length > 0) {
+        // Found a printer - navigate to a product page with filtered printers
+        navigate(`/products?printer=${encodeURIComponent(printerData[0].id)}`);
+        toast.success(`Found printer: ${printerData[0].make} ${printerData[0].model}`);
+      } else if (tonerData && tonerData.length > 0) {
+        // Found a toner - navigate to a product page with filtered toners
+        navigate(`/products?toner=${encodeURIComponent(query)}`);
+        toast.success(`Found toner: ${tonerData[0].name}`);
+      } else {
+        // No exact matches found - navigate to search results page
+        navigate(`/products?search=${encodeURIComponent(query)}`);
+        toast.info(`Searching for "${query}"`);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error("Search failed. Please try again.");
+      
+      // Still navigate to search results with the query
+      navigate(`/products?search=${encodeURIComponent(query)}`);
+    } finally {
+      setIsSearching(false);
+      setQuery(""); // Reset the search input
     }
   };
   
@@ -23,17 +75,17 @@ export function PrinterFinderCompact() {
     <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 rounded-lg shadow-md">
       <div className="flex items-center gap-2 mb-3">
         <Printer className="h-5 w-5 text-white" />
-        <h3 className="text-lg font-semibold text-white">Find Your Printer</h3>
+        <h3 className="text-lg font-semibold text-white">Find Your Supplies</h3>
       </div>
       
       <p className="text-sm text-teal-50 mb-4">
-        Search for your printer model to find compatible supplies
+        Search by printer model or toner number
       </p>
       
       <form onSubmit={handleSearch} className="flex flex-col gap-2">
         <Input
           type="text"
-          placeholder="Enter printer model (e.g., HP LaserJet Pro)"
+          placeholder="Printer model or toner number"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="w-full bg-white/90 border-0 focus:ring-2 focus:ring-yellow-300"
@@ -42,9 +94,10 @@ export function PrinterFinderCompact() {
         <Button 
           type="submit" 
           className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
+          disabled={isSearching}
         >
           <Search className="h-4 w-4 mr-2" />
-          Find My Printer
+          {isSearching ? "Searching..." : "Find Supplies"}
         </Button>
       </form>
     </div>
