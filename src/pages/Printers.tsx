@@ -270,53 +270,71 @@ export default function Printers() {
               <Card key={printer.id} className="overflow-hidden">
                 <CardHeader className="p-4 pb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1">
-                    <CardTitle className="text-lg flex flex-col sm:flex-row sm:items-center gap-0.5">
-                      <span>
-                        {printer.make} {printer.model} {getClientDisplay(printer)}
-                      </span>
-                      <span className="text-xs ml-2 px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
+                    <CardTitle className="text-lg flex flex-wrap gap-1 items-center">
+                      <span className="font-semibold text-[#004165]">{printer.model}</span>
+                      {printer.make && (
+                        <span className="ml-1 text-xs bg-blue-50 text-blue-800 px-2 rounded font-normal">
+                          {printer.make}
+                        </span>
+                      )}
+                      {getClientDisplay(printer) && (
+                        <span className="ml-2 text-xs bg-green-50 text-green-800 px-2 rounded font-normal">
+                          {getClientDisplay(printer)}
+                        </span>
+                      )}
+                      <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
                         {getOwnershipLabel(printer)}
                       </span>
                     </CardTitle>
-                    <div className="mt-1 flex gap-4 items-center flex-wrap">
+                    <div className="mt-2 flex gap-4 items-center flex-wrap">
                       <span className="text-xs text-muted-foreground font-semibold">{getTonerName(printer)}</span>
                       {printer.department && (
                         <span className="text-xs font-medium capitalize text-gray-800">{printer.department}</span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {printer.location && (
-                        <span className="mr-2">Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 min-w-fit">
-                    <div className="flex items-center mb-1">
-                      <div className="mr-2 flex items-center">
-                        <button
-                          className={`relative w-9 h-5 focus:outline-none rounded-full border ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? 'bg-green-500 border-green-500' : 'bg-gray-200 border-gray-200') : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'}`}
-                          style={{ transition: 'background 0.2s' }}
-                          disabled={!forRentToggleEnabled(printer)}
-                          aria-pressed={printer.is_for_rent}
-                          onClick={() => {
-                            if (forRentToggleEnabled(printer)) {
-                              handleToggleForRent(printer, !printer.is_for_rent);
-                            }
-                          }}
-                          tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
-                        >
-                          <span
-                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? 'translate-x-4' : ''}`}
-                          ></span>
-                        </button>
+                    {printer.location && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        <span>Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
                       </div>
+                    )}
+                  </div>
+
+                  <div className="px-4 pt-2 pb-2 flex items-center gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <span className="text-xs font-medium">For Rent</span>
+                      <button
+                        className={`relative w-9 h-5 focus:outline-none rounded-full border transition-colors duration-200
+                         ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? "bg-green-500 border-green-500" : "bg-gray-200 border-gray-200") : "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"}`}
+                        disabled={!forRentToggleEnabled(printer)}
+                        aria-pressed={printer.is_for_rent}
+                        onClick={() => {
+                          if (forRentToggleEnabled(printer)) {
+                            handleToggleForRent(printer, !printer.is_for_rent);
+                          }
+                        }}
+                        tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
+                      >
+                        <span
+                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? "translate-x-4" : ""}`}
+                          style={{
+                            boxShadow: printer.is_for_rent
+                              ? "0 2px 4px 0 rgba(34,197,94,0.15)"
+                              : "0 1px 3px 0 rgba(0,0,0,0.04)",
+                          }}
+                        />
+                      </button>
+                      <span className={`ml-2 text-xs font-semibold transition-colors duration-200 ${printer.is_for_rent ? "text-green-600" : "text-gray-400"}`}>
+                        {printer.is_for_rent ? "Active" : "Inactive"}
+                      </span>
+                    </label>
+                    <div className="flex-1 flex justify-end pr-2">
                       <PrinterStatusBadge status={printer.status} />
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="py-4">
-                  <div className="flex flex-wrap gap-2 mt-2 justify-between">
-                    <div className="flex gap-2 flex-wrap w-full">
+                <CardContent className="pb-4 pt-2">
+                  <div className="flex flex-col sm:flex-row flex-wrap sm:justify-between gap-2 mt-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                       <Button 
                         size="sm"
                         variant="outline"
