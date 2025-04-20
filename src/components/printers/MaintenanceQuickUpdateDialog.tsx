@@ -72,10 +72,10 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
           ? customError
           : PREDEFINED_ERRORS.find((e) => e.key === selectedError)?.label,
       repair_notes: getSolution(),
-      status: "completed",
+      status: "completed" as const, // Use type assertion to match the enum type
     };
 
-    const { error } = await supabase.from("maintenance_records").insert([maintenanceData]);
+    const { error } = await supabase.from("maintenance_records").insert(maintenanceData);
 
     setSubmitting(false);
 
@@ -88,7 +88,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
     } else {
       toast({
         title: "Maintenance record added!",
-        variant: "success",
+        variant: "default", // Changed from 'success' to 'default'
       });
       onOpenChange(false);
       if (onSuccess) onSuccess();

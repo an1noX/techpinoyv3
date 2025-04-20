@@ -47,7 +47,10 @@ export const usePrintersWithStatus = () => {
       );
     }
 
-    const merged = printerData.map((p: Printer) => ({
+    // Type assertion to ensure the data is treated as Printer[]
+    const printersWithTypes = printerData as unknown as Printer[];
+    
+    const merged = printersWithTypes.map((p: Printer) => ({
       ...p,
       maintenanceStatus: statusMap[p.id] || "not_tracked",
     }));
