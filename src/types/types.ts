@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export type { Json };
@@ -123,8 +122,9 @@ export interface CommercialTonerProduct {
   toner_id: string;
   created_at: string;
   updated_at: string;
-  // Join data when querying with toner reference
-  toner?: Partial<OEMToner>; // Changed to Partial to make it more flexible
+  // Modify the toner property to be optional and a Partial<OEMToner>
+  // This makes it more flexible to handle the shape of data returned from Supabase
+  toner?: Partial<OEMToner>; 
 }
 
 // For creating new OEM toner references

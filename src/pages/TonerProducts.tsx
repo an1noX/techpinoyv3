@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TonerProductDialog } from '@/components/TonerProductDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CommercialTonerProduct } from '@/types';
+import { CommercialTonerProduct } from '@/types/types';
 
 export default function TonerProducts() {
   const { toast } = useToast();
@@ -39,7 +40,15 @@ export default function TonerProducts() {
         .order('name');
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Explicitly cast the data to CommercialTonerProduct[] to ensure type safety
+      const typedData = data?.map(item => ({
+        ...item,
+        category: Array.isArray(item.category) ? item.category : [],
+        toner: item.toner || null
+      })) as CommercialTonerProduct[];
+      
+      setProducts(typedData || []);
     } catch (error: any) {
       toast({
         title: "Error fetching products",
@@ -92,7 +101,7 @@ export default function TonerProducts() {
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.toner as any)?.model.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.toner as any)?.model?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
