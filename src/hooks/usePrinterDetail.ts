@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Printer, Client } from '@/types/printers';
 import { supabase } from '@/integrations/supabase/client';
