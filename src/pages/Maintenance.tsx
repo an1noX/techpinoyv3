@@ -20,9 +20,11 @@ export default function Maintenance() {
   const { printers, loading, refetch } = usePrintersWithStatus();
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState<string>("quick-update");
 
-  const handleQuickUpdate = (printer: Printer) => {
+  const openDialog = (printer: Printer, tab: string) => {
     setSelectedPrinter(printer);
+    setDialogTab(tab);
     setDialogOpen(true);
   };
 
@@ -78,7 +80,7 @@ export default function Maintenance() {
               </CardHeader>
               <CardContent className="p-4 pt-1">
                 <div className="text-xs text-muted-foreground flex flex-wrap gap-4 mb-3">
-                  <span>SN: {printer.serialNumber ?? "N/A"}</span>
+                  <span>SN: {printer.serialNumber ?? printer.serial_number ?? "N/A"}</span>
                   <span>
                     Owner: {printer.owned_by === "client" ? 
                       `Client (${printer.assigned_to || "Unassigned"})` : 
@@ -89,12 +91,30 @@ export default function Maintenance() {
                 <div className="flex flex-wrap gap-2 mt-3">
                   <Button 
                     size="sm" 
-                    variant="default"
+                    variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => handleQuickUpdate(printer)}
+                    onClick={() => openDialog(printer, "quick-update")}
                   >
                     <Wrench className="h-4 w-4" />
-                    <span>Manage</span>
+                    <span>Quick Update</span>
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                    onClick={() => openDialog(printer, "generate-report")}
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Generate Service Report</span>
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-1"
+                    onClick={() => openDialog(printer, "mark-repaired")}
+                  >
+                    <Check className="h-4 w-4" />
+                    <span>Repaired</span>
                   </Button>
                 </div>
               </CardContent>
@@ -114,6 +134,7 @@ export default function Maintenance() {
           }}
           printer={selectedPrinter}
           onSuccess={refetch}
+          initialTab={dialogTab}
         />
       )}
 

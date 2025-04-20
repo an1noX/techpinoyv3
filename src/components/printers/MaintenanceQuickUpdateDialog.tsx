@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ interface MaintenanceQuickUpdateDialogProps {
   onOpenChange: (open: boolean) => void;
   printer: Printer;
   onSuccess?: () => void;
+  initialTab?: string;
 }
 
 export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialogProps> = ({
@@ -43,14 +44,19 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
   onOpenChange,
   printer,
   onSuccess,
+  initialTab,
 }) => {
-  const [activeTab, setActiveTab] = useState<string>("quick-update");
+  const [activeTab, setActiveTab] = useState<string>(initialTab || "quick-update");
   const [selectedError, setSelectedError] = useState<ErrorKey | null>(null);
   const [customError, setCustomError] = useState("");
   const [customSolution, setCustomSolution] = useState("");
   const [reportNotes, setReportNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab, open]);
 
   const getSolution = () => {
     if (selectedError === "custom") return customSolution;
@@ -105,7 +111,6 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       });
       onOpenChange(false);
       if (onSuccess) onSuccess();
-      // Reset state
       setSelectedError(null);
       setCustomError("");
       setCustomSolution("");
@@ -178,16 +183,24 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       return;
     }
 
-    // Then update the printer status
+    // Then update the printer status & notes (if supported)
+    const prevStatus = printer.status;
+    const prevNotes =
+      "notes" in printer
+        ? (printer as any).notes
+        : undefined;
+    const newNotes = prevNotes
+      ? `${prevNotes}\nPreviously in ${prevStatus} status, marked as repaired on ${new Date().toLocaleDateString()}`
+      : `Previously in ${prevStatus} status, marked as repaired on ${new Date().toLocaleDateString()}`;
+
+    const updateObj: Record<string, any> = {
+      status: "available",
+    };
+    if ("notes" in printer) updateObj.notes = newNotes;
+
     const { error: updateError } = await supabase
       .from("printers")
-      .update({ 
-        status: "available",
-        // Add a note about previous status
-        notes: printer.notes ? 
-          `${printer.notes}\nPreviously in ${printer.status} status, marked as repaired on ${new Date().toLocaleDateString()}` : 
-          `Previously in ${printer.status} status, marked as repaired on ${new Date().toLocaleDateString()}`
-      })
+      .update(updateObj)
       .eq("id", printer.id);
 
     setSubmitting(false);
