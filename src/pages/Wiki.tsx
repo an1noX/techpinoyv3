@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -6,7 +5,9 @@ import { Fab } from '@/components/ui/fab';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TonerList } from '@/components/TonerList';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WikiPrinter } from '@/types';
@@ -17,6 +18,7 @@ export default function Wiki() {
   const [printers, setPrinters] = useState<WikiPrinter[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('printers');
   
   useEffect(() => {
     fetchPrinters();
@@ -82,20 +84,6 @@ export default function Wiki() {
     }
   };
   
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-  
-  const filteredPrinters = printers.filter(printer => 
-    printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.series.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleViewPrinterDetails = (printerId: string) => {
-    navigate(`/wiki/${printerId}`);
-  };
-  
   const handleAddPrinter = () => {
     navigate('/wiki/new');
   };
@@ -103,11 +91,13 @@ export default function Wiki() {
   return (
     <MobileLayout
       fab={
-        <Fab 
-          icon={<Plus size={24} />} 
-          aria-label="Add printer to wiki" 
-          onClick={handleAddPrinter}
-        />
+        activeTab === 'printers' ? (
+          <Fab 
+            icon={<Plus size={24} />} 
+            aria-label="Add printer to wiki" 
+            onClick={handleAddPrinter}
+          />
+        ) : null
       }
     >
       <div className="container px-4 py-4">
@@ -119,57 +109,76 @@ export default function Wiki() {
         </div>
         
         <p className="text-sm text-muted-foreground mb-4">
-          This is the master list of all printer models. New printers can only be created here.
+          Manage printer models and compatible toners in the Wiki database.
         </p>
         
-        <div className="flex items-center space-x-2 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search printers..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </div>
-          <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-            <Filter className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          </div>
-        ) : filteredPrinters.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No printers found</p>
-            <Button className="mt-4" onClick={handleAddPrinter}>Add Printer to Wiki</Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredPrinters.map((printer) => (
-              <Card key={printer.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-sm text-muted-foreground">Series: {printer.series}</p>
-                  <div className="flex justify-between mt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleViewPrinterDetails(printer.id)}
-                    >
-                      Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className="w-full justify-start">
+            <TabsTrigger value="printers">Printers</TabsTrigger>
+            <TabsTrigger value="toners">OEM Toners</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="printers" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search printers..."
+                  className="pl-8"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
+                <Filter className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : printers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No printers found</p>
+                <Button className="mt-4" onClick={handleAddPrinter}>Add Printer to Wiki</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {printers
+                  .filter(printer => 
+                    printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    printer.series.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map((printer) => (
+                    <Card key={printer.id} className="overflow-hidden">
+                      <CardHeader className="p-4 pb-2">
+                        <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="text-sm text-muted-foreground">Series: {printer.series}</p>
+                        <div className="flex justify-between mt-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/wiki/${printer.id}`)}
+                          >
+                            Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="toners">
+            <TonerList />
+          </TabsContent>
+        </Tabs>
       </div>
     </MobileLayout>
   );
