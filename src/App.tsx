@@ -7,7 +7,7 @@ import Printers from './pages/Printers';
 import PrinterDetail from './pages/PrinterDetail';
 import Clients from './pages/Clients';
 import Auth from './pages/Auth';
-import PrivateRoute from './components/PrivateRoute';
+import { PrivateRoute } from './components/PrivateRoute';
 import Profile from './pages/Profile';
 import Products from './pages/Products';
 import Store from './pages/Store';
@@ -33,27 +33,25 @@ function App() {
         <Route path="/store" element={<Store />} />
         <Route path="/products" element={<Products />} />
         
-        <Route element={<PrivateRoute />}>
-          <Route path="/printers" element={<Printers />} />
-          <Route path="/printers/:id" element={<PrinterDetail />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/toner-products" element={<TonerProducts />} />
-          <Route path="/toners" element={<Toners />} />
-          <Route path="/wiki" element={<Wiki />} />
-          <Route path="/wiki/:id" element={<WikiDetail />} />
-          <Route path="/wiki/new" element={<WikiCreateEdit />} />
-          <Route path="/wiki/edit/:id" element={<WikiCreateEdit />} />
-          <Route path="/rentals" element={<Rentals />} />
-          <Route path="/rentals/:id" element={<RentalDetail />} />
-          <Route path="/rentals/new" element={<RentalCreate />} />
-          <Route path="/settings" element={<SystemSettings />} />
-          <Route path="/maintenance" element={<MaintenanceList />} />
-          <Route path="/maintenance/:id" element={<MaintenanceDetail />} />
-          <Route path="/maintenance/new" element={<MaintenanceEdit />} />
-          <Route path="/maintenance/new/:printerId" element={<MaintenanceEdit />} />
-          <Route path="/maintenance/edit/:id" element={<MaintenanceEdit />} />
-        </Route>
+        <Route path="/printers" element={<PrivateRoute><Printers /></PrivateRoute>} />
+        <Route path="/printers/:id" element={<PrivateRoute><PrinterDetail /></PrivateRoute>} />
+        <Route path="/clients" element={<PrivateRoute><Clients /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route path="/toner-products" element={<PrivateRoute><TonerProducts /></PrivateRoute>} />
+        <Route path="/toners" element={<PrivateRoute><Toners /></PrivateRoute>} />
+        <Route path="/wiki" element={<PrivateRoute><Wiki /></PrivateRoute>} />
+        <Route path="/wiki/:id" element={<PrivateRoute><WikiDetail /></PrivateRoute>} />
+        <Route path="/wiki/new" element={<PrivateRoute><WikiCreateEdit /></PrivateRoute>} />
+        <Route path="/wiki/edit/:id" element={<PrivateRoute><WikiCreateEdit /></PrivateRoute>} />
+        <Route path="/rentals" element={<PrivateRoute><Rentals /></PrivateRoute>} />
+        <Route path="/rentals/:id" element={<PrivateRoute><RentalDetail /></PrivateRoute>} />
+        <Route path="/rentals/new" element={<PrivateRoute><RentalCreate /></PrivateRoute>} />
+        <Route path="/settings" element={<PrivateRoute><SystemSettings /></PrivateRoute>} />
+        <Route path="/maintenance" element={<PrivateRoute><MaintenanceList /></PrivateRoute>} />
+        <Route path="/maintenance/:id" element={<PrivateRoute><MaintenanceDetail /></PrivateRoute>} />
+        <Route path="/maintenance/new" element={<PrivateRoute><MaintenanceEdit /></PrivateRoute>} />
+        <Route path="/maintenance/new/:printerId" element={<PrivateRoute><MaintenanceEdit /></PrivateRoute>} />
+        <Route path="/maintenance/edit/:id" element={<PrivateRoute><MaintenanceEdit /></PrivateRoute>} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
