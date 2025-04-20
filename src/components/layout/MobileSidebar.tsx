@@ -1,117 +1,41 @@
 
-import { Link } from 'react-router-dom';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  HomeIcon, 
-  ShoppingCart, 
-  Printer, 
-  FileText, 
-  Users, 
-  Settings, 
-  LogOut, 
-  Package 
-} from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export function MobileSidebar() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      navigate('/auth');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-  
-  const isLoggedIn = !!user;
-  
+interface MobileSidebarProps {
+  navigation: {
+    title: string;
+    href: string;
+    icon?: React.ReactNode;
+  }[];
+}
+
+export function MobileSidebar({ navigation }: MobileSidebarProps) {
   return (
-    <div className="flex flex-col h-full py-4">
-      <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold">Menu</h2>
-        
-        <div className="space-y-1">
-          <Button asChild variant="ghost" className="w-full justify-start">
-            <Link to="/">
-              <HomeIcon className="mr-2 h-4 w-4" />
-              Home
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+        <nav className="flex flex-col gap-4 mt-8">
+          {navigation.map((item, i) => (
+            <Link 
+              key={i} 
+              to={item.href}
+              className="flex items-center gap-2 px-4 py-2 text-sm rounded-md hover:bg-muted"
+            >
+              {item.icon}
+              {item.title}
             </Link>
-          </Button>
-          
-          <Button asChild variant="ghost" className="w-full justify-start">
-            <Link to="/store">
-              <ShoppingCart className="mr-2 h-4 w-4" />
-              Store
-            </Link>
-          </Button>
-        </div>
-      </div>
-      
-      {isLoggedIn && (
-        <>
-          <div className="px-3 py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold">Management</h2>
-            <div className="space-y-1">
-              <Button asChild variant="ghost" className="w-full justify-start">
-                <Link to="/printers">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Printers
-                </Link>
-              </Button>
-              
-              <Button asChild variant="ghost" className="w-full justify-start">
-                <Link to="/rentals">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Rentals
-                </Link>
-              </Button>
-              
-              <Button asChild variant="ghost" className="w-full justify-start">
-                <Link to="/clients">
-                  <Users className="mr-2 h-4 w-4" />
-                  Clients
-                </Link>
-              </Button>
-              
-              <Button asChild variant="ghost" className="w-full justify-start">
-                <Link to="/toner-products">
-                  <Package className="mr-2 h-4 w-4" />
-                  Toners
-                </Link>
-              </Button>
-            </div>
-          </div>
-          
-          <div className="px-3 py-2">
-            <h2 className="mb-2 px-4 text-lg font-semibold">Account</h2>
-            <div className="space-y-1">
-              <Button asChild variant="ghost" className="w-full justify-start">
-                <Link to="/profile">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </Button>
-              
-              <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </>
-      )}
-      
-      {!isLoggedIn && (
-        <div className="px-3 py-2 mt-auto">
-          <Button asChild className="w-full">
-            <Link to="/auth">Sign In</Link>
-          </Button>
-        </div>
-      )}
-    </div>
+          ))}
+        </nav>
+      </SheetContent>
+    </Sheet>
   );
 }

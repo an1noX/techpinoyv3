@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { PrinterStatusType, PrinterOwnershipType } from "@/types/enums";
+import { PrinterStatusType, PrinterOwnershipType } from "@/types/types";
 
 // Define the schema for the printer form
 export const printerFormSchema = z.object({
@@ -8,7 +8,7 @@ export const printerFormSchema = z.object({
   series: z.string().min(1, { message: "Series is required" }),
   model: z.string().min(1, { message: "Model is required" }),
   type: z.string().min(1, { message: "Type is required" }),
-  status: z.enum(["available", "rented", "deployed", "maintenance", "unknown", "for_repair", "retired"] as const),
+  status: z.enum(["available", "rented", "deployed", "maintenance", "for_repair", "unknown", "retired"] as const),
   description: z.string().optional(),
   category: z.string().optional(),
   price: z.coerce.number().min(0, { message: "Price must be a positive number" }),

@@ -1,54 +1,37 @@
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 interface FormContainerProps {
-  children: React.ReactNode;
   open: boolean;
+  isAlertDialogOpen: boolean;
   title: string;
   description: string;
-  className?: string;
-  isAlertDialogOpen: boolean;
   onCloseAlert: () => void;
   onConfirmCancel: () => void;
+  children: React.ReactNode;
+  className?: string;
 }
 
 export function FormContainer({
-  children,
   open,
+  isAlertDialogOpen,
   title,
   description,
-  className,
-  isAlertDialogOpen,
   onCloseAlert,
   onConfirmCancel,
+  children,
+  className
 }: FormContainerProps) {
   return (
     <>
       <Dialog open={open}>
         <DialogContent 
-          className={cn(
-            "flex flex-col max-h-[90vh] p-0 gap-0", 
-            className
-          )}
+          className={cn("max-w-[900px] max-h-[90vh] overflow-hidden p-0", className)}
+          showClose={false}
         >
-          <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogHeader className="px-6 pt-6">
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
@@ -61,13 +44,13 @@ export function FormContainer({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to cancel?
+              You have unsaved changes. Are you sure you want to close this form?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Resume Editing</AlertDialogCancel>
+            <AlertDialogCancel>No, continue editing</AlertDialogCancel>
             <AlertDialogAction onClick={onConfirmCancel}>
-              Discard Changes
+              Yes, discard changes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

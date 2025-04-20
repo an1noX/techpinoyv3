@@ -1,105 +1,96 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
-interface AuthContextType {
-  user: any | null;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  isLoading: boolean;
-  hasPermission: (permission: string) => boolean;
+export interface AuthContextType {
+  user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  logout: () => Promise<void>;
+  signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  signIn: async () => {},
-  signOut: async () => {},
-  isLoading: true,
-  hasPermission: () => false,
+  session: null,
   isAuthenticated: false,
-  logout: async () => {},
+  signOut: async () => {},
   hasRole: () => false,
+  hasPermission: () => false,
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const useAuth = () => useContext(AuthContext);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        setSession(session);
         setUser(session?.user ?? null);
-        setIsLoading(false);
+        setLoading(false);
       }
     );
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
     });
 
-    if (error) throw error;
-  };
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    await supabase.auth.signOut();
   };
 
-  // Alias for signOut for compatibility
-  const logout = async () => {
-    return signOut();
-  };
-
-  // Simplified permission check function
-  const hasPermission = (permission: string) => {
-    // For now, just return true for testing - in a real app you'd check user roles/permissions
-    return true;
-  };
-
-  // Check if user has a specific role
   const hasRole = (role: string) => {
-    // For now, just return true for testing - in a real app you'd check user roles
-    return true;
+    // Check if user has specific role
+    const userRole = user?.user_metadata?.role;
+    return userRole === role;
+  };
+
+  const hasPermission = (permission: string) => {
+    // Simple implementation - could be more sophisticated
+    const userRole = user?.user_metadata?.role;
+
+    // Admin has all permissions
+    if (userRole === 'admin') return true;
+
+    // Check specific permissions
+    const permissionMap: Record<string, string[]> = {
+      'manager': ['read:printers', 'update:printers', 'create:printers', 'transfer:printers', 'read:maintenance', 'update:maintenance', 'create:maintenance'],
+      'technician': ['read:printers', 'update:printers', 'read:maintenance', 'update:maintenance', 'create:maintenance'],
+      'client': ['read:printers'],
+    };
+
+    return permissionMap[userRole as string]?.includes(permission) || false;
+  };
+
+  const value = {
+    user,
+    session,
+    isAuthenticated: !!user,
+    signOut,
+    hasRole,
+    hasPermission,
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      signIn, 
-      signOut, 
-      isLoading, 
-      hasPermission,
-      isAuthenticated: !!user,
-      logout,
-      hasRole
-    }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

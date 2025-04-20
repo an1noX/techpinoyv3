@@ -1,7 +1,7 @@
 
 import { Json } from "@/integrations/supabase/types";
 
-export { Json };
+export type { Json };
 
 export interface Product {
   id: string;
@@ -19,7 +19,7 @@ export interface PrinterType {
   make: string;
   series: string;
   model: string;
-  status: string;
+  status: PrinterStatusType;
   type?: string;
   description?: string;
   category?: string;
@@ -34,7 +34,7 @@ export interface PrinterType {
   departmentId?: string;
   client?: string;
   clientId?: string;
-  ownership?: string;
+  ownership?: PrinterOwnershipType;
   assignedAdmin?: string;
   assignedUserId?: string;
   notes?: string;
@@ -42,6 +42,15 @@ export interface PrinterType {
   imageUrl?: string;
   oemToner?: string;
 }
+
+export interface PrinterSeries {
+  id: string;
+  name: string;
+  makeId: string;
+}
+
+export type PrinterStatusType = "available" | "rented" | "maintenance" | "deployed" | "for_repair" | "unknown" | "retired";
+export type PrinterOwnershipType = "system_asset" | "client_owned";
 
 export interface TonerType {
   id: string;

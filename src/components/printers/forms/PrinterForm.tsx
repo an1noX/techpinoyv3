@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from '@hookform/resolvers/zod';
+
+import { useState } from "react";
 import { PrinterType, TonerType } from "@/types/types";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
@@ -110,7 +109,7 @@ export function PrinterForm({
             />
             <DetailsSection 
               form={form}
-              toners={toners.map(t => ({ id: t.id, name: t.name }))}
+              toners={toners.map(t => ({ id: t.id, name: t.name || t.model }))}
               onAddNewToner={handleAddNewToner}
             />
             <PricingSection form={form} />

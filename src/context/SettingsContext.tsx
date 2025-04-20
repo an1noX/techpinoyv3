@@ -1,251 +1,311 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { FrontendSettings, StoreInfo } from "@/types/settings";
-import { Json } from "@/types/types";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/types/types';
 
-export interface JsonSettings {
-  [key: string]: Json;
+// Interfaces for store settings
+interface LiveChat {
+  enabled: boolean;
+  type: string;
+  value: string;
+}
+
+interface SocialMedia {
+  facebook: string;
+  instagram: string;
+  youtube: string;
+  twitter: string;
+}
+
+export interface StoreSettings {
+  id: string;
+  store_name: string;
+  tagline: string;
+  phone_number: string;
+  email: string;
+  office_hours: string;
+  address: string;
+  live_chat: LiveChat;
+  social_media: SocialMedia;
+  updated_at: string;
 }
 
 interface SettingsContextType {
-  settings: FrontendSettings;
+  settings: StoreSettings | null;
   isLoading: boolean;
-  updateSettings: (settings: FrontendSettings) => Promise<void>;
-  updateStoreInfo: (storeInfo: StoreInfo) => Promise<void>;
+  saveSettings: (settings: StoreSettings) => Promise<void>;
+  error: string | null;
 }
 
-const defaultStoreInfo: StoreInfo = {
-  storeName: "TechPinoy",
-  tagline: "",
-  phoneNumber: "(877) 518-1272",
-  email: "support@techpinoy.com",
-  officeHours: "Mon–Fri 9:00AM – 6:00PM",
-  address: "",
-  liveChat: {
+// Default settings
+const defaultSettings: StoreSettings = {
+  id: '',
+  store_name: 'TonerPal Store',
+  tagline: 'Quality Toner Products for Every Printer',
+  phone_number: '+1 (555) 123-4567',
+  email: 'support@tonerpal.com',
+  office_hours: 'Mon-Fri: 9am-5pm, Sat: 10am-2pm',
+  address: '123 Printer Lane, Toner City, TC 12345',
+  live_chat: {
     enabled: false,
-    type: "messenger",
-    value: ""
+    type: 'messenger',
+    value: ''
   },
-  socialMedia: {
-    facebook: "",
-    instagram: "",
-    youtube: "",
-    twitter: ""
-  }
+  social_media: {
+    facebook: '',
+    instagram: '',
+    youtube: '',
+    twitter: ''
+  },
+  updated_at: new Date().toISOString()
 };
 
-const defaultSettings: FrontendSettings = {
-  companyName: 'Print Management System',
-  mainMenuItems: [],
-  footerSections: [],
-  showUnderConstructionModal: false,
-  storeInfo: defaultStoreInfo
-};
-
+// Create the context
 const SettingsContext = createContext<SettingsContextType>({
-  settings: defaultSettings,
+  settings: null,
   isLoading: true,
-  updateSettings: async () => {},
-  updateStoreInfo: async () => {}
+  saveSettings: async () => {},
+  error: null
 });
 
-export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [settings, setSettings] = useState<FrontendSettings>(defaultSettings);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export const useSettings = () => useContext(SettingsContext);
 
-  const fetchStoreInfo = async () => {
+// Provider component
+interface SettingsProviderProps {
+  children: ReactNode;
+}
+
+export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Create store settings in database (only need to do this once)
+  const createInitialSettings = async () => {
     try {
-      // First try to get existing record
-      const { data: storeData, error: storeError } = await supabase
+      // In a real app, we'd do proper validation and handle the case when store_information 
+      // table doesn't exist yet, but for this example we'll keep it simple
+      const { error } = await supabase
         .from('store_information')
-        .select('*')
-        .limit(1)
-        .single();
+        .insert(defaultSettings);
 
-      if (storeError && storeError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
-        console.error("Error loading store information:", storeError);
-        throw storeError;
+      if (error) {
+        console.error('Error creating settings:', error);
+        setError(error.message);
       }
-
-      // If no data exists, create default entry
-      if (!storeData) {
-        console.log("No store information found, creating default entry...");
-        
-        const { data: newStoreData, error: createError } = await supabase
-          .from('store_information')
-          .insert([{
-            store_name: defaultStoreInfo.storeName,
-            tagline: defaultStoreInfo.tagline,
-            phone_number: defaultStoreInfo.phoneNumber,
-            email: defaultStoreInfo.email,
-            office_hours: defaultStoreInfo.officeHours,
-            address: defaultStoreInfo.address,
-            live_chat: defaultStoreInfo.liveChat,
-            social_media: defaultStoreInfo.socialMedia
-          }])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error("Error creating default store information:", createError);
-          throw createError;
-        }
-
-        return newStoreData;
-      }
-
-      return storeData;
-    } catch (error) {
-      console.error("Error in fetchStoreInfo:", error);
-      throw error;
+    } catch (err) {
+      console.error('Error in createInitialSettings:', err);
+      setError('Failed to create initial settings');
     }
   };
 
+  // Fetch settings from database
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
-
-      // Fetch store information first
-      let storeData;
-      try {
-        storeData = await fetchStoreInfo();
-      } catch (error) {
-        console.error("Failed to fetch store information:", error);
-        storeData = null;
-      }
-
-      // Then fetch general settings
-      const { data: settingsData, error: settingsError } = await supabase
-        .from('settings')
-        .select('frontend')
-        .eq('id', 'default')
+      setError(null);
+      
+      // Query the store_information table
+      const { data, error } = await supabase
+        .from('store_information')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(1)
         .single();
-      
-      if (settingsError) {
-        console.error("Error loading settings:", settingsError);
+        
+      if (error) {
+        // If the table doesn't exist or is empty, create initial settings
+        if (error.code === 'PGRST116') {
+          await createInitialSettings();
+          // After creating, fetch again
+          const { data: newData, error: newError } = await supabase
+            .from('store_information')
+            .select('*')
+            .order('created_at', { ascending: true })
+            .limit(1)
+            .single();
+            
+          if (newError) {
+            throw newError;
+          }
+          
+          if (newData) {
+            setSettings(formatSettingsData(newData));
+          } else {
+            // If still no data, use default
+            setSettings(defaultSettings);
+          }
+        } else {
+          throw error;
+        }
+      } else if (data) {
+        setSettings(formatSettingsData(data));
+      } else {
+        // No error but no data either, create initial
+        await createInitialSettings();
+        setSettings(defaultSettings);
       }
-
-      // Convert and merge the data
-      const frontendSettings = settingsData?.frontend as JsonSettings;
-      const merged: FrontendSettings = {
-        ...defaultSettings,
-        ...frontendSettings,
-        storeInfo: storeData ? {
-          storeName: storeData.store_name,
-          tagline: storeData.tagline,
-          phoneNumber: storeData.phone_number,
-          email: storeData.email,
-          officeHours: storeData.office_hours,
-          address: storeData.address,
-          liveChat: storeData.live_chat,
-          socialMedia: storeData.social_media
-        } : defaultStoreInfo
-      };
-      
-      setSettings(merged);
-    } catch (error) {
-      console.error("Error loading settings:", error);
-      // Use default settings on error
-      setSettings(defaultSettings);
+    } catch (err: any) {
+      console.error('Error fetching settings:', err);
+      setError(err.message || 'Failed to load settings');
+      setSettings(defaultSettings); // Use default as fallback
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateStoreInfo = async (storeInfo: StoreInfo) => {
+  // Format the data from the database
+  const formatSettingsData = (data: any): StoreSettings => {
+    // Handle case where JSON fields might be stored as strings
+    let liveChatData = data.live_chat;
+    let socialMediaData = data.social_media;
+    
+    if (typeof liveChatData === 'string') {
+      try {
+        liveChatData = JSON.parse(liveChatData);
+      } catch (e) {
+        liveChatData = defaultSettings.live_chat;
+      }
+    }
+    
+    if (typeof socialMediaData === 'string') {
+      try {
+        socialMediaData = JSON.parse(socialMediaData);
+      } catch (e) {
+        socialMediaData = defaultSettings.social_media;
+      }
+    }
+    
+    return {
+      id: data.id || '',
+      store_name: data.store_name || defaultSettings.store_name,
+      tagline: data.tagline || defaultSettings.tagline,
+      phone_number: data.phone_number || defaultSettings.phone_number,
+      email: data.email || defaultSettings.email,
+      office_hours: data.office_hours || defaultSettings.office_hours,
+      address: data.address || defaultSettings.address,
+      live_chat: {
+        enabled: liveChatData?.enabled ?? defaultSettings.live_chat.enabled,
+        type: liveChatData?.type ?? defaultSettings.live_chat.type,
+        value: liveChatData?.value ?? defaultSettings.live_chat.value
+      },
+      social_media: {
+        facebook: socialMediaData?.facebook ?? defaultSettings.social_media.facebook,
+        instagram: socialMediaData?.instagram ?? defaultSettings.social_media.instagram,
+        youtube: socialMediaData?.youtube ?? defaultSettings.social_media.youtube,
+        twitter: socialMediaData?.twitter ?? defaultSettings.social_media.twitter
+      },
+      updated_at: data.updated_at || new Date().toISOString()
+    };
+  };
+
+  // Save settings to database
+  const saveSettings = async (updatedSettings: StoreSettings) => {
     try {
-      // Convert from camelCase to snake_case for database
-      const dbData = {
-        store_name: storeInfo.storeName,
-        tagline: storeInfo.tagline,
-        phone_number: storeInfo.phoneNumber,
-        email: storeInfo.email,
-        office_hours: storeInfo.officeHours,
-        address: storeInfo.address,
-        live_chat: storeInfo.liveChat,
-        social_media: storeInfo.socialMedia,
+      setIsLoading(true);
+      setError(null);
+      
+      // Convert live_chat and social_media objects to JSON strings if needed
+      const settingsToSave = {
+        ...updatedSettings,
+        // Convert objects to JSON strings if your database requires it
+        // live_chat: JSON.stringify(updatedSettings.live_chat),
+        // social_media: JSON.stringify(updatedSettings.social_media),
         updated_at: new Date().toISOString()
       };
-
-      // Get the existing record
-      const { data: existingData, error: queryError } = await supabase
+      
+      // Perform the upsert (update or insert)
+      const { error } = await supabase
         .from('store_information')
-        .select('id')
-        .limit(1)
-        .maybeSingle();
-
-      if (queryError) {
-        console.error("Error querying existing store information:", queryError);
-        throw queryError;
+        .upsert(settingsToSave);
+        
+      if (error) {
+        throw error;
       }
-
-      // Perform upsert with ID if it exists
-      const { error: upsertError } = await supabase
-        .from('store_information')
-        .upsert({
-          ...dbData,
-          id: existingData?.id
-        }, {
-          onConflict: 'id'
-        });
-
-      if (upsertError) {
-        console.error("Error upserting store information:", upsertError);
-        throw upsertError;
-      }
-
+      
       // Update local state
-      setSettings(prev => ({
-        ...prev,
-        storeInfo
-      }));
-
-      // Refetch to ensure we have the latest data
-      await fetchSettings();
-    } catch (error) {
-      console.error("Error updating store information:", error);
-      throw error;
+      setSettings(updatedSettings);
+    } catch (err: any) {
+      console.error('Error saving settings:', err);
+      setError(err.message || 'Failed to save settings');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Initialize settings
+  // Initial load of settings
   useEffect(() => {
     fetchSettings();
   }, []);
 
-  // Set up Supabase realtime subscription
-  useEffect(() => {
-    const subscription = supabase
-      .channel('store_information_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'store_information'
-        },
-        (payload) => {
-          console.log('Store information changed:', payload);
-          fetchSettings();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
   return (
-    <SettingsContext.Provider value={{ 
-      settings, 
-      isLoading, 
-      updateSettings,
-      updateStoreInfo
-    }}>
+    <SettingsContext.Provider value={{ settings, isLoading, saveSettings, error }}>
       {children}
     </SettingsContext.Provider>
   );
 };
 
-export const useSettings = () => useContext(SettingsContext);
+// Static Settings Context (for use in Store page without requiring auth)
+interface StaticSettingsContextType {
+  settings: StoreSettings | null;
+  isLoading: boolean;
+}
+
+const StaticSettingsContext = createContext<StaticSettingsContextType>({
+  settings: null,
+  isLoading: true
+});
+
+export const useStaticSettings = () => useContext(StaticSettingsContext);
+
+export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStaticSettings = async () => {
+      try {
+        setIsLoading(true);
+        // Try to get settings from store_information
+        const { data, error } = await supabase
+          .from('store_information')
+          .select('*')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .single();
+          
+        if (error) {
+          console.log('Using default settings since none found in database');
+          setSettings(defaultSettings);
+        } else if (data) {
+          setSettings({
+            id: data.id || '',
+            store_name: data.store_name || defaultSettings.store_name,
+            tagline: data.tagline || defaultSettings.tagline,
+            phone_number: data.phone_number || defaultSettings.phone_number,
+            email: data.email || defaultSettings.email,
+            office_hours: data.office_hours || defaultSettings.office_hours,
+            address: data.address || defaultSettings.address,
+            live_chat: data.live_chat || defaultSettings.live_chat,
+            social_media: data.social_media || defaultSettings.social_media,
+            updated_at: data.updated_at || new Date().toISOString()
+          });
+        } else {
+          setSettings(defaultSettings);
+        }
+      } catch (err) {
+        console.error('Error fetching static settings:', err);
+        setSettings(defaultSettings); // Use default as fallback
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStaticSettings();
+  }, []);
+
+  return (
+    <StaticSettingsContext.Provider value={{ settings, isLoading }}>
+      {children}
+    </StaticSettingsContext.Provider>
+  );
+};

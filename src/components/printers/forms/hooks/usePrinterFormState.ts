@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PrinterType, TonerType } from "@/types/types";
-import { PrinterOwnershipType } from "@/types/enums";
+import { PrinterType, TonerType, PrinterStatusType, PrinterOwnershipType } from "@/types/types";
 import { toast } from "sonner";
 import { printerFormSchema, type PrinterFormValues } from "../printer-form-schema";
 
@@ -14,9 +13,12 @@ export function usePrinterFormState(
   const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
   const [selectedToners, setSelectedToners] = useState<string[]>(printer?.toners || []);
   const [imageUrl, setImageUrl] = useState<string>(printer?.imageUrl || "");
-  const [ownershipType, setOwnershipType] = useState<"system_asset" | "client_owned">(
+  const [ownershipType, setOwnershipType] = useState<PrinterOwnershipType>(
     printer?.ownership === "client_owned" ? "client_owned" : "system_asset"
   );
+
+  const defaultStatus: PrinterStatusType = "available";
+  const defaultOwnership: PrinterOwnershipType = "system_asset";
 
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
@@ -25,7 +27,7 @@ export function usePrinterFormState(
       series: printer?.series || "",
       model: printer?.model || "",
       type: printer?.type || "laser",
-      status: printer?.status || "available",
+      status: printer?.status || defaultStatus,
       description: printer?.description || "",
       category: printer?.category || "printer",
       price: printer?.price || 0,
@@ -36,7 +38,7 @@ export function usePrinterFormState(
       serialNumber: printer?.serialNumber || "",
       department: printer?.department || "",
       location: printer?.location || "",
-      ownership: printer?.ownership || "system_asset",
+      ownership: printer?.ownership || defaultOwnership,
       clientId: printer?.clientId || "",
       oemToner: printer?.oemToner || "",
     },
@@ -60,7 +62,7 @@ export function usePrinterFormState(
         series: printer.series || "",
         model: printer.model || "",
         type: printer.type || "laser",
-        status: printer.status || "available", 
+        status: printer.status || defaultStatus, 
         description: printer.description || "",
         category: printer.category || "printer",
         price: printer.price || 0,
@@ -71,7 +73,7 @@ export function usePrinterFormState(
         serialNumber: printer.serialNumber || "",
         department: printer.department || "",
         location: printer.location || "",
-        ownership: printer.ownership || "system_asset",
+        ownership: printer.ownership || defaultOwnership,
         clientId: printer.clientId || "",
         oemToner: printer.oemToner || "",
       });
