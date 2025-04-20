@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShoppingCart, Search, Phone, HelpCircle, Menu } from "lucide-react";
+import { ShoppingCart, Search, Phone, HelpCircle, Menu, User } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { HeaderNavLinks } from "./header/HeaderNavLinks";
 import { FloatingNav } from "./FloatingNav";
@@ -27,8 +27,8 @@ interface HomeHeaderProps {
 }
 
 export function HomeHeader({ config }: HomeHeaderProps) {
-  const { user } = useAuth();
-  const isLoggedIn = !!user;
+  const navigate = useNavigate();
+  const isLoggedIn = false; // Default to not logged in for public header
   
   // Provide default config if none provided
   const defaultConfig: HeaderConfig = {
@@ -55,7 +55,27 @@ export function HomeHeader({ config }: HomeHeaderProps) {
   return (
     <header className="bg-background sticky top-0 z-40 w-full border-b">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-        <MobileSidebar navigation={navigationItems} />
+        <div className="flex items-center">
+          <Button variant="ghost" size="icon" asChild>
+            <SheetTrigger>
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </SheetTrigger>
+          </Button>
+          <SheetContent side="left">
+            <nav className="flex flex-col gap-4 mt-8">
+              {navigationItems.map((item) => (
+                <Link 
+                  key={item.href} 
+                  to={item.href}
+                  className="text-lg hover:text-primary transition-colors"
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </nav>
+          </SheetContent>
+        </div>
         
         <Link to="/" className="flex items-center font-semibold">
           {headerConfig.logoUrl ? (
