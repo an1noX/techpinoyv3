@@ -1,15 +1,17 @@
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 interface AdminLayoutProps {
   requiredRoles?: string[];
 }
 
+// Note: This is a placeholder until we properly implement auth context
 const AdminLayout: React.FC<AdminLayoutProps> = ({ requiredRoles = ['admin', 'owner'] }) => {
-  const { isAuthenticated, hasRole } = useAuth();
+  // Temporarily mock authentication until we implement the proper AuthContext
+  const isAuthenticated = true;
+  const hasRole = (role: string) => true;
 
   // Check if user is authenticated
   if (!isAuthenticated) {

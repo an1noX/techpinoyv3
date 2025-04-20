@@ -33,23 +33,23 @@ import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const storeInfoSchema = z.object({
   storeName: z.string().min(1, "Store name is required"),
-  tagline: z.string(),
+  tagline: z.string().optional(),
   phoneNumber: z.string().min(1, "Phone number is required"),
   email: z.string().email("Invalid email address"),
-  officeHours: z.string(),
-  address: z.string(),
+  officeHours: z.string().optional(),
+  address: z.string().optional(),
   liveChat: z.object({
     enabled: z.boolean(),
     type: z.enum(["messenger", "whatsapp", "custom"]),
-    value: z.string()
-  }).required(),
+    value: z.string().optional()
+  }),
   socialMedia: z.object({
     facebook: z.string().url().optional().or(z.literal("")),
     instagram: z.string().url().optional().or(z.literal("")),
     youtube: z.string().url().optional().or(z.literal("")),
     twitter: z.string().url().optional().or(z.literal(""))
-  }).required()
-}).required();
+  })
+});
 
 type StoreInfoForm = z.infer<typeof storeInfoSchema>;
 
