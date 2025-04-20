@@ -38,6 +38,7 @@ export default function Printers() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedPrinter, setSelectedPrinter] = useState<PrinterType | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
 
   const [printerStatusDialogOpen, setPrinterStatusDialogOpen] = useState(false);
   const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
@@ -99,7 +100,6 @@ export default function Printers() {
         variant: "destructive"
       });
 
-      // Mock data with correct types
       const mockPrinters: PrinterType[] = [
         {
           id: '1',
@@ -204,15 +204,12 @@ export default function Printers() {
   const forRentToggleEnabled = (printer: PrinterType) =>
     printer.status === "available" && printer.owned_by === "system";
 
-  // Helper for ownership label and displaying client
   const getOwnershipLabel = (printer: PrinterType) =>
     printer.owned_by === "client" ? "Client Owned" : "System Unit";
 
-  // For display: show client if owned_by is "client", nothing otherwise
   const getClientDisplay = (printer: PrinterType) =>
     printer.owned_by === "client" && printer.assigned_to ? `(${printer.assigned_to})` : "";
 
-  // Placeholder function for toner name (you can update if real toner data is mapped)
   const getTonerName = (printer: PrinterType) => "TONER NAME";
 
   return (
@@ -293,7 +290,6 @@ export default function Printers() {
                   </div>
                   <div className="flex flex-col items-end gap-2 min-w-fit">
                     <div className="flex items-center mb-1">
-                      {/* For Rent Toggle in front of status */}
                       <div className="mr-2 flex items-center">
                         <button
                           className={`relative w-9 h-5 focus:outline-none rounded-full border ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? 'bg-green-500 border-green-500' : 'bg-gray-200 border-gray-200') : 'bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed'}`}
@@ -337,15 +333,33 @@ export default function Printers() {
                         <Wrench className="h-4 w-4" />
                         Update Status
                       </Button>
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => handleOpenTransferDialog(printer)}
-                      >
-                        <ArrowUpDown className="h-4 w-4" />
-                        {getAssignTransferLabel(printer)}
-                      </Button>
+                      {!printer.client_id ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => {
+                            setSelectedPrinter(printer);
+                            setAssignDialogOpen(true);
+                          }}
+                        >
+                          <ArrowUpDown className="h-4 w-4" />
+                          Assign
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => {
+                            setSelectedPrinter(printer);
+                            setTransferDialogOpen(true);
+                          }}
+                        >
+                          <ArrowUpDown className="h-4 w-4" />
+                          Transfer
+                        </Button>
+                      )}
                       <Button 
                         size="sm"
                         variant="outline"
@@ -355,7 +369,6 @@ export default function Printers() {
                         <History className="h-4 w-4" />
                         History
                       </Button>
-                      {/* Repaired button removed */}
                     </div>
                   </div>
                 </CardContent>
@@ -403,14 +416,25 @@ export default function Printers() {
             }}
             printer={selectedPrinter}
           />
-          <PrinterTransferDialog
+          <AssignPrinterDialog
+            open={assignDialogOpen}
+            onOpenChange={(open) => {
+              setAssignDialogOpen(open);
+              if (!open) setSelectedPrinter(null);
+              if (!open) fetchPrinters();
+            }}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
+          />
+          <TransferPrinterDialog
             open={transferDialogOpen}
             onOpenChange={(open) => {
               setTransferDialogOpen(open);
               if (!open) setSelectedPrinter(null);
+              if (!open) fetchPrinters();
             }}
-            printer={selectedPrinter as any}
-            onTransferSuccess={fetchPrinters}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
           />
         </>
       )}
