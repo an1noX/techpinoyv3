@@ -75,15 +75,15 @@ export default function Profile() {
   }, [user, toast]);
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error: any) {
       toast({
         title: 'Error signing out',
         description: error.message,
         variant: 'destructive'
       });
-    } else {
-      navigate('/auth');
     }
   };
 

@@ -50,7 +50,24 @@ export function AssignPrinterDialog({
         throw error;
       }
       
-      setAvailablePrinters(data || []);
+      // Transform the data to match our type definitions
+      const transformedPrinters: Printer[] = (data || []).map(printer => ({
+        id: printer.id,
+        make: printer.make,
+        model: printer.model,
+        series: printer.series,
+        status: printer.status as PrinterStatus,
+        owned_by: printer.owned_by,
+        assigned_to: printer.assigned_to,
+        department: printer.department,
+        location: printer.location,
+        created_at: printer.created_at,
+        updated_at: printer.updated_at,
+        is_for_rent: printer.is_for_rent,
+        client_id: printer.client_id
+      }));
+      
+      setAvailablePrinters(transformedPrinters);
     } catch (error: any) {
       toast({
         title: "Error fetching available printers",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -56,21 +55,7 @@ export default function RentalDetail() {
         return;
       }
       
-      // Transform to match our Rental type
-      const transformedRental: Rental = {
-        id: data.id,
-        printerId: data.printer_id,
-        clientId: data.client_id,
-        client: data.client,
-        printer: data.printer,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        status: data.status as 'active' | 'completed' | 'cancelled' | 'upcoming',
-        signatureUrl: data.signature_url,
-        agreementUrl: data.agreement_url,
-      };
-      
-      setRental(transformedRental);
+      setRental(data as Rental);
     } catch (error: any) {
       toast({
         title: "Error loading rental",
@@ -81,15 +66,19 @@ export default function RentalDetail() {
       // Mock data for development
       const mockRental: Rental = {
         id: id || '1',
-        printerId: '1',
-        clientId: 'client1',
+        printer_id: '1',
+        client_id: 'client1',
         client: 'Acme Corp',
         printer: 'HP LaserJet Pro MFP M428fdn',
-        startDate: '2023-04-10',
-        endDate: '2023-06-10',
+        start_date: '2023-04-10',
+        end_date: '2023-06-10',
         status: 'active',
-        signatureUrl: null,
-        agreementUrl: null,
+        signature_url: null,
+        agreement_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        created_by: null,
+        notes: null
       };
       
       setRental(mockRental);
@@ -193,14 +182,14 @@ export default function RentalDetail() {
                 <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
                 <div className="flex justify-between w-full">
                   <span className="text-muted-foreground">Start Date:</span>
-                  <span>{new Date(rental.startDate).toLocaleDateString()}</span>
+                  <span>{new Date(rental.start_date).toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="flex items-center">
                 <CalendarDays className="h-4 w-4 mr-2 text-muted-foreground" />
                 <div className="flex justify-between w-full">
                   <span className="text-muted-foreground">End Date:</span>
-                  <span>{new Date(rental.endDate).toLocaleDateString()}</span>
+                  <span>{new Date(rental.end_date || '').toLocaleDateString()}</span>
                 </div>
               </div>
               <div className="flex items-center">
@@ -209,7 +198,7 @@ export default function RentalDetail() {
                   <span className="text-muted-foreground">Duration:</span>
                   <span>
                     {Math.ceil(
-                      (new Date(rental.endDate).getTime() - new Date(rental.startDate).getTime()) / 
+                      (new Date(rental.end_date || '').getTime() - new Date(rental.start_date).getTime()) / 
                       (1000 * 60 * 60 * 24)
                     )} days
                   </span>
@@ -252,7 +241,7 @@ export default function RentalDetail() {
                   variant="outline" 
                   size="sm" 
                   className="w-full mt-4"
-                  onClick={() => navigate(`/printers/${rental.printerId}`)}
+                  onClick={() => navigate(`/printers/${rental.printer_id}`)}
                 >
                   View Printer Details
                 </Button>
@@ -271,7 +260,7 @@ export default function RentalDetail() {
                     <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
                     <div className="flex justify-between w-full">
                       <span>Rental Agreement</span>
-                      <Button variant="ghost" size="sm" onClick={handleViewAgreement}>
+                      <Button variant="ghost" size="sm" onClick={() => {}}>
                         View
                       </Button>
                     </div>
@@ -280,7 +269,7 @@ export default function RentalDetail() {
                     <Signature className="h-4 w-4 mr-2 text-muted-foreground" />
                     <div className="flex justify-between w-full">
                       <span>Signature</span>
-                      <Button variant="ghost" size="sm" onClick={handleViewAgreement}>
+                      <Button variant="ghost" size="sm" onClick={() => {}}>
                         View
                       </Button>
                     </div>
@@ -302,7 +291,7 @@ export default function RentalDetail() {
                     <div className="flex items-center justify-between w-full">
                       <span>Created</span>
                       <span className="text-sm text-muted-foreground">
-                        {new Date(rental.startDate).toLocaleDateString()}
+                        {new Date(rental.start_date).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -312,7 +301,7 @@ export default function RentalDetail() {
                       <div className="flex items-center justify-between w-full">
                         <span>Completed</span>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(rental.endDate).toLocaleDateString()}
+                          {new Date(rental.end_date || '').toLocaleDateString()}
                         </span>
                       </div>
                     </div>
@@ -329,14 +318,14 @@ export default function RentalDetail() {
               <Button 
                 variant="outline" 
                 className="flex-1"
-                onClick={handleExtendRental}
+                onClick={() => {}}
               >
                 Extend Rental
               </Button>
               <Button 
                 variant="outline" 
                 className="flex-1"
-                onClick={handleCancelRental}
+                onClick={() => {}}
               >
                 Cancel Rental
               </Button>
@@ -346,7 +335,7 @@ export default function RentalDetail() {
             <Button 
               variant="outline" 
               className="flex-1"
-              onClick={handleCancelRental}
+              onClick={() => {}}
             >
               Cancel Booking
             </Button>
@@ -354,7 +343,7 @@ export default function RentalDetail() {
           <Button 
             variant="default" 
             className="flex-1"
-            onClick={handleEditRental}
+            onClick={() => {}}
           >
             <Edit className="mr-2 h-4 w-4" />
             Edit

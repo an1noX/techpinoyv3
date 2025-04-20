@@ -1,16 +1,18 @@
+
 export interface Printer {
   id: string;
   make: string;
   series: string;
   model: string;
   status: PrinterStatus;
-  ownedBy: string;
-  assignedTo?: string;
+  owned_by: string;
+  assigned_to?: string;
   department?: string;
   location?: string;
-  createdAt: string;
-  updatedAt: string;
-  isForRent?: boolean;
+  created_at: string;
+  updated_at: string;
+  is_for_rent?: boolean;
+  client_id?: string;
 }
 
 export type PrinterStatus = 'available' | 'rented' | 'maintenance';
@@ -20,10 +22,10 @@ export interface WikiPrinter {
   make: string;
   series: string;
   model: string;
-  maintenanceTips?: string;
+  maintenance_tips?: string;
   specs?: Record<string, string>;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Client {
@@ -34,6 +36,8 @@ export interface Client {
   phone: string | null;
   address: string | null;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Profile {
@@ -62,6 +66,7 @@ export interface PrinterClientAssignment {
   active: boolean;
   created_at: string;
   updated_at: string;
+  notes?: string | null;
 }
 
 export interface Rental {
@@ -73,6 +78,29 @@ export interface Rental {
   status: string;
   created_by: string | null;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
+  client?: string;
+  printer?: string;
+  signature_url?: string | null;
+  agreement_url?: string | null;
+  next_available_date?: string | null;
+  inquiry_count?: number;
+  booking_count?: number;
+}
+
+export interface RentalOption {
+  id: string;
+  printer_id: string;
+  is_for_rent: boolean;
+  rental_rate: number;
+  rate_unit: string;
+  minimum_duration: number;
+  duration_unit: string;
+  security_deposit: number;
+  availability?: any;
+  terms?: string;
+  cancellation_policy?: string;
   created_at: string;
   updated_at: string;
 }
