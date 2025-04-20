@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -48,7 +47,6 @@ const App = () => (
             <Route path="/products/:id" element={<Products />} />
             <Route path="/brands/:brand" element={<Products />} />
             <Route path="/categories/:category" element={<Products />} />
-            
             <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
             <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
             <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
@@ -62,7 +60,7 @@ const App = () => (
             <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
             <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
             <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
-            
+            <Route path="/maintenance" element={<ProtectedLayout><React.Suspense fallback={<div>Loading...</div>}><Maintenance /></React.Suspense></ProtectedLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -101,6 +101,30 @@ export type Database = {
           },
         ]
       }
+      departments: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       frontend_settings: {
         Row: {
           created_at: string
@@ -127,6 +151,165 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      maintenance_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          notes: string
+          performed_by: string
+          printer_id: string
+          printer_model: string
+          scheduled: boolean | null
+          scheduled_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes: string
+          performed_by: string
+          printer_id: string
+          printer_model: string
+          scheduled?: boolean | null
+          scheduled_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string
+          performed_by?: string
+          printer_id?: string
+          printer_model?: string
+          scheduled?: boolean | null
+          scheduled_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_records: {
+        Row: {
+          activity_type: string | null
+          completed_at: string | null
+          cost: number | null
+          created_at: string
+          diagnosed_by: string | null
+          diagnosis_date: string | null
+          diagnostic_notes: string | null
+          id: string
+          issue_description: string | null
+          next_maintenance_date: string | null
+          parts_used: Json | null
+          printer_id: string | null
+          remarks: string | null
+          repair_notes: string | null
+          reported_at: string | null
+          reported_by: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["maintenance_status"]
+          technician: string | null
+          updated_at: string
+        }
+        Insert: {
+          activity_type?: string | null
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          diagnosed_by?: string | null
+          diagnosis_date?: string | null
+          diagnostic_notes?: string | null
+          id?: string
+          issue_description?: string | null
+          next_maintenance_date?: string | null
+          parts_used?: Json | null
+          printer_id?: string | null
+          remarks?: string | null
+          repair_notes?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          technician?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activity_type?: string | null
+          completed_at?: string | null
+          cost?: number | null
+          created_at?: string
+          diagnosed_by?: string | null
+          diagnosis_date?: string | null
+          diagnostic_notes?: string | null
+          id?: string
+          issue_description?: string | null
+          next_maintenance_date?: string | null
+          parts_used?: Json | null
+          printer_id?: string | null
+          remarks?: string | null
+          repair_notes?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["maintenance_status"]
+          technician?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_reports: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          maintenance_record_id: string | null
+          report_content: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          maintenance_record_id?: string | null
+          report_content: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          maintenance_record_id?: string | null
+          report_content?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_reports_maintenance_record_id_fkey"
+            columns: ["maintenance_record_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       printer_client_assignments: {
         Row: {
@@ -221,32 +404,38 @@ export type Database = {
       printer_wiki: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           maintenance_tips: string | null
           make: string
           model: string
           series: string
           specs: Json | null
+          type: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           maintenance_tips?: string | null
           make: string
           model: string
           series: string
           specs?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           maintenance_tips?: string | null
           make?: string
           model?: string
           series?: string
           specs?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -254,47 +443,95 @@ export type Database = {
       printers: {
         Row: {
           assigned_to: string | null
+          assigned_user_id: string | null
+          category: string | null
           client_id: string | null
           created_at: string
           department: string | null
+          department_id: string | null
+          description: string | null
           id: string
+          image_url: string | null
+          is_featured: boolean | null
           is_for_rent: boolean | null
+          is_rental_available: boolean | null
           location: string | null
           make: string
           model: string
+          notes: string | null
+          oem_toner: string | null
           owned_by: string
+          ownership: string | null
+          price: number | null
+          quantity_in_stock: number | null
+          rental_price: number | null
+          serial_number: string | null
           series: string
           status: string
+          toners: string[] | null
+          type: string | null
           updated_at: string
         }
         Insert: {
           assigned_to?: string | null
+          assigned_user_id?: string | null
+          category?: string | null
           client_id?: string | null
           created_at?: string
           department?: string | null
+          department_id?: string | null
+          description?: string | null
           id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
           is_for_rent?: boolean | null
+          is_rental_available?: boolean | null
           location?: string | null
           make: string
           model: string
+          notes?: string | null
+          oem_toner?: string | null
           owned_by: string
+          ownership?: string | null
+          price?: number | null
+          quantity_in_stock?: number | null
+          rental_price?: number | null
+          serial_number?: string | null
           series: string
           status: string
+          toners?: string[] | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
           assigned_to?: string | null
+          assigned_user_id?: string | null
+          category?: string | null
           client_id?: string | null
           created_at?: string
           department?: string | null
+          department_id?: string | null
+          description?: string | null
           id?: string
+          image_url?: string | null
+          is_featured?: boolean | null
           is_for_rent?: boolean | null
+          is_rental_available?: boolean | null
           location?: string | null
           make?: string
           model?: string
+          notes?: string | null
+          oem_toner?: string | null
           owned_by?: string
+          ownership?: string | null
+          price?: number | null
+          quantity_in_stock?: number | null
+          rental_price?: number | null
+          serial_number?: string | null
           series?: string
           status?: string
+          toners?: string[] | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -303,6 +540,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printers_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
             referencedColumns: ["id"]
           },
         ]
@@ -455,7 +699,7 @@ export type Database = {
           },
         ]
       }
-      store_information: {
+      system_settings: {
         Row: {
           address: string | null
           created_at: string | null
@@ -590,6 +834,83 @@ export type Database = {
           },
         ]
       }
+      transfer_logs: {
+        Row: {
+          created_at: string | null
+          date: string
+          from_client: string | null
+          from_client_id: string | null
+          from_department: string | null
+          from_department_id: string | null
+          from_user: string | null
+          from_user_id: string | null
+          id: string
+          notes: string | null
+          printer_id: string
+          printer_model: string
+          to_client: string | null
+          to_client_id: string | null
+          to_department: string | null
+          to_department_id: string | null
+          to_user: string | null
+          to_user_id: string | null
+          transferred_by: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string
+          from_client?: string | null
+          from_client_id?: string | null
+          from_department?: string | null
+          from_department_id?: string | null
+          from_user?: string | null
+          from_user_id?: string | null
+          id?: string
+          notes?: string | null
+          printer_id: string
+          printer_model: string
+          to_client?: string | null
+          to_client_id?: string | null
+          to_department?: string | null
+          to_department_id?: string | null
+          to_user?: string | null
+          to_user_id?: string | null
+          transferred_by: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          from_client?: string | null
+          from_client_id?: string | null
+          from_department?: string | null
+          from_department_id?: string | null
+          from_user?: string | null
+          from_user_id?: string | null
+          id?: string
+          notes?: string | null
+          printer_id?: string
+          printer_model?: string
+          to_client?: string | null
+          to_client_id?: string | null
+          to_department?: string | null
+          to_department_id?: string | null
+          to_user?: string | null
+          to_user_id?: string | null
+          transferred_by?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_logs_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -599,6 +920,21 @@ export type Database = {
     }
     Enums: {
       chat_type: "messenger" | "whatsapp" | "custom"
+      maintenance_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "unrepairable"
+        | "decommissioned"
+      printer_ownership_type: "system_asset" | "client_owned"
+      printer_status_type:
+        | "available"
+        | "rented"
+        | "maintenance"
+        | "deployed"
+        | "for_repair"
+        | "unknown"
+        | "retired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -715,6 +1051,23 @@ export const Constants = {
   public: {
     Enums: {
       chat_type: ["messenger", "whatsapp", "custom"],
+      maintenance_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "unrepairable",
+        "decommissioned",
+      ],
+      printer_ownership_type: ["system_asset", "client_owned"],
+      printer_status_type: [
+        "available",
+        "rented",
+        "maintenance",
+        "deployed",
+        "for_repair",
+        "unknown",
+        "retired",
+      ],
     },
   },
 } as const
