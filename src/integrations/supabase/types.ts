@@ -384,6 +384,18 @@ export type Database = {
           stock: number
           threshold: number
           updated_at: string
+          variant_group_id: string | null
+          is_base_model: boolean
+          base_model_reference: string | null
+          variant_details: Json | null
+          oem_code: string | null
+          aliases: string[] | null
+          is_commercial_product: boolean
+          category: string[] | null
+          description: string | null
+          image_url: string | null
+          is_active: boolean
+          sku: string | null
         }
         Insert: {
           brand: string
@@ -396,6 +408,18 @@ export type Database = {
           stock?: number
           threshold?: number
           updated_at?: string
+          variant_group_id?: string | null
+          is_base_model?: boolean
+          base_model_reference?: string | null
+          variant_details?: Json | null
+          oem_code?: string | null
+          aliases?: string[] | null
+          is_commercial_product?: boolean
+          category?: string[] | null
+          description?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          sku?: string | null
         }
         Update: {
           brand?: string
@@ -408,6 +432,18 @@ export type Database = {
           stock?: number
           threshold?: number
           updated_at?: string
+          variant_group_id?: string | null
+          is_base_model?: boolean
+          base_model_reference?: string | null
+          variant_details?: Json | null
+          oem_code?: string | null
+          aliases?: string[] | null
+          is_commercial_product?: boolean
+          category?: string[] | null
+          description?: string | null
+          image_url?: string | null
+          is_active?: boolean
+          sku?: string | null
         }
         Relationships: []
       }

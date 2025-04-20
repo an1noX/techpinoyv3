@@ -1,0 +1,30 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+  --placeholder-image: url('/lovable-uploads/techpinoy-placeholder.png');
+  --main-orange: hsl(var(--techpinoy-500));
+  --darker-orange: hsl(var(--techpinoy-600));
+  --main-blue: hsl(var(--techblue-500));
+  --darker-blue: hsl(var(--techblue-600));
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  @apply bg-background text-foreground transition-colors duration-300;
+}
+
+/* Dark mode body styles */
+.dark-theme body {
+  @apply bg-background text-foreground;
+}

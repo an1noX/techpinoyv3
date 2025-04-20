@@ -1,4 +1,3 @@
-
 export interface Printer {
   id: string;
   make: string;
@@ -114,4 +113,167 @@ export interface RentalOption {
   cancellation_policy?: string;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Raw toner data from the Supabase 'toners' table
+ */
+export interface TonerData {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  page_yield: number;
+  stock: number;
+  threshold: number;
+  compatible_printers: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Commercial toner product for sale.
+ * This type is used to transform the raw toner data into a more frontend-friendly format.
+ */
+export interface TonerProduct {
+  id: string;
+  name: string;
+  description?: string;
+  category: string[];
+  commercial_products?: CommercialTonerProduct[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Base type for shared toner properties
+interface TonerBase {
+  brand: string;
+  model: string;
+  color: string;
+  oem_code?: string | null;
+  page_yield: number;
+  aliases?: string[];
+  variant_group_id?: string | null;
+  is_base_model?: boolean;
+  variant_name?: string | null;
+  base_model_reference?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// OEM Toner Reference (Wiki entry)
+export interface OEMToner {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  oem_code?: string | null;
+  page_yield: number;
+  aliases?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Commercial Toner Product (Inventory item)
+export interface CommercialTonerProduct {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string;
+  price: number;
+  stock_level: number;
+  reorder_point: number;
+  category: string[];
+  image_url?: string;
+  is_active: boolean;
+  toner_id: string;
+  created_at: string;
+  updated_at: string;
+  // Join data when querying with toner reference
+  toner?: OEMToner;
+}
+
+// For use in edit forms
+export interface EditableOEMToner extends OEMToner {
+  isEditing?: boolean;
+}
+
+// For creating new OEM toner references
+export interface NewOEMToner {
+  brand: string;
+  model: string;
+  color: string;
+  oem_code?: string | null;
+  page_yield: number;
+  aliases?: string[];
+}
+
+// For creating new commercial products
+export interface NewCommercialProduct {
+  sku: string;
+  name: string;
+  description?: string;
+  price: number;
+  stock_level: number;
+  reorder_point: number;
+  category: string[];
+  image_url?: string;
+  is_active: boolean;
+  toner_id: string;
+}
+
+// OEM Toner Reference - Used for printer compatibility tracking only, not inventory
+export interface Toner {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  oem_code?: string | null;
+  page_yield: number;
+  aliases?: string[];
+  // Variant support
+  variant_group_id?: string | null;
+  is_base_model?: boolean;
+  base_model_reference?: string | null;
+  variant_details?: Record<string, any> | null;
+  // Commercial product fields
+  is_commercial_product?: boolean;
+  price?: number;
+  stock?: number;
+  threshold?: number;
+  description?: string;
+  category?: string[];
+  image_url?: string;
+  is_active?: boolean;
+  compatible_printers?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Frontend view of commercial toner products
+export interface CommercialTonerProduct {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string;
+  price: number;
+  stock_level: number;
+  reorder_point: number;
+  category: string[];
+  image_url?: string;
+  is_active: boolean;
+  compatible_printers: string[];
+  created_at: string;
+  updated_at: string;
+  toner_id: string;
+}
+
+// For use in edit forms
+export interface EditableToner extends Toner {
+  isEditing?: boolean;
+}
+
+// For creating new toners
+export interface NewToner extends TonerBase {
+  id?: string;
 }

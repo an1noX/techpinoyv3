@@ -1,0 +1,35 @@
+
+.printer-finder-box {
+  @apply bg-techblue-700 text-white p-6 rounded-md;
+}
+
+.printer-finder-title {
+  @apply text-xl md:text-2xl font-bold mb-4 text-center;
+}
+
+.printer-finder-subtitle {
+  @apply text-sm md:text-base mb-6 text-center;
+}
+
+.printer-finder-button {
+  @apply bg-techpinoy-500 hover:bg-techpinoy-600 text-white font-bold py-3 px-6 rounded flex items-center justify-center w-full;
+}
+
+/* Printer finder specific styles for responsiveness */
+.printer-finder {
+  @apply h-full flex flex-col justify-between;
+}
+
+.printer-finder-compact {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.printer-finder-compact .space-y-3 {
+  @apply flex-grow flex flex-col;
+}
+
+.printer-finder-compact button {
+  @apply mt-auto;
+}

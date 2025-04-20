@@ -1,0 +1,114 @@
+
+/* ... keep existing code */
+
+/* Carousel and Slider Styles */
+.carousel-container {
+  @apply relative overflow-hidden rounded-lg;
+}
+
+.carousel-slide {
+  @apply transition-opacity duration-500;
+}
+
+.carousel-indicators {
+  @apply flex justify-center space-x-2 mt-3;
+}
+
+.carousel-indicator {
+  @apply w-1.5 h-1.5 rounded-full bg-gray-300 transition-all;
+}
+
+.carousel-indicator.active {
+  @apply bg-primary w-5;
+}
+
+/* Free Printer Program - Modern styles */
+.printer-program-container {
+  @apply bg-white rounded-xl shadow-md overflow-hidden transition-all;
+}
+
+.printer-badge {
+  @apply absolute top-3 right-3 z-10 px-3 py-1 bg-red-500 text-white font-bold text-xs;
+}
+
+.printer-benefit-item {
+  @apply flex items-start gap-2 text-gray-800 text-sm;
+}
+
+.printer-benefit-icon {
+  @apply p-1 rounded-full mt-0.5;
+}
+
+/* Story Section Styles */
+.story-section {
+  @apply transition-all duration-500 bg-white/60 p-3 rounded-lg;
+}
+
+.story-section-active {
+  @apply opacity-100 transform translate-y-0;
+}
+
+.story-section-inactive {
+  @apply opacity-0 absolute transform translate-y-8;
+}
+
+.story-icon-container {
+  @apply p-2 rounded-full;
+}
+
+/* Animations */
+@keyframes pulse-gentle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 3s infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s ease-out forwards;
+}
+
+/* Slideshow Styles */
+.slideshow-container {
+  @apply relative min-h-[200px];
+}
+
+.slideshow-slide {
+  @apply absolute top-0 left-0 w-full transition-all duration-500 ease-in-out;
+}
+
+.slideshow-slide-active {
+  @apply opacity-100 z-10;
+}
+
+.slideshow-slide-inactive {
+  @apply opacity-0 z-0;
+}
+
+.slideshow-dot {
+  @apply w-2 h-2 rounded-full transition-all duration-300 cursor-pointer;
+}
+
+.slideshow-dot-active {
+  @apply bg-primary w-5;
+}
+
+.slideshow-dot-inactive {
+  @apply bg-gray-300;
+}

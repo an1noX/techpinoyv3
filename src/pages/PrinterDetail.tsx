@@ -19,14 +19,18 @@ import { Calendar } from '@/components/ui/calendar';
 import {
   ChevronLeft, 
   Edit, 
+  Save,
+  X,
   Share2, 
   AlertTriangle, 
   Info, 
   Trash2,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Building2,
+  User
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Printer, PrinterStatus } from '@/types';
+import { Printer, PrinterStatus, Client, OwnershipType } from '@/types/printers';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -86,6 +90,9 @@ export default function PrinterDetail() {
   const [activeTab, setActiveTab] = useState('details');
   const [isForRent, setIsForRent] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedPrinter, setEditedPrinter] = useState<Partial<Printer>>({});
   const [rentalOptions, setRentalOptions] = useState<RentalOptions>({
     isForRent: false,
     rentalRate: 0,
@@ -103,8 +110,28 @@ export default function PrinterDetail() {
     if (id) {
       fetchPrinter(id);
       fetchRentalOptions(id);
+      fetchClients();
     }
   }, [id]);
+
+  const fetchClients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('company');
+
+      if (error) throw error;
+      setClients(data || []);
+    } catch (error: any) {
+      console.error('Error fetching clients:', error);
+      toast({
+        title: "Error fetching clients",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
   
   const fetchPrinter = async (printerId: string) => {
     try {
@@ -399,6 +426,75 @@ export default function PrinterDetail() {
     }));
     setHasUnsavedChanges(true);
   };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+    setEditedPrinter({
+      owned_by: printer?.owned_by,
+      department: printer?.department,
+      location: printer?.location,
+      client_id: printer?.client_id,
+      assigned_to: printer?.assigned_to
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedPrinter({});
+  };
+
+  const handleSaveEdit = async () => {
+    if (!printer || !editedPrinter) return;
+
+    try {
+      const updates = {
+        ...editedPrinter,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('printers')
+        .update(updates)
+        .eq('id', printer.id);
+
+      if (error) throw error;
+
+      setPrinter({
+        ...printer,
+        ...updates
+      });
+
+      setIsEditing(false);
+      toast({
+        title: "Changes saved",
+        description: "Printer details have been updated successfully."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error saving changes",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleOwnershipChange = (value: OwnershipType) => {
+    setEditedPrinter(prev => ({
+      ...prev,
+      owned_by: value,
+      // Clear client assignment if changing to system owned
+      ...(value === 'system' ? { client_id: null, assigned_to: null } : {})
+    }));
+  };
+
+  const handleClientChange = (clientId: string) => {
+    const selectedClient = clients.find(c => c.id === clientId);
+    setEditedPrinter(prev => ({
+      ...prev,
+      client_id: clientId,
+      assigned_to: selectedClient?.company
+    }));
+  };
   
   if (loading) {
     return (
@@ -449,9 +545,20 @@ export default function PrinterDetail() {
             }}>
               <Share2 className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/printers/${printer.id}/edit`)}>
-              <Edit className="h-5 w-5" />
-            </Button>
+            {isEditing ? (
+              <>
+                <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                  <X className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleSaveEdit}>
+                  <Save className="h-5 w-5" />
+                </Button>
+              </>
+            ) : (
+              <Button variant="ghost" size="icon" onClick={handleEdit}>
+                <Edit className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
         
@@ -508,39 +615,103 @@ export default function PrinterDetail() {
                       <span className="text-sm text-muted-foreground">Model</span>
                       <span className="text-sm font-medium">{printer.model}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Owner</span>
-                      <span className="text-sm font-medium capitalize">{printer.owned_by}</span>
+                      {isEditing ? (
+                        <Select
+                          value={editedPrinter.owned_by || printer.owned_by}
+                          onValueChange={handleOwnershipChange}
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="system">System Owned</SelectItem>
+                            <SelectItem value="client">Client Owned</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-sm font-medium capitalize">
+                          {printer.owned_by === 'system' ? 'System Owned' : 'Client Owned'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
                 
                 <div>
                   <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-muted-foreground">
-                      <path d="M20 10V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" />
-                      <path d="M20 14v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3" />
-                      <path d="M12 12H4v4a4 4 0 0 0 4 4h12" />
-                      <path d="M2 12h20" />
-                    </svg>
-                    <h3 className="font-medium">Location</h3>
+                    <Building2 className="h-5 w-5 mr-2 text-muted-foreground" />
+                    <h3 className="font-medium">Location & Assignment</h3>
                   </div>
                   <Separator className="my-2" />
-                  <div className="pl-7 space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Department</span>
-                      <span className="text-sm font-medium">{printer.department}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Location</span>
-                      <span className="text-sm font-medium">{printer.location}</span>
-                    </div>
-                    {printer.assigned_to && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Assigned To</span>
-                        <span className="text-sm font-medium">{printer.assigned_to}</span>
+                  <div className="pl-7 space-y-4">
+                    {(isEditing || printer.owned_by === 'client') && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Assigned Client</span>
+                        {isEditing ? (
+                          <Select
+                            value={editedPrinter.client_id || printer.client_id || ''}
+                            onValueChange={handleClientChange}
+                            disabled={editedPrinter.owned_by === 'system' || printer.owned_by === 'system'}
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Select client" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {clients.map(client => (
+                                <SelectItem key={client.id} value={client.id}>
+                                  {client.company}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : printer.assigned_to ? (
+                          <Badge variant="outline" className="font-medium">
+                            <User className="h-3 w-3 mr-1" />
+                            {printer.assigned_to}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Unassigned
+                          </Badge>
+                        )}
                       </div>
                     )}
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Department</span>
+                      {isEditing ? (
+                        <Input
+                          value={editedPrinter.department || printer.department || ''}
+                          onChange={(e) => setEditedPrinter(prev => ({
+                            ...prev,
+                            department: e.target.value
+                          }))}
+                          className="w-[180px]"
+                          placeholder="Enter department"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium">{printer.department || '—'}</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Location</span>
+                      {isEditing ? (
+                        <Input
+                          value={editedPrinter.location || printer.location || ''}
+                          onChange={(e) => setEditedPrinter(prev => ({
+                            ...prev,
+                            location: e.target.value
+                          }))}
+                          className="w-[180px]"
+                          placeholder="Enter location"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium">{printer.location || '—'}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 

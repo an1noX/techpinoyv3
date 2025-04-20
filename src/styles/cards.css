@@ -1,0 +1,40 @@
+
+.google-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 shadow-sm;
+}
+
+.google-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.google-badge-blue {
+  @apply bg-[#e8f0fe] text-[#1a73e8] border-[#1a73e8];
+}
+
+.product-card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-shadow hover:shadow-md;
+}
+
+.product-title {
+  @apply text-sm font-medium text-gray-800 line-clamp-2 h-10;
+}
+
+.product-price {
+  @apply text-lg font-bold text-gray-900;
+}
+
+.product-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.product-badge-instock {
+  @apply bg-green-100 text-green-800;
+}
+
+.product-badge-lowstock {
+  @apply bg-amber-100 text-amber-800;
+}
+
+.product-badge-outofstock {
+  @apply bg-red-100 text-red-800;
+}
