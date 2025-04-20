@@ -42,19 +42,18 @@ export function HomeHeader({ config }: HomeHeaderProps) {
   
   const headerConfig = { ...defaultConfig, ...config };
 
+  // Define navigation items for mobile sidebar
+  const navigationItems = [
+    { title: "Home", href: "/" },
+    { title: "Products", href: "/products" },
+    { title: "About", href: "/about" },
+    { title: "Contact", href: "/contact" }
+  ];
+
   return (
     <header className="bg-background sticky top-0 z-40 w-full border-b">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-        <Sheet>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="sm">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:w-64">
-            <MobileSidebar />
-          </SheetContent>
-        </Sheet>
+        <MobileSidebar navigation={navigationItems} />
         
         <Link to="/" className="flex items-center font-semibold">
           {headerConfig.logoUrl ? (

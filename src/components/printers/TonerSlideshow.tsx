@@ -8,16 +8,17 @@ import { ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 
 interface TonerSlideshowProps {
   toners: TonerType[];
+  printerModel?: string; // Made optional to avoid breaking existing usage
 }
 
-export function TonerSlideshow({ toners }: TonerSlideshowProps) {
+export function TonerSlideshow({ toners, printerModel }: TonerSlideshowProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   if (toners.length === 0) {
     return (
       <div className="text-center p-4 border rounded-md">
         <Printer className="h-10 w-10 mx-auto text-muted-foreground" />
-        <p className="mt-2 text-muted-foreground">No toners available for this printer</p>
+        <p className="mt-2 text-muted-foreground">No toners available {printerModel ? `for ${printerModel}` : ''}</p>
       </div>
     );
   }

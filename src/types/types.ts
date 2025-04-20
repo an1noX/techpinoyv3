@@ -124,7 +124,7 @@ export interface CommercialTonerProduct {
   created_at: string;
   updated_at: string;
   // Join data when querying with toner reference
-  toner?: OEMToner;
+  toner?: Partial<OEMToner>; // Changed to Partial to make it more flexible
 }
 
 // For creating new OEM toner references

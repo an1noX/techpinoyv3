@@ -38,7 +38,6 @@ export function TonerSection({
           <TonerSelector
             value={selectedToners[0] || ""}
             onChange={handleTonerSelectorChange}
-            onAddToner={onAddToner}
             toners={toners}
           />
         </div>

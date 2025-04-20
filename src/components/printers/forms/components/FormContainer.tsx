@@ -29,7 +29,6 @@ export function FormContainer({
       <Dialog open={open}>
         <DialogContent 
           className={cn("max-w-[900px] max-h-[90vh] overflow-hidden p-0", className)}
-          showClose={false}
         >
           <DialogHeader className="px-6 pt-6">
             <DialogTitle>{title}</DialogTitle>

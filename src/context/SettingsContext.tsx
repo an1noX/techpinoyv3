@@ -27,6 +27,7 @@ export interface StoreSettings {
   live_chat: LiveChat;
   social_media: SocialMedia;
   updated_at: string;
+  storeInfo?: any; // Added for compatibility with StoreSettings.tsx
 }
 
 interface SettingsContextType {
@@ -34,6 +35,7 @@ interface SettingsContextType {
   isLoading: boolean;
   saveSettings: (settings: StoreSettings) => Promise<void>;
   error: string | null;
+  updateStoreInfo?: (storeInfo: any) => Promise<void>; // Added for compatibility with StoreSettings.tsx
 }
 
 // Default settings
@@ -86,13 +88,22 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       // table doesn't exist yet, but for this example we'll keep it simple
       const { error } = await supabase
         .from('store_information')
-        .insert(defaultSettings);
+        .insert({
+          store_name: defaultSettings.store_name,
+          tagline: defaultSettings.tagline,
+          phone_number: defaultSettings.phone_number,
+          email: defaultSettings.email,
+          office_hours: defaultSettings.office_hours,
+          address: defaultSettings.address,
+          live_chat: defaultSettings.live_chat,
+          social_media: defaultSettings.social_media
+        });
 
       if (error) {
         console.error('Error creating settings:', error);
         setError(error.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in createInitialSettings:', err);
       setError('Failed to create initial settings');
     }
@@ -194,7 +205,26 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         youtube: socialMediaData?.youtube ?? defaultSettings.social_media.youtube,
         twitter: socialMediaData?.twitter ?? defaultSettings.social_media.twitter
       },
-      updated_at: data.updated_at || new Date().toISOString()
+      updated_at: data.updated_at || new Date().toISOString(),
+      storeInfo: {
+        storeName: data.store_name || defaultSettings.store_name,
+        tagline: data.tagline || defaultSettings.tagline,
+        phoneNumber: data.phone_number || defaultSettings.phone_number,
+        email: data.email || defaultSettings.email,
+        officeHours: data.office_hours || defaultSettings.office_hours,
+        address: data.address || defaultSettings.address,
+        liveChat: {
+          enabled: liveChatData?.enabled ?? defaultSettings.live_chat.enabled,
+          type: liveChatData?.type ?? defaultSettings.live_chat.type,
+          value: liveChatData?.value ?? defaultSettings.live_chat.value
+        },
+        socialMedia: {
+          facebook: socialMediaData?.facebook ?? defaultSettings.social_media.facebook,
+          instagram: socialMediaData?.instagram ?? defaultSettings.social_media.instagram,
+          youtube: socialMediaData?.youtube ?? defaultSettings.social_media.youtube,
+          twitter: socialMediaData?.twitter ?? defaultSettings.social_media.twitter
+        }
+      }
     };
   };
 
@@ -204,12 +234,17 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       setIsLoading(true);
       setError(null);
       
-      // Convert live_chat and social_media objects to JSON strings if needed
+      // Prepare data for saving
       const settingsToSave = {
-        ...updatedSettings,
-        // Convert objects to JSON strings if your database requires it
-        // live_chat: JSON.stringify(updatedSettings.live_chat),
-        // social_media: JSON.stringify(updatedSettings.social_media),
+        id: updatedSettings.id,
+        store_name: updatedSettings.store_name,
+        tagline: updatedSettings.tagline,
+        phone_number: updatedSettings.phone_number,
+        email: updatedSettings.email,
+        office_hours: updatedSettings.office_hours,
+        address: updatedSettings.address,
+        live_chat: updatedSettings.live_chat,
+        social_media: updatedSettings.social_media,
         updated_at: new Date().toISOString()
       };
       
@@ -232,13 +267,50 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     }
   };
 
+  // Update store info (compatibility with StoreSettings.tsx)
+  const updateStoreInfo = async (storeInfo: any) => {
+    if (!settings) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const updatedSettings: StoreSettings = {
+        ...settings,
+        store_name: storeInfo.storeName,
+        tagline: storeInfo.tagline,
+        phone_number: storeInfo.phoneNumber,
+        email: storeInfo.email,
+        office_hours: storeInfo.officeHours,
+        address: storeInfo.address,
+        live_chat: storeInfo.liveChat,
+        social_media: storeInfo.socialMedia,
+        updated_at: new Date().toISOString(),
+        storeInfo
+      };
+
+      await saveSettings(updatedSettings);
+    } catch (err: any) {
+      console.error('Error updating store info:', err);
+      setError(err.message || 'Failed to update store info');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Initial load of settings
   useEffect(() => {
     fetchSettings();
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ settings, isLoading, saveSettings, error }}>
+    <SettingsContext.Provider value={{ 
+      settings, 
+      isLoading, 
+      saveSettings, 
+      error,
+      updateStoreInfo
+    }}>
       {children}
     </SettingsContext.Provider>
   );
@@ -277,6 +349,26 @@ export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ chil
           console.log('Using default settings since none found in database');
           setSettings(defaultSettings);
         } else if (data) {
+          // Handle case where JSON fields might be stored as strings
+          let liveChatData = data.live_chat;
+          let socialMediaData = data.social_media;
+          
+          if (typeof liveChatData === 'string') {
+            try {
+              liveChatData = JSON.parse(liveChatData);
+            } catch (e) {
+              liveChatData = defaultSettings.live_chat;
+            }
+          }
+          
+          if (typeof socialMediaData === 'string') {
+            try {
+              socialMediaData = JSON.parse(socialMediaData);
+            } catch (e) {
+              socialMediaData = defaultSettings.social_media;
+            }
+          }
+          
           setSettings({
             id: data.id || '',
             store_name: data.store_name || defaultSettings.store_name,
@@ -285,8 +377,8 @@ export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ chil
             email: data.email || defaultSettings.email,
             office_hours: data.office_hours || defaultSettings.office_hours,
             address: data.address || defaultSettings.address,
-            live_chat: data.live_chat || defaultSettings.live_chat,
-            social_media: data.social_media || defaultSettings.social_media,
+            live_chat: liveChatData || defaultSettings.live_chat,
+            social_media: socialMediaData || defaultSettings.social_media,
             updated_at: data.updated_at || new Date().toISOString()
           });
         } else {

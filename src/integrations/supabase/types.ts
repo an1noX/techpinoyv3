@@ -101,6 +101,33 @@ export type Database = {
           },
         ]
       }
+      frontend_settings: {
+        Row: {
+          created_at: string
+          id: string
+          settings: Json | null
+          store_info: Json | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          settings?: Json | null
+          store_info?: Json | null
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          settings?: Json | null
+          store_info?: Json | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       printer_client_assignments: {
         Row: {
           assigned_at: string
