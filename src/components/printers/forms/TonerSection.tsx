@@ -1,11 +1,10 @@
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
-import { PrinterFormValues } from "./printer-form-schema";
-import { TonerType } from "@/types/types";
-import { TonerSelector } from "@/components/toners/TonerSelector";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TonerType } from "@/types/types";
+import { PrinterFormValues } from "../printer-form-schema";
+import { TonerSelector } from "@/components/toners/TonerSelector";
 
 interface TonerSectionProps {
   form: UseFormReturn<PrinterFormValues>;
@@ -31,43 +30,32 @@ export function TonerSection({
   };
 
   return (
-    <Card className="bg-white">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl">Toner Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <FormLabel>Primary Toner</FormLabel>
-            {onAddToner && (
-              <TonerSelector
-                value={selectedToners[0] || ""}
-                onChange={handleTonerSelectorChange}
-                onAddToner={onAddToner}
-                toners={toners}
-              />
-            )}
-          </div>
-          
-          <div>
-            <FormLabel>Compatible Toners</FormLabel>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border rounded p-2">
-              {toners.map((toner) => (
-                <div key={toner.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`toner-${toner.id}`}
-                    checked={selectedToners.includes(toner.id)}
-                    onCheckedChange={() => onTonerChange(toner.id)}
-                  />
-                  <FormLabel htmlFor={`toner-${toner.id}`} className="cursor-pointer">
-                    {toner.name}
-                  </FormLabel>
-                </div>
-              ))}
-            </div>
-          </div>
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">Compatible Toners</h3>
+      {onAddToner && (
+        <div className="mb-4">
+          <Label className="mb-2 block">Primary Toner</Label>
+          <TonerSelector
+            value={selectedToners[0] || ""}
+            onChange={handleTonerSelectorChange}
+            toners={toners}
+          />
         </div>
-      </CardContent>
-    </Card>
+      )}
+      <div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 border rounded p-2">
+          {toners.map((toner) => (
+            <div key={toner.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`toner-${toner.id}`}
+                checked={selectedToners.includes(toner.id)}
+                onCheckedChange={() => onTonerChange(toner.id)}
+              />
+              <Label htmlFor={`toner-${toner.id}`}>{toner.name}</Label>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/types/types';
@@ -58,7 +59,8 @@ const defaultSettings: StoreSettings = {
     youtube: '',
     twitter: ''
   },
-  updated_at: new Date().toISOString()
+  updated_at: new Date().toISOString(),
+  storeInfo: null
 };
 
 // Create the context
@@ -95,8 +97,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
           email: defaultSettings.email,
           office_hours: defaultSettings.office_hours,
           address: defaultSettings.address,
-          live_chat: defaultSettings.live_chat,
-          social_media: defaultSettings.social_media
+          live_chat: defaultSettings.live_chat as unknown as Json,
+          social_media: defaultSettings.social_media as unknown as Json
         });
 
       if (error) {
@@ -186,7 +188,30 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       }
     }
     
-    return {
+    // Ensure liveChatData has all required fields
+    if (!liveChatData || typeof liveChatData !== 'object') {
+      liveChatData = defaultSettings.live_chat;
+    } else {
+      liveChatData = {
+        enabled: liveChatData.enabled ?? defaultSettings.live_chat.enabled,
+        type: liveChatData.type ?? defaultSettings.live_chat.type,
+        value: liveChatData.value ?? defaultSettings.live_chat.value
+      };
+    }
+    
+    // Ensure socialMediaData has all required fields
+    if (!socialMediaData || typeof socialMediaData !== 'object') {
+      socialMediaData = defaultSettings.social_media;
+    } else {
+      socialMediaData = {
+        facebook: socialMediaData.facebook ?? defaultSettings.social_media.facebook,
+        instagram: socialMediaData.instagram ?? defaultSettings.social_media.instagram,
+        youtube: socialMediaData.youtube ?? defaultSettings.social_media.youtube,
+        twitter: socialMediaData.twitter ?? defaultSettings.social_media.twitter
+      };
+    }
+    
+    const formattedSettings: StoreSettings = {
       id: data.id || '',
       store_name: data.store_name || defaultSettings.store_name,
       tagline: data.tagline || defaultSettings.tagline,
@@ -194,38 +219,24 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       email: data.email || defaultSettings.email,
       office_hours: data.office_hours || defaultSettings.office_hours,
       address: data.address || defaultSettings.address,
-      live_chat: {
-        enabled: liveChatData?.enabled ?? defaultSettings.live_chat.enabled,
-        type: liveChatData?.type ?? defaultSettings.live_chat.type,
-        value: liveChatData?.value ?? defaultSettings.live_chat.value
-      },
-      social_media: {
-        facebook: socialMediaData?.facebook ?? defaultSettings.social_media.facebook,
-        instagram: socialMediaData?.instagram ?? defaultSettings.social_media.instagram,
-        youtube: socialMediaData?.youtube ?? defaultSettings.social_media.youtube,
-        twitter: socialMediaData?.twitter ?? defaultSettings.social_media.twitter
-      },
-      updated_at: data.updated_at || new Date().toISOString(),
-      storeInfo: {
-        storeName: data.store_name || defaultSettings.store_name,
-        tagline: data.tagline || defaultSettings.tagline,
-        phoneNumber: data.phone_number || defaultSettings.phone_number,
-        email: data.email || defaultSettings.email,
-        officeHours: data.office_hours || defaultSettings.office_hours,
-        address: data.address || defaultSettings.address,
-        liveChat: {
-          enabled: liveChatData?.enabled ?? defaultSettings.live_chat.enabled,
-          type: liveChatData?.type ?? defaultSettings.live_chat.type,
-          value: liveChatData?.value ?? defaultSettings.live_chat.value
-        },
-        socialMedia: {
-          facebook: socialMediaData?.facebook ?? defaultSettings.social_media.facebook,
-          instagram: socialMediaData?.instagram ?? defaultSettings.social_media.instagram,
-          youtube: socialMediaData?.youtube ?? defaultSettings.social_media.youtube,
-          twitter: socialMediaData?.twitter ?? defaultSettings.social_media.twitter
-        }
-      }
+      live_chat: liveChatData as LiveChat,
+      social_media: socialMediaData as SocialMedia,
+      updated_at: data.updated_at || new Date().toISOString()
     };
+    
+    // Add storeInfo for compatibility with StoreSettings.tsx
+    formattedSettings.storeInfo = {
+      storeName: formattedSettings.store_name,
+      tagline: formattedSettings.tagline,
+      phoneNumber: formattedSettings.phone_number,
+      email: formattedSettings.email,
+      officeHours: formattedSettings.office_hours,
+      address: formattedSettings.address,
+      liveChat: formattedSettings.live_chat,
+      socialMedia: formattedSettings.social_media
+    };
+    
+    return formattedSettings;
   };
 
   // Save settings to database
@@ -243,8 +254,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
         email: updatedSettings.email,
         office_hours: updatedSettings.office_hours,
         address: updatedSettings.address,
-        live_chat: updatedSettings.live_chat,
-        social_media: updatedSettings.social_media,
+        live_chat: updatedSettings.live_chat as unknown as Json,
+        social_media: updatedSettings.social_media as unknown as Json,
         updated_at: new Date().toISOString()
       };
       
@@ -369,7 +380,7 @@ export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ chil
             }
           }
           
-          setSettings({
+          const formattedSettings: StoreSettings = {
             id: data.id || '',
             store_name: data.store_name || defaultSettings.store_name,
             tagline: data.tagline || defaultSettings.tagline,
@@ -377,10 +388,24 @@ export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ chil
             email: data.email || defaultSettings.email,
             office_hours: data.office_hours || defaultSettings.office_hours,
             address: data.address || defaultSettings.address,
-            live_chat: liveChatData || defaultSettings.live_chat,
-            social_media: socialMediaData || defaultSettings.social_media,
+            live_chat: liveChatData as LiveChat || defaultSettings.live_chat,
+            social_media: socialMediaData as SocialMedia || defaultSettings.social_media,
             updated_at: data.updated_at || new Date().toISOString()
-          });
+          };
+          
+          // Add storeInfo for compatibility
+          formattedSettings.storeInfo = {
+            storeName: formattedSettings.store_name,
+            tagline: formattedSettings.tagline,
+            phoneNumber: formattedSettings.phone_number,
+            email: formattedSettings.email,
+            officeHours: formattedSettings.office_hours,
+            address: formattedSettings.address,
+            liveChat: formattedSettings.live_chat,
+            socialMedia: formattedSettings.social_media
+          };
+          
+          setSettings(formattedSettings);
         } else {
           setSettings(defaultSettings);
         }

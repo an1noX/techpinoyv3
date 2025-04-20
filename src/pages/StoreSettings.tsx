@@ -53,6 +53,27 @@ const storeInfoSchema = z.object({
 
 type StoreInfoForm = z.infer<typeof storeInfoSchema>;
 
+// Default store info values
+const defaultStoreInfo: StoreInfoForm = {
+  storeName: "",
+  tagline: "",
+  phoneNumber: "",
+  email: "",
+  officeHours: "",
+  address: "",
+  liveChat: {
+    enabled: false,
+    type: "messenger",
+    value: ""
+  },
+  socialMedia: {
+    facebook: "",
+    instagram: "",
+    youtube: "",
+    twitter: ""
+  }
+};
+
 export default function StoreSettings() {
   const navigate = useNavigate();
   const { settings, updateStoreInfo, isLoading } = useSettings();
@@ -60,42 +81,45 @@ export default function StoreSettings() {
 
   const form = useForm<StoreInfoForm>({
     resolver: zodResolver(storeInfoSchema),
-    defaultValues: {
-      storeName: "",
-      tagline: "",
-      phoneNumber: "",
-      email: "",
-      officeHours: "",
-      address: "",
-      liveChat: {
-        enabled: false,
-        type: "messenger",
-        value: ""
-      },
-      socialMedia: {
-        facebook: "",
-        instagram: "",
-        youtube: "",
-        twitter: ""
-      }
-    }
+    defaultValues: defaultStoreInfo
   });
 
   // Update form when settings are loaded
   useEffect(() => {
-    if (settings.storeInfo) {
+    if (settings && settings.storeInfo) {
       form.reset(settings.storeInfo);
+    } else if (settings) {
+      // If settings exist but storeInfo doesn't, create a default storeInfo from settings
+      const mappedStoreInfo: StoreInfoForm = {
+        storeName: settings.store_name || "",
+        tagline: settings.tagline || "",
+        phoneNumber: settings.phone_number || "",
+        email: settings.email || "",
+        officeHours: settings.office_hours || "",
+        address: settings.address || "",
+        liveChat: settings.live_chat || defaultStoreInfo.liveChat,
+        socialMedia: settings.social_media || defaultStoreInfo.socialMedia
+      };
+      form.reset(mappedStoreInfo);
     }
-  }, [settings.storeInfo, form]);
+  }, [settings, form]);
 
   const onSubmit = async (data: StoreInfoForm) => {
     try {
       setIsSaving(true);
-      await updateStoreInfo(data as StoreInfo);
-      toast({
-        title: "Settings saved",
-        description: "Store settings have been updated successfully."
-      });
+      if (updateStoreInfo) {
+        await updateStoreInfo(data as StoreInfo);
+        toast({
+          title: "Settings saved",
+          description: "Store settings have been updated successfully."
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Cannot update settings: updateStoreInfo function not available",
+          variant: "destructive"
+        });
+      }
     } catch (error: any) {
       console.error('Save error:', error);
       toast({

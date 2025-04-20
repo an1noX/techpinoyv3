@@ -20,9 +20,10 @@ export interface TonerSelectorProps {
   value: string;
   onChange: (value: string) => void;
   toners: TonerType[];
+  onAddToner?: (toner: TonerType) => void;
 }
 
-export function TonerSelector({ value, onChange, toners }: TonerSelectorProps) {
+export function TonerSelector({ value, onChange, toners, onAddToner }: TonerSelectorProps) {
   const [open, setOpen] = useState(false);
   const selectedToner = toners.find((toner) => toner.id === value);
 
