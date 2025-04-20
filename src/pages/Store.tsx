@@ -170,6 +170,11 @@ const StoreContent = () => {
     );
   }
 
+  useEffect(() => {
+    // Seed on initial load (one-time; safe to call repeatedly due to skip logic)
+    seedTonerProducts();
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden">
       {/* Toast notifications */}
