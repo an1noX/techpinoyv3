@@ -120,21 +120,8 @@ export default function PrinterDetail() {
         throw error;
       }
       
-      const transformedPrinter: Printer = {
-        id: data.id,
-        make: data.make,
-        series: data.series,
-        model: data.model,
-        status: data.status as PrinterStatus,
-        ownedBy: data.owned_by,
-        assignedTo: data.assigned_to || undefined,
-        department: data.department || undefined,
-        location: data.location || undefined,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      };
+      setPrinter(data as Printer);
       
-      setPrinter(transformedPrinter);
     } catch (error: any) {
       toast({
         title: "Error fetching printer details",
@@ -149,11 +136,11 @@ export default function PrinterDetail() {
           series: 'LaserJet', 
           model: 'Pro MFP M428fdn',
           status: 'available',
-          ownedBy: 'system',
+          owned_by: 'system',
           department: 'Marketing',
           location: 'Floor 2, Room 201',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         '2': { 
           id: '2', 
@@ -161,12 +148,12 @@ export default function PrinterDetail() {
           series: 'MFC', 
           model: 'L8900CDW',
           status: 'rented',
-          ownedBy: 'system',
-          assignedTo: 'Acme Corp',
+          owned_by: 'system',
+          assigned_to: 'Acme Corp',
           department: 'Sales',
           location: 'Floor 1, Room 105',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
         '3': { 
           id: '3', 
@@ -174,12 +161,12 @@ export default function PrinterDetail() {
           series: 'imageRUNNER', 
           model: '1643i',
           status: 'maintenance',
-          ownedBy: 'client',
-          assignedTo: 'TechSolutions Inc',
+          owned_by: 'client',
+          assigned_to: 'TechSolutions Inc',
           department: 'IT',
           location: 'Floor 3, Room 302',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         },
       };
       
@@ -243,7 +230,7 @@ export default function PrinterDetail() {
       setPrinter({
         ...printer,
         status,
-        updatedAt: new Date().toISOString()
+        updated_at: new Date().toISOString()
       });
       
       toast({
@@ -316,8 +303,8 @@ export default function PrinterDetail() {
       if (printer) {
         setPrinter({
           ...printer,
-          isForRent: state,
-          updatedAt: new Date().toISOString()
+          is_for_rent: state,
+          updated_at: new Date().toISOString()
         });
       }
       
@@ -348,7 +335,7 @@ export default function PrinterDetail() {
 
   useEffect(() => {
     if (printer) {
-      setIsForRent(printer.isForRent || false);
+      setIsForRent(printer.is_for_rent || false);
     }
   }, [printer]);
 
@@ -523,7 +510,7 @@ export default function PrinterDetail() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Owner</span>
-                      <span className="text-sm font-medium capitalize">{printer.ownedBy}</span>
+                      <span className="text-sm font-medium capitalize">{printer.owned_by}</span>
                     </div>
                   </div>
                 </div>
@@ -548,10 +535,10 @@ export default function PrinterDetail() {
                       <span className="text-sm text-muted-foreground">Location</span>
                       <span className="text-sm font-medium">{printer.location}</span>
                     </div>
-                    {printer.assignedTo && (
+                    {printer.assigned_to && (
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Assigned To</span>
-                        <span className="text-sm font-medium">{printer.assignedTo}</span>
+                        <span className="text-sm font-medium">{printer.assigned_to}</span>
                       </div>
                     )}
                   </div>
@@ -615,7 +602,7 @@ export default function PrinterDetail() {
                 
                 <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="destructive" className="w-full mt-4">
+                    <Button variant="destructive" className="w-full">
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete Printer
                     </Button>

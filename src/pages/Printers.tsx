@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -80,6 +79,7 @@ export default function Printers() {
           location: 'Floor 2, Room 201',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_for_rent: false,
         },
         { 
           id: '2', 
@@ -93,6 +93,7 @@ export default function Printers() {
           location: 'Floor 1, Room 105',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_for_rent: false,
         },
         { 
           id: '3', 
@@ -106,6 +107,7 @@ export default function Printers() {
           location: 'Floor 3, Room 302',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_for_rent: false,
         },
       ];
       
