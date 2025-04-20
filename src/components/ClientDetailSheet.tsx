@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Client, PrinterSummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 interface ClientDetailSheetProps {
   open: boolean;
@@ -49,7 +49,6 @@ export function ClientDetailSheet({
         notes: client.notes || ''
       });
       
-      // Extract departments from printers
       if (client.printers) {
         const depts = client.printers
           .map(printer => printer.location || '')
@@ -123,8 +122,6 @@ export function ClientDetailSheet({
         return;
       }
 
-      // In a real application, we would update the assigned printers or create a departments table
-      // For this demo, we'll just add it to our local state
       setDepartments(prev => [...prev, newDepartment]);
       setNewDepartment('');
       setAddingDepartment(false);
@@ -144,12 +141,9 @@ export function ClientDetailSheet({
 
   const handleDeleteClient = async () => {
     try {
-      // Check if client has assigned printers
       if (client.printers && client.printers.length > 0) {
-        // Get all printer IDs
         const printerIds = client.printers.map(printer => printer.id);
         
-        // Update all printers to remove the client
         const { error: updateError } = await supabase
           .from('printers')
           .update({
@@ -164,7 +158,6 @@ export function ClientDetailSheet({
           throw updateError;
         }
         
-        // Delete any printer assignments
         const { error: assignmentError } = await supabase
           .from('printer_client_assignments')
           .delete()
@@ -175,7 +168,6 @@ export function ClientDetailSheet({
         }
       }
       
-      // Delete the client
       const { error } = await supabase
         .from('clients')
         .delete()

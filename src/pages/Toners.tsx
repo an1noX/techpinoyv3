@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Json } from '@/integrations/supabase/types';
 
 interface Toner {
   id: string;
@@ -21,7 +22,7 @@ interface Toner {
   page_yield: number;
   stock: number;
   threshold: number;
-  compatible_printers?: Record<string, any>;
+  compatible_printers?: Record<string, any> | null;
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +59,7 @@ export default function Toners() {
         throw error;
       }
       
-      setToners(data || []);
+      setToners(data as Toner[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching toners",
