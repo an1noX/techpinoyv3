@@ -194,7 +194,7 @@ const StoreContent = () => {
           onProductClick={handleProductClick} 
         />
 
-        {/* Printer Solutions Section */}
+        {/* Printer Solutions Section (Now uses live Supabase data) */}
         <PrinterSolutionsSection />
 
         {/* About TechPinoy */}
