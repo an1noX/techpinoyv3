@@ -1,0 +1,151 @@
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { PrinterType, TonerType, PrinterStatusType, PrinterOwnershipType } from "@/types/types";
+import { toast } from "sonner";
+import { Form } from "@/components/ui/form";
+import { FormContainer } from "./components/FormContainer";
+import { FormActions } from "./components/FormActions";
+import { printerFormSchema, type PrinterFormValues } from "./printer-form-schema";
+import { GeneralInfoSection } from "./sections/GeneralInfoSection";
+import { DetailsSection } from "./sections/DetailsSection";
+import { PricingSection } from "./sections/PricingSection";
+import { FeaturesSection } from "./sections/FeaturesSection";
+import { TonerSection } from "./sections/TonerSection";
+import { ImageSection } from "./sections/ImageSection";
+import { PrinterOwnershipSection } from "./PrinterOwnershipSection";
+import { usePrinterMakesAndSeries } from "@/hooks/usePrinterMakesAndSeries";
+import { usePrinterFormState } from "./hooks/usePrinterFormState";
+
+interface PrinterFormProps {
+  printer?: PrinterType;
+  toners: TonerType[];
+  clients?: Array<{ id: string; name: string }>;
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: PrinterType) => void;
+  onAddToner?: (toner: TonerType) => void;
+}
+
+export function PrinterForm({
+  printer,
+  toners,
+  clients = [],
+  open,
+  onClose,
+  onSubmit,
+  onAddToner
+}: PrinterFormProps) {
+  const {
+    form,
+    selectedToners,
+    setSelectedToners,
+    imageUrl,
+    setImageUrl,
+    ownershipType,
+    isAlertDialogOpen, 
+    setIsAlertDialogOpen,
+    handleClose,
+    handleConfirmCancel,
+    handleTonerChange,
+    handleAddNewToner
+  } = usePrinterFormState(printer, onAddToner);
+
+  const { makes, series, addNewMake, addNewSeries } = usePrinterMakesAndSeries();
+
+  const onSubmitData = (data: PrinterFormValues) => {
+    // Generate printer name from make, series, model
+    const makeName = makes.find(m => m.id === data.make)?.name || data.make;
+    const seriesName = series.find(s => s.id === data.series)?.name || data.series;
+    const printerName = [makeName, seriesName, data.model].filter(Boolean).join(" ");
+    
+    // Create printer data with the form values and selected toners
+    const printerData: PrinterType = {
+      id: printer?.id || crypto.randomUUID(),
+      name: printerName,
+      model: data.model,
+      series: data.series,
+      type: data.type,
+      status: data.status,
+      make: data.make,
+      serialNumber: data.serialNumber,
+      department: data.department,
+      location: data.location,
+      description: data.description,
+      category: data.category,
+      price: data.price,
+      rentalPrice: data.rentalPrice,
+      quantityInStock: data.quantityInStock,
+      imageUrl: imageUrl,
+      isRentalAvailable: data.isRentalAvailable,
+      isFeatured: data.isFeatured,
+      toners: selectedToners,
+      ownership: data.ownership,
+      clientId: data.clientId,
+      oemToner: data.oemToner,
+    };
+
+    onSubmit(printerData);
+    onClose();
+    toast.success(`${printerName} has been saved!`);
+  };
+
+  return (
+    <FormContainer 
+      open={open}
+      isAlertDialogOpen={isAlertDialogOpen}
+      title={printer ? "Edit Printer" : "Add Printer"}
+      description={printer ? "Edit the details of the selected printer." : "Add a new printer to the catalog."}
+      onCloseAlert={() => setIsAlertDialogOpen(false)}
+      onConfirmCancel={handleConfirmCancel}
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmitData)} className="grid gap-6 p-6">
+          <h2 className="text-xl font-semibold">{printer ? "Edit Printer" : "Add Printer"}</h2>
+          <p className="text-sm text-muted-foreground">
+            {printer ? "Edit the details of the selected printer." : "Add a new printer to the catalog."}
+          </p>
+          
+          <div className="grid gap-6 overflow-y-auto max-h-[calc(90vh-12rem)] p-1">
+            <GeneralInfoSection 
+              form={form} 
+              makes={makes} 
+              series={series}
+              onAddNewMake={addNewMake}
+              onAddNewSeries={addNewSeries}
+            />
+            <DetailsSection 
+              form={form}
+              toners={toners.map(t => ({ id: t.id, name: t.name }))}
+              onAddNewToner={handleAddNewToner}
+            />
+            <PricingSection form={form} />
+            <FeaturesSection form={form} />
+            <PrinterOwnershipSection 
+              form={form} 
+              ownershipType={ownershipType}
+              clients={clients}
+            />
+            <TonerSection 
+              form={form} 
+              toners={toners} 
+              selectedToners={selectedToners} 
+              onTonerChange={handleTonerChange} 
+              onAddToner={onAddToner} 
+            />
+            <ImageSection 
+              imageUrl={imageUrl} 
+              setImageUrl={setImageUrl} 
+            />
+          </div>
+
+          <FormActions 
+            isEditing={!!printer} 
+            onCancel={handleClose} 
+          />
+        </form>
+      </Form>
+    </FormContainer>
+  );
+}

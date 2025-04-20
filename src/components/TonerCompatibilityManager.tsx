@@ -1,3 +1,13 @@
+/**
+ * TonerCompatibilityManager
+ * 
+ * This component manages the relationship between printers and their compatible OEM toner models.
+ * It uses the reference data from the 'toners' table and maintains relationships in 'printer_toner_compatibility'.
+ * 
+ * Note: This is NOT related to product inventory management. This component only handles 
+ * the reference data that indicates which toner models are compatible with which printers.
+ * For actual product inventory management, see the TonerProducts page.
+ */
 
 import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
@@ -9,12 +19,17 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Toner {
-  id: string;
+interface TonerBase {
   brand: string;
   model: string;
   color: string;
+  oem_code?: string | null;
   page_yield: number;
+  aliases?: string[];
+}
+
+interface Toner extends TonerBase {
+  id: string;
 }
 
 interface TonerCompatibilityManagerProps {
@@ -44,14 +59,24 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
             brand,
             model,
             color,
-            page_yield
+            oem_code,
+            page_yield,
+            aliases
           )
         `)
         .eq('printer_wiki_id', printerId);
 
       if (error) throw error;
 
-      const toners = data.map(item => item.toners as Toner);
+      const toners = data.map(item => {
+        if (!item.toners) return null;
+        const toner = item.toners as unknown as Toner;
+        return {
+          ...toner,
+          aliases: Array.isArray(toner.aliases) ? toner.aliases : []
+        };
+      }).filter((toner): toner is Toner => toner !== null);
+
       setCompatibleToners(toners);
     } catch (error: any) {
       toast({
@@ -73,7 +98,12 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
 
       if (error) throw error;
 
-      setAvailableToners(data);
+      const processedData = (data || []).map(toner => ({
+        ...toner,
+        aliases: Array.isArray(toner.aliases) ? toner.aliases : []
+      }));
+
+      setAvailableToners(processedData);
       setAddTonerDialogOpen(true);
     } catch (error: any) {
       toast({
@@ -90,7 +120,9 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
         .from('printer_toner_compatibility')
         .insert({
           printer_wiki_id: printerId,
-          toner_id: toner.id
+          toner_id: toner.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -99,7 +131,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       setAddTonerDialogOpen(false);
       
       toast({
-        title: "Toner added",
+        title: "Success",
         description: "Toner compatibility has been updated"
       });
     } catch (error: any) {
@@ -124,7 +156,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       setCompatibleToners(compatibleToners.filter(t => t.id !== tonerId));
       
       toast({
-        title: "Toner removed",
+        title: "Success",
         description: "Toner compatibility has been updated"
       });
     } catch (error: any) {
@@ -138,7 +170,11 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
 
   const filteredToners = availableToners.filter(toner =>
     toner.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    toner.model.toLowerCase().includes(searchTerm.toLowerCase())
+    toner.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    toner.oem_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (toner.aliases || []).some(alias => 
+      alias.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   return (
@@ -173,11 +209,17 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
                 <div>
                   <p className="font-medium">{toner.brand} {toner.model}</p>
                   <div className="flex gap-2 mt-1">
-                    <Badge>{toner.color}</Badge>
+                    <Badge variant="outline" className="capitalize">{toner.color}</Badge>
+                    {toner.oem_code && <Badge variant="outline">{toner.oem_code}</Badge>}
                     <span className="text-sm text-muted-foreground">
                       {toner.page_yield.toLocaleString()} pages
                     </span>
                   </div>
+                  {toner.aliases && toner.aliases.length > 0 && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Also known as: {toner.aliases.join(', ')}
+                    </p>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
@@ -215,11 +257,17 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
                   <div>
                     <p className="font-medium">{toner.brand} {toner.model}</p>
                     <div className="flex gap-2 mt-1">
-                      <Badge>{toner.color}</Badge>
+                      <Badge variant="outline" className="capitalize">{toner.color}</Badge>
+                      {toner.oem_code && <Badge variant="outline">{toner.oem_code}</Badge>}
                       <span className="text-sm text-muted-foreground">
                         {toner.page_yield.toLocaleString()} pages
                       </span>
                     </div>
+                    {toner.aliases && toner.aliases.length > 0 && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Also known as: {toner.aliases.join(', ')}
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="outline"
