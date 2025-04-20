@@ -5,7 +5,7 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Printer, Calendar, User, Tool, DollarSign, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Printer, Calendar, User, DollarSign, ClipboardList, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -65,7 +65,7 @@ export default function MaintenanceDetail() {
     }
   };
 
-  const updateMaintenanceStatus = async (status: string) => {
+  const updateMaintenanceStatus = async (status: "pending" | "in_progress" | "completed" | "unrepairable" | "decommissioned") => {
     try {
       const { error } = await supabase
         .from('maintenance_records')
