@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Printer, PrinterStatus, OwnershipType } from "@/types/printers";
+import { Printer, PrinterStatus } from "@/types/printers";
 
 export function useRentablePrinters() {
   const [printers, setPrinters] = useState<Printer[]>([]);
@@ -27,9 +27,8 @@ export function useRentablePrinters() {
         // Transform the data to match the Printer type
         const typedPrinters: Printer[] = (data || []).map(printer => ({
           ...printer,
-          // Ensure status and owned_by are properly typed
+          // Ensure status is properly typed as PrinterStatus
           status: printer.status as PrinterStatus,
-          owned_by: printer.owned_by as OwnershipType
         }));
         setPrinters(typedPrinters);
       }
