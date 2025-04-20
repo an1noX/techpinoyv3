@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Json } from '@/integrations/supabase/types';
 
 const formSchema = z.object({
   sku: z.string().min(1, 'SKU is required'),
@@ -87,15 +88,28 @@ export function TonerProductDialog({
       
       // Process data to ensure all fields are correctly typed
       const processedData = (data || []).map(toner => {
-        // Ensure aliases is always an array of strings
+        // Handle potentially problematic fields
         const aliases = Array.isArray(toner.aliases) 
-          ? toner.aliases.map((alias: any) => String(alias))
-          : [];
+          ? toner.aliases 
+          : (toner.aliases ? [] : []);
+          
+        // Convert compatible_printers from Json to string[]
+        const compatible_printers = Array.isArray(toner.compatible_printers) 
+          ? toner.compatible_printers 
+          : (toner.compatible_printers ? [] : []);
         
         return {
-          ...toner,
-          aliases
-        };
+          id: toner.id,
+          brand: toner.brand,
+          model: toner.model,
+          color: toner.color,
+          oem_code: toner.oem_code,
+          page_yield: toner.page_yield || 0,
+          aliases: aliases as string[],
+          compatible_printers: compatible_printers as string[],
+          created_at: toner.created_at,
+          updated_at: toner.updated_at
+        } as OEMToner;
       });
       
       setOEMToners(processedData);

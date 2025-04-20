@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
@@ -9,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TonerProductDialog } from '@/components/TonerProductDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-// Use the import from index.ts instead of types.ts
 import { CommercialTonerProduct } from '@/types';
 
 export default function TonerProducts() {
@@ -35,27 +33,25 @@ export default function TonerProducts() {
             id,
             brand,
             model,
-            color
+            color,
+            page_yield,
+            created_at,
+            updated_at
           )
         `)
         .order('name');
 
       if (error) throw error;
       
-      // Ensure the data conforms to the CommercialTonerProduct type from index.ts
-      const typedData = data?.map(item => ({
-        ...item,
-        category: Array.isArray(item.category) ? item.category : [],
-        toner: item.toner ? {
-          ...item.toner,
-          // Add missing required fields for OEMToner
-          created_at: item.toner.created_at || new Date().toISOString(),
-          updated_at: item.toner.updated_at || new Date().toISOString(),
-          page_yield: item.toner.page_yield || 0
-        } : undefined
-      })) as CommercialTonerProduct[];
+      const typedData = data?.map(item => {
+        return {
+          ...item,
+          category: Array.isArray(item.category) ? item.category : [],
+          toner: item.toner || undefined
+        } as CommercialTonerProduct;
+      }) || [];
       
-      setProducts(typedData || []);
+      setProducts(typedData);
     } catch (error: any) {
       toast({
         title: "Error fetching products",
@@ -108,7 +104,7 @@ export default function TonerProducts() {
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.toner as any)?.model?.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.toner?.model?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   return (
