@@ -2,7 +2,7 @@
 //ensure these are check throughly in each project folders and subfolders
 //these components just neededs update or add entry in db if missing or need to fix the interface
 //ensure that this components layout,style will not be touched changed or modified
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProductDetailsDialog } from "@/components/products/ProductDetailsDialog";
 import { HomeHeader } from "@/components/layout/HomeHeader";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -19,6 +19,7 @@ import { Toaster } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StaticSettingsProvider, useStaticSettings } from "@/context/StaticSettingsContext";
+import { seedTonerProducts } from "@/utils/seedToners";
 
 // Static product interface
 export interface EnhancedTonerType {
