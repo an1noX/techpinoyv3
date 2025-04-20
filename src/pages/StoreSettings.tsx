@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const storeInfoSchema = z.object({
   storeName: z.string().min(1, "Store name is required"),
@@ -102,10 +111,8 @@ export default function StoreSettings() {
   if (isLoading) {
     return (
       <MobileLayout>
-        <div className="container mx-auto py-8">
-          <div className="flex justify-center">
-            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-          </div>
+        <div className="container mx-auto py-8 flex items-center justify-center h-[80vh]">
+          <LoadingSpinner size={32} className="text-primary" />
         </div>
       </MobileLayout>
     );
@@ -113,9 +120,9 @@ export default function StoreSettings() {
 
   return (
     <MobileLayout>
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-8 px-4 md:px-8">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/store")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -123,7 +130,7 @@ export default function StoreSettings() {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-20">
             <Card>
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
@@ -244,16 +251,22 @@ export default function StoreSettings() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Chat Type</FormLabel>
-                          <FormControl>
-                            <select
-                              className="w-full p-2 border rounded-md"
-                              {...field}
-                            >
-                              <option value="messenger">Facebook Messenger</option>
-                              <option value="whatsapp">WhatsApp</option>
-                              <option value="custom">Custom</option>
-                            </select>
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select chat type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="messenger">Facebook Messenger</SelectItem>
+                              <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                              <SelectItem value="custom">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -349,13 +362,24 @@ export default function StoreSettings() {
               </CardContent>
             </Card>
 
-            <Button 
-              type="submit"
-              className="mb-20"
-              disabled={isSaving}
-            >
-              {isSaving ? "Saving..." : "Save Changes"}
-            </Button>
+            <div className="flex justify-between">
+              <Link to="/store">
+                <Button type="button" variant="outline">
+                  Cancel
+                </Button>
+              </Link>
+              <Button 
+                type="submit"
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <LoadingSpinner size={16} className="mr-2" />
+                    Saving...
+                  </>
+                ) : "Save Changes"}
+              </Button>
+            </div>
           </form>
         </Form>
       </div>

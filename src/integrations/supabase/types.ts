@@ -45,6 +45,62 @@ export type Database = {
         }
         Relationships: []
       }
+      commercial_toner_products: {
+        Row: {
+          category: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price: number
+          reorder_point: number
+          sku: string
+          stock_level: number
+          toner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price: number
+          reorder_point?: number
+          sku: string
+          stock_level?: number
+          toner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          reorder_point?: number
+          sku?: string
+          stock_level?: number
+          toner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_toner_products_toner_id_fkey"
+            columns: ["toner_id"]
+            isOneToOne: false
+            referencedRelation: "toners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_client_assignments: {
         Row: {
           assigned_at: string
@@ -372,80 +428,140 @@ export type Database = {
           },
         ]
       }
+      store_information: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          live_chat: Json | null
+          office_hours: string | null
+          phone_number: string | null
+          social_media: Json | null
+          store_name: string
+          tagline: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          live_chat?: Json | null
+          office_hours?: string | null
+          phone_number?: string | null
+          social_media?: Json | null
+          store_name: string
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          live_chat?: Json | null
+          office_hours?: string | null
+          phone_number?: string | null
+          social_media?: Json | null
+          store_name?: string
+          tagline?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       toners: {
         Row: {
+          aliases: Json | null
+          base_model_reference: string | null
           brand: string
+          category: string[] | null
           color: string
           compatible_printers: Json | null
           created_at: string
+          description: string | null
           id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_base_model: boolean | null
+          is_commercial_product: boolean | null
           model: string
+          oem_code: string | null
           page_yield: number
+          sku: string | null
           stock: number
           threshold: number
           updated_at: string
-          variant_group_id: string | null
-          is_base_model: boolean
-          base_model_reference: string | null
           variant_details: Json | null
-          oem_code: string | null
-          aliases: string[] | null
-          is_commercial_product: boolean
-          category: string[] | null
-          description: string | null
-          image_url: string | null
-          is_active: boolean
-          sku: string | null
+          variant_group_id: string | null
+          variant_name: string | null
         }
         Insert: {
+          aliases?: Json | null
+          base_model_reference?: string | null
           brand: string
+          category?: string[] | null
           color: string
           compatible_printers?: Json | null
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_base_model?: boolean | null
+          is_commercial_product?: boolean | null
           model: string
+          oem_code?: string | null
           page_yield: number
+          sku?: string | null
           stock?: number
           threshold?: number
           updated_at?: string
-          variant_group_id?: string | null
-          is_base_model?: boolean
-          base_model_reference?: string | null
           variant_details?: Json | null
-          oem_code?: string | null
-          aliases?: string[] | null
-          is_commercial_product?: boolean
-          category?: string[] | null
-          description?: string | null
-          image_url?: string | null
-          is_active?: boolean
-          sku?: string | null
+          variant_group_id?: string | null
+          variant_name?: string | null
         }
         Update: {
+          aliases?: Json | null
+          base_model_reference?: string | null
           brand?: string
+          category?: string[] | null
           color?: string
           compatible_printers?: Json | null
           created_at?: string
+          description?: string | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_base_model?: boolean | null
+          is_commercial_product?: boolean | null
           model?: string
+          oem_code?: string | null
           page_yield?: number
+          sku?: string | null
           stock?: number
           threshold?: number
           updated_at?: string
-          variant_group_id?: string | null
-          is_base_model?: boolean
-          base_model_reference?: string | null
           variant_details?: Json | null
-          oem_code?: string | null
-          aliases?: string[] | null
-          is_commercial_product?: boolean
-          category?: string[] | null
-          description?: string | null
-          image_url?: string | null
-          is_active?: boolean
-          sku?: string | null
+          variant_group_id?: string | null
+          variant_name?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_base_model"
+            columns: ["base_model_reference"]
+            isOneToOne: false
+            referencedRelation: "toners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_variant_group"
+            columns: ["variant_group_id"]
+            isOneToOne: false
+            referencedRelation: "toners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -455,7 +571,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      chat_type: "messenger" | "whatsapp" | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -570,6 +686,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      chat_type: ["messenger", "whatsapp", "custom"],
+    },
   },
 } as const
