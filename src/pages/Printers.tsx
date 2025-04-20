@@ -17,6 +17,7 @@ import { MarkRepairedDialog } from '@/components/printers/MarkRepairedDialog';
 import { PrinterDetailsDialog } from '@/components/printers/PrinterDetailsDialog';
 import { PrinterHistoryDialog } from '@/components/printers/PrinterHistoryDialog';
 import { PrinterStatusBadge } from '@/components/printers/PrinterStatus';
+import { UpdatePrinterStatusDialog } from '@/components/printers/UpdatePrinterStatusDialog';
 
 const toOwnershipType = (val: any): OwnershipType =>
   val === 'system' ? 'system' : 'client';
@@ -38,7 +39,7 @@ export default function Printers() {
   const [selectedPrinter, setSelectedPrinter] = useState<PrinterType | null>(null);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
-  const [quickUpdateDialogOpen, setQuickUpdateDialogOpen] = useState(false);
+  const [printerStatusDialogOpen, setPrinterStatusDialogOpen] = useState(false);
   const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
   const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -169,9 +170,9 @@ export default function Printers() {
     setTransferDialogOpen(true);
   };
 
-  const openQuickUpdateDialog = (printer: PrinterType) => {
+  const openPrinterStatusDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
-    setQuickUpdateDialogOpen(true);
+    setPrinterStatusDialogOpen(true);
   };
 
   const openServiceReportDialog = (printer: PrinterType) => {
@@ -327,11 +328,11 @@ export default function Printers() {
                         <Info className="h-4 w-4" />
                         Details
                       </Button>
-                      <Button 
+                      <Button
                         size="sm"
                         variant="outline"
                         className="flex items-center gap-1"
-                        onClick={() => openQuickUpdateDialog(printer)}
+                        onClick={() => openPrinterStatusDialog(printer)}
                       >
                         <Wrench className="h-4 w-4" />
                         Update Status
@@ -366,16 +367,15 @@ export default function Printers() {
 
       {selectedPrinter && (
         <>
-          <MaintenanceQuickUpdateDialog
-            open={quickUpdateDialogOpen}
+          <UpdatePrinterStatusDialog
+            open={printerStatusDialogOpen}
             onOpenChange={(open) => {
-              setQuickUpdateDialogOpen(open);
+              setPrinterStatusDialogOpen(open);
               if (!open) setSelectedPrinter(null);
               if (!open) fetchPrinters();
             }}
             printer={selectedPrinter}
             onSuccess={fetchPrinters}
-            isStatusOnly
           />
           <GenerateServiceReportDialog
             open={serviceReportDialogOpen}
@@ -394,7 +394,6 @@ export default function Printers() {
               if (!open) setSelectedPrinter(null);
             }}
             printer={selectedPrinter}
-            // Extend to pass inline edit logic if used
           />
           <PrinterHistoryDialog
             open={historyDialogOpen}
