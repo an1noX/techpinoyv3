@@ -1,24 +1,23 @@
 
 import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AdminLayoutProps {
   children?: ReactNode;
   requiredRoles?: string[];
 }
 
-// Note: This is a placeholder until we properly implement auth context
 const AdminLayout: React.FC<AdminLayoutProps> = ({ 
   children, 
   requiredRoles = ['admin', 'owner'] 
 }) => {
-  // Temporarily mock authentication until we implement the proper AuthContext
-  const isAuthenticated = true;
-  const hasRole = (role: string) => true;
+  // Use the real authentication context instead of mocked values
+  const { isAuthenticated, hasRole } = useAuth();
 
   // Check if user is authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/auth" />;
   }
 
   // Check if user has required role

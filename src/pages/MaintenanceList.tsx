@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -117,7 +116,6 @@ export default function MaintenanceList() {
     printerDetailsMap[record.printer_id]?.make.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Create the content that will be rendered inside AdminLayout
   const maintenanceListContent = (
     <div className="container mx-auto px-4 py-6">
       <div className="flex justify-between items-center mb-6">
@@ -274,11 +272,9 @@ export default function MaintenanceList() {
     </div>
   );
   
-  // Since AdminLayout uses Outlet, we need a different approach
-  // We'll return the AdminLayout without children
   return (
-    <div className="admin-layout">
+    <AdminLayout>
       {maintenanceListContent}
-    </div>
+    </AdminLayout>
   );
 }

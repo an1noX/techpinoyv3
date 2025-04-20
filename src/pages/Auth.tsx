@@ -39,6 +39,9 @@ export default function Auth() {
           description: error.message,
           variant: "destructive"
         });
+      } else {
+        // Navigate on successful login
+        navigate('/');
       }
     } catch (error: any) {
       toast({
