@@ -1,7 +1,7 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface AuthContextType {
   user: User | null;
@@ -10,18 +10,25 @@ export interface AuthContextType {
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
+  signIn: (credentials: { email: string; password: string }) => Promise<{ error: Error | null }>;
+  signUp: (credentials: { 
+    email: string; 
+    password: string;
+    options?: { data: { first_name: string; last_name: string } }
+  }) => Promise<{ error: Error | null }>;
 }
 
-const AuthContext = createContext<AuthContextType>({
+// Export the AuthContext so it can be imported in other files
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   isAuthenticated: false,
   signOut: async () => {},
   hasRole: () => false,
   hasPermission: () => false,
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
 });
-
-export const useAuth = () => useContext(AuthContext);
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -56,6 +63,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await supabase.auth.signOut();
   };
 
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signUp = async ({ email, password, options }: { 
+    email: string; 
+    password: string;
+    options?: { data: { first_name: string; last_name: string } }
+  }) => {
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: options?.data
+      }
+    });
+    return { error };
+  };
+
   const hasRole = (role: string) => {
     // Check if user has specific role
     const userRole = user?.user_metadata?.role;
@@ -86,6 +113,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signOut,
     hasRole,
     hasPermission,
+    signIn,
+    signUp,
   };
 
   return (

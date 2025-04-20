@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/components/AuthProvider";
+import { AuthProvider } from "@/context/AuthContext";
 import { PrivateRoute } from "@/components/PrivateRoute";
 import Index from "./pages/Index";
 import Wiki from "./pages/Wiki";
@@ -38,36 +38,34 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route path="/auth" element={
-            <AuthProvider>
-              <Auth />
-            </AuthProvider>
-          } />
-          <Route path="/store" element={<Store />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:id" element={<Products />} />
-          <Route path="/brands/:brand" element={<Products />} />
-          <Route path="/categories/:category" element={<Products />} />
-          
-          <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
-          <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
-          <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
-          <Route path="/wiki/new" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
-          <Route path="/wiki/edit/:id" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
-          <Route path="/printers" element={<ProtectedLayout><Printers /></ProtectedLayout>} />
-          <Route path="/printers/:id" element={<ProtectedLayout><PrinterDetail /></ProtectedLayout>} />
-          <Route path="/rentals" element={<ProtectedLayout><Rentals /></ProtectedLayout>} />
-          <Route path="/rentals/:id" element={<ProtectedLayout><RentalDetail /></ProtectedLayout>} />
-          <Route path="/rentals/new" element={<ProtectedLayout><RentalCreate /></ProtectedLayout>} />
-          <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
-          <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
-          <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<Products />} />
+            <Route path="/brands/:brand" element={<Products />} />
+            <Route path="/categories/:category" element={<Products />} />
+            
+            <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
+            <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
+            <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
+            <Route path="/wiki/new" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
+            <Route path="/wiki/edit/:id" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
+            <Route path="/printers" element={<ProtectedLayout><Printers /></ProtectedLayout>} />
+            <Route path="/printers/:id" element={<ProtectedLayout><PrinterDetail /></ProtectedLayout>} />
+            <Route path="/rentals" element={<ProtectedLayout><Rentals /></ProtectedLayout>} />
+            <Route path="/rentals/:id" element={<ProtectedLayout><RentalDetail /></ProtectedLayout>} />
+            <Route path="/rentals/new" element={<ProtectedLayout><RentalCreate /></ProtectedLayout>} />
+            <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
+            <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
+            <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
