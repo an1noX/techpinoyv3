@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Json } from '@/types/settings';
 
 const generalSettingsSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -27,6 +28,15 @@ const generalSettingsSchema = z.object({
   phone: z.string().optional(),
   address: z.string().optional(),
   logoUrl: z.string().optional(),
+});
+
+const maintenanceSettingsSchema = z.object({
+  enableScheduledMaintenance: z.boolean().default(false),
+  defaultMaintenancePeriod: z.number().min(1).default(90),
+  notifyBeforeDays: z.number().min(1).default(7),
+  defaultTechnicians: z.string().optional(),
+  autoGenerateReports: z.boolean().default(false),
+  maintenanceInstructions: z.string().optional(),
 });
 
 interface MaintenanceSettings {
@@ -182,7 +192,7 @@ export default function SystemSettings() {
 
       let operation;
       if (settings?.id) {
-        const updatedData: any = {
+        const updatedData = {
           maintenance_settings: maintenanceSettings
         };
 
@@ -191,7 +201,7 @@ export default function SystemSettings() {
           .update(updatedData)
           .eq('id', settings.id);
       } else {
-        const newData: any = {
+        const newData = {
           store_name: 'Default Company',
           maintenance_settings: maintenanceSettings
         };
