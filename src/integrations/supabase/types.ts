@@ -333,32 +333,38 @@ export type Database = {
       printer_wiki: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           maintenance_tips: string | null
           make: string
           model: string
           series: string
           specs: Json | null
+          type: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           maintenance_tips?: string | null
           make: string
           model: string
           series: string
           specs?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           maintenance_tips?: string | null
           make?: string
           model?: string
           series?: string
           specs?: Json | null
+          type?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -369,14 +375,18 @@ export type Database = {
           client_id: string | null
           created_at: string
           department: string | null
+          description: string | null
           id: string
           is_for_rent: boolean | null
           location: string | null
           make: string
           model: string
+          notes: string | null
           owned_by: string
+          serial_number: string | null
           series: string
           status: string
+          type: string | null
           updated_at: string
         }
         Insert: {
@@ -384,14 +394,18 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           department?: string | null
+          description?: string | null
           id?: string
           is_for_rent?: boolean | null
           location?: string | null
           make: string
           model: string
+          notes?: string | null
           owned_by: string
+          serial_number?: string | null
           series: string
           status: string
+          type?: string | null
           updated_at?: string
         }
         Update: {
@@ -399,14 +413,18 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           department?: string | null
+          description?: string | null
           id?: string
           is_for_rent?: boolean | null
           location?: string | null
           make?: string
           model?: string
+          notes?: string | null
           owned_by?: string
+          serial_number?: string | null
           series?: string
           status?: string
+          type?: string | null
           updated_at?: string
         }
         Relationships: [
