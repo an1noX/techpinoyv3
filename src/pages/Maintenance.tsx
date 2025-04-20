@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Wrench, Hammer, SlidersHorizontal } from "lucide-react";
+import { BottomNavigation } from "@/components/navigation/BottomNavigation";
 
 interface MaintenanceRecord {
   id: string;
@@ -54,7 +55,7 @@ export default function Maintenance() {
   };
 
   return (
-    <div className="container mx-auto px-2 py-4">
+    <div className="container mx-auto px-2 py-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
         <Wrench className="h-7 w-7 text-sky-700" />
         <h1 className="text-2xl font-bold">Repair & Maintenance</h1>
@@ -104,6 +105,7 @@ export default function Maintenance() {
           )}
         </div>
       )}
+      <BottomNavigation />
     </div>
   );
 }

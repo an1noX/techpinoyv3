@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ import NotFound from "./pages/NotFound";
 import TonerProducts from "./pages/TonerProducts";
 import Store from "./pages/Store";
 import Products from "./pages/Products";
+import Maintenance from "./pages/Maintenance";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -60,7 +62,7 @@ const App = () => (
             <Route path="/clients" element={<ProtectedLayout><Clients /></ProtectedLayout>} />
             <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
             <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
-            <Route path="/maintenance" element={<ProtectedLayout><React.Suspense fallback={<div>Loading...</div>}><Maintenance /></React.Suspense></ProtectedLayout>} />
+            <Route path="/maintenance" element={<ProtectedLayout><Maintenance /></ProtectedLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
