@@ -47,8 +47,8 @@ export const usePrintersWithStatus = () => {
       );
     }
 
-    // Type assertion to ensure the data is treated as Printer[]
-    const printersWithTypes = printerData as unknown as Printer[];
+    // Cast the data to the correct type
+    const printersWithTypes = printerData as Printer[];
     
     const merged = printersWithTypes.map((p: Printer) => ({
       ...p,

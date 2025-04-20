@@ -4,7 +4,7 @@ import { Printer } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Printer as PrinterIcon } from "lucide-react";
+import { Wrench, Printer as PrinterIcon, FileText, Check } from "lucide-react";
 import { BottomNavigation } from "@/components/navigation/BottomNavigation";
 import { MaintenanceQuickUpdateDialog } from "@/components/printers/MaintenanceQuickUpdateDialog";
 import { usePrintersWithStatus } from "@/hooks/usePrintersWithStatus";
@@ -26,6 +26,11 @@ export default function Maintenance() {
     setDialogOpen(true);
   };
 
+  // Filter printers to only show those with maintenance or for_repair status
+  const maintenancePrinters = printers.filter(
+    printer => printer.status === "maintenance" || printer.status === "for_repair"
+  );
+
   return (
     <div className="container mx-auto px-2 py-4 pb-20">
       <div className="flex items-center gap-3 mb-6">
@@ -39,13 +44,13 @@ export default function Maintenance() {
         <div className="flex justify-center py-12">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
-      ) : printers.length === 0 ? (
+      ) : maintenancePrinters.length === 0 ? (
         <div className="text-center text-muted-foreground py-10">
-          No printers found.
+          No printers currently in maintenance or repair status.
         </div>
       ) : (
         <div className="space-y-4">
-          {printers.map((printer) => (
+          {maintenancePrinters.map((printer) => (
             <Card key={printer.id}>
               <CardHeader className="p-4 pb-2 flex flex-row gap-2 items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -60,15 +65,37 @@ export default function Maintenance() {
                     </Badge>
                   </span>
                 </div>
-                <Button size="sm" onClick={() => handleQuickUpdate(printer)}>
-                  Quick Update
-                </Button>
+                <div className="flex space-x-2">
+                  <Badge 
+                    variant="outline" 
+                    className={printer.status === "maintenance" ? 
+                      "bg-amber-50 text-amber-700 border-amber-200" : 
+                      "bg-red-50 text-red-700 border-red-200"}
+                  >
+                    {printer.status === "maintenance" ? "Maintenance" : "For Repair"}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="p-4 pt-1">
-                <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
-                  <span>Department: {printer.department ?? "-"}</span>
-                  <span>Status: {printer.status}</span>
+                <div className="text-xs text-muted-foreground flex flex-wrap gap-4 mb-3">
+                  <span>SN: {printer.serialNumber ?? "N/A"}</span>
+                  <span>
+                    Owner: {printer.owned_by === "client" ? 
+                      `Client (${printer.assigned_to || "Unassigned"})` : 
+                      "System Unit"}
+                  </span>
                   <span>Location: {printer.location ?? "-"}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="default"
+                    className="flex items-center gap-1"
+                    onClick={() => handleQuickUpdate(printer)}
+                  >
+                    <Wrench className="h-4 w-4" />
+                    <span>Manage</span>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -76,7 +103,7 @@ export default function Maintenance() {
         </div>
       )}
 
-      {/* Dialog for Quick Update */}
+      {/* Dialog for Maintenance Management */}
       {selectedPrinter && (
         <MaintenanceQuickUpdateDialog
           open={dialogOpen}
