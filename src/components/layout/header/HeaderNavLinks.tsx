@@ -1,7 +1,6 @@
-
 import { Link } from "react-router-dom";
 import { ShoppingCart, Printer, Package, User, LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";  // Updated import
 import { useNavigate } from "react-router-dom";
 
 interface HeaderNavLinksProps {
@@ -9,11 +8,11 @@ interface HeaderNavLinksProps {
 }
 
 export function HeaderNavLinks({ isMobile }: HeaderNavLinksProps) {
-  const { isAuthenticated, signOut } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    signOut();
+    logout();
     navigate('/');
   };
 
@@ -29,7 +28,7 @@ export function HeaderNavLinks({ isMobile }: HeaderNavLinksProps) {
         ) : (
           <li className="flex items-center space-x-2 px-4">
             <User className="h-5 w-5" />
-            <Link to="/auth" className="hover:text-yellow-300 font-medium">Login</Link>
+            <Link to="/login" className="hover:text-yellow-300 font-medium">Login</Link>
           </li>
         )}
         <li className="flex items-center space-x-2 px-4">

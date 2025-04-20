@@ -20,15 +20,6 @@ export interface SocialMedia {
   twitter: string;
 }
 
-export interface MaintenanceSettings {
-  enableScheduledMaintenance: boolean;
-  defaultMaintenancePeriod: number;
-  notifyBeforeDays: number;
-  defaultTechnicians: string;
-  autoGenerateReports: boolean;
-  maintenanceInstructions: string;
-}
-
 export interface StoreInfo {
   storeName: string;
   tagline: string;
@@ -40,6 +31,7 @@ export interface StoreInfo {
   socialMedia: SocialMedia;
 }
 
+// Add the missing StoreSettings type
 export interface StoreSettings {
   id: string;
   store_name: string;
@@ -50,11 +42,11 @@ export interface StoreSettings {
   address: string;
   live_chat: LiveChat;
   social_media: SocialMedia;
-  maintenance_settings?: MaintenanceSettings;
   updated_at: string;
   storeInfo?: StoreInfo;
 }
 
+// Add the missing SettingsContextType
 export interface SettingsContextType {
   settings: StoreSettings | null;
   isLoading: boolean;

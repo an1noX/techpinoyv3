@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users, Package, Settings, Wrench } from 'lucide-react';
+import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users, Package, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function BottomNavigation() {
@@ -25,13 +24,8 @@ export function BottomNavigation() {
       icon: Package 
     },
     { 
-      name: 'Maintenance', 
-      path: '/maintenance', 
-      icon: Wrench 
-    },
-    { 
-      name: 'System', 
-      path: '/system-settings', 
+      name: 'Store', 
+      path: '/store-settings', 
       icon: Settings 
     },
     { 

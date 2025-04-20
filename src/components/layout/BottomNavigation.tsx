@@ -1,12 +1,12 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, Plus, User } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export function BottomNavigation() {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path ? 'text-primary' : 'text-muted-foreground';
@@ -30,21 +30,16 @@ export function BottomNavigation() {
           <Search className={`h-5 w-5 ${isActive('/store')}`} />
           <span className="text-xs">Store</span>
         </Link>
-        {isAuthenticated && (
+        {user && (
           <Link to="/printers/new" className="flex flex-col items-center justify-center">
             <Plus className={`h-5 w-5 ${isActive('/printers/new')}`} />
             <span className="text-xs">Add</span>
           </Link>
         )}
-        {isAuthenticated ? (
+        {user && (
           <Link to="/profile" className="flex flex-col items-center justify-center">
             <User className={`h-5 w-5 ${isActive('/profile')}`} />
             <span className="text-xs">Profile</span>
-          </Link>
-        ) : (
-          <Link to="/auth" className="flex flex-col items-center justify-center">
-            <User className={`h-5 w-5 ${isActive('/auth')}`} />
-            <span className="text-xs">Login</span>
           </Link>
         )}
       </div>

@@ -1,7 +1,8 @@
+
 import { useState } from "react";
 import { PrinterType, TransferLogType, MaintenanceLogType, TonerType } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { TransferDialog } from "../TransferDialog";
 import { MaintenanceLogDialog } from "../MaintenanceLogDialog";
