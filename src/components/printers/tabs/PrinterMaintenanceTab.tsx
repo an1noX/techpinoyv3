@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Wrench } from 'lucide-react';
@@ -7,22 +8,17 @@ import { MaintenanceStatus } from '@/components/printers/MaintenanceStatus';
 import { QuickUpdateDialog } from '@/components/printers/maintenance/QuickUpdateDialog';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { MaintenanceLogType } from '@/types/types';
 
 interface PrinterMaintenanceTabProps {
   printerId: string;
-  printerDetails?: any;
+  printerDetails: any;
   onRefresh?: () => void;
-  onOpenMaintenanceDialog?: () => void;
-  maintenanceLogs?: MaintenanceLogType[];
 }
 
 export function PrinterMaintenanceTab({ 
   printerId, 
   printerDetails,
-  onRefresh,
-  onOpenMaintenanceDialog,
-  maintenanceLogs: externalMaintenanceLogs
+  onRefresh 
 }: PrinterMaintenanceTabProps) {
   const navigate = useNavigate();
   const [maintenanceRecords, setMaintenanceRecords] = useState<any[]>([]);
@@ -30,13 +26,8 @@ export function PrinterMaintenanceTab({
   const [quickUpdateOpen, setQuickUpdateOpen] = useState(false);
   
   useEffect(() => {
-    if (externalMaintenanceLogs) {
-      setMaintenanceRecords(externalMaintenanceLogs.filter(log => log.printerId === printerId));
-      setLoading(false);
-    } else {
-      fetchMaintenanceRecords();
-    }
-  }, [printerId, externalMaintenanceLogs]);
+    fetchMaintenanceRecords();
+  }, [printerId]);
   
   const fetchMaintenanceRecords = async () => {
     try {
@@ -57,11 +48,7 @@ export function PrinterMaintenanceTab({
   };
   
   const handleCreateMaintenanceRecord = () => {
-    if (onOpenMaintenanceDialog) {
-      onOpenMaintenanceDialog();
-    } else {
-      navigate(`/maintenance/new/${printerId}`);
-    }
+    navigate(`/maintenance/new/${printerId}`);
   };
   
   const handleQuickUpdateSuccess = () => {
@@ -137,19 +124,17 @@ export function PrinterMaintenanceTab({
         </div>
       )}
       
-      {printerDetails && (
-        <QuickUpdateDialog
-          open={quickUpdateOpen}
-          onOpenChange={setQuickUpdateOpen}
-          printer={{
-            id: printerId,
-            make: printerDetails?.make || '',
-            model: printerDetails?.model || '',
-            status: printerDetails?.status || 'unknown'
-          }}
-          onSuccess={handleQuickUpdateSuccess}
-        />
-      )}
+      <QuickUpdateDialog
+        open={quickUpdateOpen}
+        onOpenChange={setQuickUpdateOpen}
+        printer={{
+          id: printerId,
+          make: printerDetails?.make || '',
+          model: printerDetails?.model || '',
+          status: printerDetails?.status || 'unknown'
+        }}
+        onSuccess={handleQuickUpdateSuccess}
+      />
     </div>
   );
 }
