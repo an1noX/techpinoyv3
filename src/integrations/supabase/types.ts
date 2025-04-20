@@ -77,6 +77,54 @@ export type Database = {
         }
         Relationships: []
       }
+      printer_client_assignments: {
+        Row: {
+          active: boolean | null
+          assigned_at: string
+          assigned_by: string | null
+          client_id: string
+          created_at: string
+          id: string
+          printer_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id: string
+          created_at?: string
+          id?: string
+          printer_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          assigned_at?: string
+          assigned_by?: string | null
+          client_id?: string
+          created_at?: string
+          id?: string
+          printer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "printer_client_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "printer_client_assignments_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       printer_wiki_details: {
         Row: {
           created_at: string | null
@@ -106,6 +154,129 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      printers: {
+        Row: {
+          created_at: string
+          id: string
+          last_serviced: string | null
+          location: string | null
+          make: string
+          model: string
+          serial_number: string | null
+          series: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_serviced?: string | null
+          location?: string | null
+          make: string
+          model: string
+          serial_number?: string | null
+          series: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_serviced?: string | null
+          location?: string | null
+          make?: string
+          model?: string
+          serial_number?: string | null
+          series?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rentals: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          notes: string | null
+          printer_id: string
+          start_date: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          printer_id: string
+          start_date: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          printer_id?: string
+          start_date?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentals_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

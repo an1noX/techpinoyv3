@@ -2,37 +2,29 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  signUp: (data: { email: string; password: string; options?: any }) => Promise<{ error: any }>;
-  signIn: (data: { email: string; password: string }) => Promise<{ error: any }>;
-  signOut: () => Promise<{ error: any }>;
-  loading: boolean;
+  signIn: (credentials: { email: string; password: string }) => Promise<{ error: Error | null }>;
+  signUp: (credentials: { email: string; password: string; options?: { data: { first_name: string; last_name: string } } }) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  signUp: async () => ({ error: null }),
-  signIn: async () => ({ error: null }),
-  signOut: async () => ({ error: null }),
-  loading: true,
-});
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
       }
     );
 
@@ -40,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     return () => {
@@ -48,48 +39,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signUp = async ({ email, password, options }: { email: string; password: string; options?: any }) => {
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options,
-      });
-      return { error };
-    } catch (error) {
-      return { error };
+  const signIn = async ({ email, password }: { email: string; password: string }) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+      navigate('/');
     }
+    return { error };
   };
 
-  const signIn = async ({ email, password }: { email: string; password: string }) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      return { error };
-    } catch (error) {
-      return { error };
+  const signUp = async ({ email, password, options }: { 
+    email: string; 
+    password: string;
+    options?: { data: { first_name: string; last_name: string } }
+  }) => {
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: options?.data
+      }
+    });
+    if (!error) {
+      navigate('/auth');
     }
+    return { error };
   };
 
   const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      return { error };
-    } catch (error) {
-      return { error };
-    }
+    await supabase.auth.signOut();
+    navigate('/auth');
   };
 
-  const value = {
-    session,
-    user,
-    signUp,
-    signIn,
-    signOut,
-    loading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ session, user, signIn, signUp, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }

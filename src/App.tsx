@@ -1,10 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/components/AuthProvider";
+import { PrivateRoute } from "@/components/PrivateRoute";
 import Index from "./pages/Index";
 import Wiki from "./pages/Wiki";
 import WikiDetail from "./pages/WikiDetail";
@@ -23,31 +23,30 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
-            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/wiki" element={<Wiki />} />
-            <Route path="/wiki/:id" element={<WikiDetail />} />
-            <Route path="/wiki/new" element={<WikiCreateEdit />} />
-            <Route path="/wiki/edit/:id" element={<WikiCreateEdit />} />
-            <Route path="/printers" element={<Printers />} />
-            <Route path="/printers/:id" element={<PrinterDetail />} />
-            <Route path="/printers/import/confirmation" element={<Printers />} />
-            <Route path="/rentals" element={<Rentals />} />
-            <Route path="/rentals/:id" element={<RentalDetail />} />
-            <Route path="/rentals/new" element={<RentalCreate />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/" element={<PrivateRoute><Index /></PrivateRoute>} />
+            <Route path="/wiki" element={<PrivateRoute><Wiki /></PrivateRoute>} />
+            <Route path="/wiki/:id" element={<PrivateRoute><WikiDetail /></PrivateRoute>} />
+            <Route path="/wiki/new" element={<PrivateRoute><WikiCreateEdit /></PrivateRoute>} />
+            <Route path="/wiki/edit/:id" element={<PrivateRoute><WikiCreateEdit /></PrivateRoute>} />
+            <Route path="/printers" element={<PrivateRoute><Printers /></PrivateRoute>} />
+            <Route path="/printers/:id" element={<PrivateRoute><PrinterDetail /></PrivateRoute>} />
+            <Route path="/rentals" element={<PrivateRoute><Rentals /></PrivateRoute>} />
+            <Route path="/rentals/:id" element={<PrivateRoute><RentalDetail /></PrivateRoute>} />
+            <Route path="/rentals/new" element={<PrivateRoute><RentalCreate /></PrivateRoute>} />
+            <Route path="/clients" element={<PrivateRoute><Clients /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 

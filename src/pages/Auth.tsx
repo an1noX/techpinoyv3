@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,33 +22,9 @@ export default function Auth() {
   
   React.useEffect(() => {
     if (session) {
-      // Check user role after session is established
-      const checkUserRole = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          toast({
-            title: "Error checking user role",
-            description: error.message,
-            variant: "destructive"
-          });
-          return;
-        }
-
-        if (data?.role === 'admin') {
-          navigate('/');
-        } else if (data?.role) {
-          navigate('/printers');
-        }
-      };
-
-      checkUserRole();
+      navigate('/');
     }
-  }, [session, navigate, toast]);
+  }, [session, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,12 +38,6 @@ export default function Auth() {
           title: "Login failed",
           description: error.message,
           variant: "destructive"
-        });
-      } else {
-        // Role-based redirection is handled in useEffect
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
         });
       }
     } catch (error: any) {
@@ -89,11 +58,11 @@ export default function Auth() {
     try {
       const { error } = await signUp({ 
         email, 
-        password, 
+        password,
         options: {
-          data: { 
-            first_name: firstName, 
-            last_name: lastName 
+          data: {
+            first_name: firstName,
+            last_name: lastName
           }
         }
       });
@@ -120,7 +89,7 @@ export default function Auth() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
       <div className="w-full max-w-md">

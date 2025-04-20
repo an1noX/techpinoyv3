@@ -1,22 +1,3 @@
-
-// Update Rental type to match actual database schema
-export interface Rental {
-  id: string;
-  printerId: string | null;
-  clientId: string | null;
-  client: string;
-  printer: string;
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'completed' | 'cancelled' | 'upcoming';
-  signatureUrl?: string | null;
-  agreementUrl?: string | null;
-  inquiryCount?: number;
-  bookingCount?: number;
-  nextAvailableDate?: string;
-}
-
-// Add Printer type
 export interface Printer {
   id: string;
   make: string;
@@ -32,27 +13,8 @@ export interface Printer {
   isForRent?: boolean;
 }
 
-// Add PrinterStatus type
 export type PrinterStatus = 'available' | 'rented' | 'maintenance';
 
-// Add RentalOptions type
-export interface RentalOptions {
-  id: string;
-  printerId: string;
-  isForRent: boolean;
-  rentalRate: number;
-  rateUnit: 'hourly' | 'daily' | 'weekly' | 'monthly';
-  minimumDuration: number;
-  durationUnit: 'hours' | 'days' | 'weeks' | 'months';
-  securityDeposit: number;
-  terms: string;
-  cancellationPolicy: string;
-  availability?: Date[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Add WikiPrinter type
 export interface WikiPrinter {
   id: string;
   make: string;
@@ -62,4 +24,55 @@ export interface WikiPrinter {
   specs?: Record<string, string>;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  notes: string | null;
+}
+
+export interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  department: string | null;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DatabaseTypes {
+  profiles: Profile;
+  printers: Printer;
+  printer_client_assignments: PrinterClientAssignment;
+  rentals: Rental;
+}
+
+export interface PrinterClientAssignment {
+  id: string;
+  printer_id: string;
+  client_id: string;
+  assigned_at: string;
+  assigned_by: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Rental {
+  id: string;
+  printer_id: string;
+  client_id: string;
+  start_date: string;
+  end_date: string | null;
+  status: string;
+  created_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
