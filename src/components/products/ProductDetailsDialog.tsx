@@ -10,13 +10,12 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { EnhancedTonerType } from '@/pages/Store';
 import { Product } from '@/types/types';
 
 type ProductDetailsProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: EnhancedTonerType | Product;
+  product: Product;
 };
 
 export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDetailsProps) {
@@ -54,7 +53,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
               <h3 className="font-medium">Availability</h3>
               <p className={isInStock ? 'text-green-600' : 'text-red-600'}>
                 {isInStock ? 'In Stock' : 'Out of Stock'}
-                {isInStock && product.quantityInStock && ` (${product.quantityInStock} available)`}
+                {isInStock && ` (${product.quantityInStock} available)`}
               </p>
             </div>
 
@@ -68,7 +67,7 @@ export function ProductDetailsDialog({ open, onOpenChange, product }: ProductDet
               <p>{product.brand}</p>
             </div>
 
-            {'description' in product && product.description && (
+            {product.description && (
               <div>
                 <h3 className="font-medium">Description</h3>
                 <p className="text-sm text-muted-foreground">{product.description}</p>

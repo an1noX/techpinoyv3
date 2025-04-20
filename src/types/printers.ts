@@ -1,3 +1,4 @@
+
 export type PrinterStatus = 'available' | 'rented' | 'maintenance';
 export type OwnershipType = 'system' | 'client';
 
@@ -23,4 +24,10 @@ export interface Printer {
   is_for_rent?: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  client_id?: string;
 }

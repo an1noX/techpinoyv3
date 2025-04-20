@@ -19,7 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { EditableToner, TonerBase } from '@/types';
+import { EditableToner, TonerBase } from '@/types/types';
+import { Json } from '@/integrations/supabase/types';
 
 export function TonerList() {
   const { toast } = useToast();
@@ -65,6 +66,13 @@ export function TonerList() {
           ? toner.aliases.map((alias: any) => String(alias))
           : [];
           
+        // Ensure compatible_printers is always an array of strings or null
+        const compatible_printers = toner.compatible_printers 
+          ? (Array.isArray(toner.compatible_printers) 
+              ? toner.compatible_printers.map((printer: any) => String(printer))
+              : null)
+          : null;
+          
         // Ensure variant_details is a proper record or null
         const variant_details = typeof toner.variant_details === 'object' 
           ? toner.variant_details 
@@ -73,8 +81,9 @@ export function TonerList() {
         return {
           ...toner,
           aliases,
+          compatible_printers,
           variant_details
-        };
+        } as EditableToner;
       });
 
       setToners(processedData);

@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+// Remove the duplicate import
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
