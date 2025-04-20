@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TonerProductDialog } from '@/components/TonerProductDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CommercialTonerProduct } from '@/types/types';
+// Use the import from index.ts instead of types.ts
+import { CommercialTonerProduct } from '@/types';
 
 export default function TonerProducts() {
   const { toast } = useToast();
@@ -41,11 +42,17 @@ export default function TonerProducts() {
 
       if (error) throw error;
       
-      // Explicitly cast the data to CommercialTonerProduct[] to ensure type safety
+      // Ensure the data conforms to the CommercialTonerProduct type from index.ts
       const typedData = data?.map(item => ({
         ...item,
         category: Array.isArray(item.category) ? item.category : [],
-        toner: item.toner || null
+        toner: item.toner ? {
+          ...item.toner,
+          // Add missing required fields for OEMToner
+          created_at: item.toner.created_at || new Date().toISOString(),
+          updated_at: item.toner.updated_at || new Date().toISOString(),
+          page_yield: item.toner.page_yield || 0
+        } : undefined
       })) as CommercialTonerProduct[];
       
       setProducts(typedData || []);

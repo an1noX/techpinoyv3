@@ -1,4 +1,3 @@
-
 export interface Printer {
   id: string;
   make: string;
@@ -167,6 +166,7 @@ export interface OEMToner extends TonerBase {
   id: string;
   created_at: string;
   updated_at: string;
+  compatible_printers?: string[] | null;
 }
 
 // Commercial Toner Product (Inventory item)
@@ -184,8 +184,8 @@ export interface CommercialTonerProduct {
   toner_id: string;
   created_at: string;
   updated_at: string;
-  // Join data when querying with toner reference
-  toner?: OEMToner;
+  // Make toner optional and a Partial<OEMToner> to match types/types.ts
+  toner?: Partial<OEMToner>;
 }
 
 // For use in edit forms
