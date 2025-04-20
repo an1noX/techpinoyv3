@@ -839,7 +839,7 @@ export default function Rentals() {
               Cancel
             </Button>
             <Button
-              onClick={() => handleStatusChange(selectedRental?.printerId || '')}
+              onClick={() => handleStatusChange(selectedRental?.printer_id || '')}
             >
               Update Status
             </Button>
