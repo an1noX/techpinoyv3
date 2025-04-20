@@ -23,7 +23,7 @@ export const AssignPrinterDialog: React.FC<AssignPrinterDialogProps> = ({
 }) => {
   const { toast } = useToast();
   const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [departments, setDepartments] = useState<{ id: string; name: string; client_id: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [selectedClient, setSelectedClient] = useState<string>("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -48,12 +48,13 @@ export const AssignPrinterDialog: React.FC<AssignPrinterDialogProps> = ({
   const fetchDepartments = async () => {
     const { data, error } = await supabase
       .from("departments")
-      .select("id, name, client_id");
+      .select("id, name");
+    
     if (!error && data) setDepartments(data);
   };
 
   const filteredDepartments = selectedClient
-    ? departments.filter((d) => d.client_id === selectedClient)
+    ? departments.filter((d) => d.id === selectedClient)
     : [];
 
   const handleAssign = async () => {

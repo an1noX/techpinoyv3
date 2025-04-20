@@ -18,6 +18,8 @@ import { PrinterDetailsDialog } from '@/components/printers/PrinterDetailsDialog
 import { PrinterHistoryDialog } from '@/components/printers/PrinterHistoryDialog';
 import { PrinterStatusBadge } from '@/components/printers/PrinterStatus';
 import { UpdatePrinterStatusDialog } from '@/components/printers/UpdatePrinterStatusDialog';
+import { AssignPrinterDialog } from '@/components/printers/AssignPrinterDialog';
+import { TransferPrinterDialog } from '@/components/printers/TransferPrinterDialog';
 
 const toOwnershipType = (val: any): OwnershipType =>
   val === 'system' ? 'system' : 'client';
