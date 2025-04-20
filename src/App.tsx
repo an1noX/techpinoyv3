@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +25,7 @@ import Products from "./pages/Products";
 import SystemSettings from "./pages/SystemSettings";
 import MaintenanceList from "./pages/MaintenanceList";
 import MaintenanceDetail from "./pages/MaintenanceDetail";
+import MaintenanceEdit from "./pages/MaintenanceEdit";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -67,6 +69,9 @@ const App = () => (
             <Route path="/system-settings" element={<ProtectedLayout><SystemSettings /></ProtectedLayout>} />
             <Route path="/maintenance" element={<ProtectedLayout><MaintenanceList /></ProtectedLayout>} />
             <Route path="/maintenance/:id" element={<ProtectedLayout><MaintenanceDetail /></ProtectedLayout>} />
+            <Route path="/maintenance/new" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
+            <Route path="/maintenance/new/:printerId" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
+            <Route path="/maintenance/edit/:id" element={<ProtectedLayout><MaintenanceEdit /></ProtectedLayout>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

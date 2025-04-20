@@ -1,22 +1,154 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+const generalSettingsSchema = z.object({
+  companyName: z.string().min(1, 'Company name is required'),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  logoUrl: z.string().optional(),
+});
+
+const maintenanceSettingsSchema = z.object({
+  enableScheduledMaintenance: z.boolean().default(false),
+  defaultMaintenancePeriod: z.number().min(1).optional(),
+  notifyBeforeDays: z.number().min(1).optional(),
+  defaultTechnicians: z.string().optional(),
+  autoGenerateReports: z.boolean().default(false),
+  maintenanceInstructions: z.string().optional(),
+});
 
 export default function SystemSettings() {
   const { toast } = useToast();
-  const [storeName, setStoreName] = useState('');
+  const [settings, setSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
+    resolver: zodResolver(generalSettingsSchema),
+    defaultValues: {
+      companyName: '',
+      email: '',
+      phone: '',
+      address: '',
+      logoUrl: '',
+    },
+  });
+
+  const maintenanceForm = useForm<z.infer<typeof maintenanceSettingsSchema>>({
+    resolver: zodResolver(maintenanceSettingsSchema),
+    defaultValues: {
+      enableScheduledMaintenance: false,
+      defaultMaintenancePeriod: 90, // 90 days
+      notifyBeforeDays: 7,
+      defaultTechnicians: '',
+      autoGenerateReports: false,
+      maintenanceInstructions: '',
+    },
+  });
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
     try {
-      // Simulate a successful save
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setSettings(data);
+        generalForm.reset({
+          companyName: data.store_name || '',
+          email: data.email || '',
+          phone: data.phone_number || '',
+          address: data.address || '',
+          logoUrl: '',
+        });
+
+        // If maintenance settings exist in the data, populate those fields
+        if (data.maintenance_settings) {
+          maintenanceForm.reset({
+            enableScheduledMaintenance: data.maintenance_settings.enableScheduledMaintenance || false,
+            defaultMaintenancePeriod: data.maintenance_settings.defaultMaintenancePeriod || 90,
+            notifyBeforeDays: data.maintenance_settings.notifyBeforeDays || 7,
+            defaultTechnicians: data.maintenance_settings.defaultTechnicians || '',
+            autoGenerateReports: data.maintenance_settings.autoGenerateReports || false,
+            maintenanceInstructions: data.maintenance_settings.maintenanceInstructions || '',
+          });
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error fetching settings",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGeneralSubmit = async (values: z.infer<typeof generalSettingsSchema>) => {
+    try {
+      const updatedSettings = {
+        store_name: values.companyName,
+        email: values.email || null,
+        phone_number: values.phone || null,
+        address: values.address || null,
+      };
+
+      let operation;
+      if (settings?.id) {
+        // Update existing settings
+        operation = supabase
+          .from('system_settings')
+          .update(updatedSettings)
+          .eq('id', settings.id);
+      } else {
+        // Insert new settings
+        operation = supabase
+          .from('system_settings')
+          .insert([updatedSettings]);
+      }
+
+      const { error } = await operation;
+      if (error) throw error;
+
       toast({
         title: "Settings updated",
-        description: "Your system settings have been saved successfully.",
+        description: "Your general settings have been saved successfully.",
       });
+      fetchSettings();
     } catch (error: any) {
       toast({
         title: "Error saving settings",
@@ -26,30 +158,285 @@ export default function SystemSettings() {
     }
   };
 
+  const handleMaintenanceSubmit = async (values: z.infer<typeof maintenanceSettingsSchema>) => {
+    try {
+      const updatedSettings = {
+        maintenance_settings: values,
+      };
+
+      let operation;
+      if (settings?.id) {
+        // Update existing settings
+        operation = supabase
+          .from('system_settings')
+          .update(updatedSettings)
+          .eq('id', settings.id);
+      } else {
+        // Insert new settings with maintenance settings
+        operation = supabase
+          .from('system_settings')
+          .insert([{
+            store_name: 'Default Company',
+            ...updatedSettings
+          }]);
+      }
+
+      const { error } = await operation;
+      if (error) throw error;
+
+      toast({
+        title: "Maintenance settings updated",
+        description: "Your maintenance settings have been saved successfully.",
+      });
+      fetchSettings();
+    } catch (error: any) {
+      toast({
+        title: "Error saving maintenance settings",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <MobileLayout>
+        <div className="container px-4 py-4">
+          <div className="flex justify-center py-8">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
+
   return (
     <MobileLayout>
       <div className="container px-4 py-4">
         <h1 className="text-2xl font-bold mb-6">System Settings</h1>
 
-        <form onSubmit={handleSubmit}>
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Company Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Company Name</label>
-                <Input
-                  value={storeName}
-                  onChange={(e) => setStoreName(e.target.value)}
-                />
-              </div>
-              {/* You can add more static fields here if needed */}
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="general" className="mb-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+          </TabsList>
 
-          <Button type="submit">Save Changes</Button>
-        </form>
+          <TabsContent value="general" className="mt-4">
+            <Form {...generalForm}>
+              <form onSubmit={generalForm.handleSubmit(handleGeneralSubmit)} className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Company Information</CardTitle>
+                    <CardDescription>Configure your business details that appear in reports and customer communications.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={generalForm.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={generalForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Used for notifications and customer communications
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={generalForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Phone</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={generalForm.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Business Address</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Button type="submit">Save General Settings</Button>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="maintenance" className="mt-4">
+            <Form {...maintenanceForm}>
+              <form onSubmit={maintenanceForm.handleSubmit(handleMaintenanceSubmit)} className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Maintenance Configuration</CardTitle>
+                    <CardDescription>Configure settings for printer maintenance and repairs.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <FormField
+                      control={maintenanceForm.control}
+                      name="enableScheduledMaintenance"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Enable Scheduled Maintenance
+                            </FormLabel>
+                            <FormDescription>
+                              Automatically track and notify when printers need maintenance
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {maintenanceForm.watch("enableScheduledMaintenance") && (
+                      <>
+                        <FormField
+                          control={maintenanceForm.control}
+                          name="defaultMaintenancePeriod"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Default Maintenance Period (days)</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                              </FormControl>
+                              <FormDescription>
+                                How often printers should be scheduled for maintenance by default
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={maintenanceForm.control}
+                          name="notifyBeforeDays"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Notification Lead Time (days)</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                              </FormControl>
+                              <FormDescription>
+                                Days before scheduled maintenance to send a notification
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
+
+                    <FormField
+                      control={maintenanceForm.control}
+                      name="defaultTechnicians"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Default Technicians</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Enter technician names, separated by commas" 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            List of technicians available for maintenance assignments
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={maintenanceForm.control}
+                      name="autoGenerateReports"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Auto-Generate Reports
+                            </FormLabel>
+                            <FormDescription>
+                              Automatically generate and save reports after maintenance is completed
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={maintenanceForm.control}
+                      name="maintenanceInstructions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Default Maintenance Instructions</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Enter standard maintenance instructions or protocols" 
+                              className="min-h-[150px]"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Default instructions to be included in maintenance tasks
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Button type="submit">Save Maintenance Settings</Button>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
       </div>
     </MobileLayout>
   );

@@ -3,12 +3,28 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Printer, Calendar, User, DollarSign, ClipboardList, Wrench } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Printer, 
+  Calendar, 
+  User, 
+  DollarSign, 
+  ClipboardList, 
+  Wrench,
+  FileText,
+  Tool
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 export default function MaintenanceDetail() {
   const { id } = useParams();
@@ -35,7 +51,9 @@ export default function MaintenanceDetail() {
             make,
             model,
             series,
-            serial_number
+            serial_number,
+            location,
+            department
           )
         `)
         .eq('id', recordId)
@@ -90,6 +108,90 @@ export default function MaintenanceDetail() {
     }
   };
 
+  const generateServiceReport = async () => {
+    try {
+      // Check if report already exists
+      const { data: existingReports, error: checkError } = await supabase
+        .from('maintenance_reports')
+        .select('id')
+        .eq('maintenance_record_id', id);
+      
+      if (checkError) throw checkError;
+      
+      // Prepare report content
+      const reportContent = {
+        record_id: id,
+        printer: {
+          make: record.printers?.make,
+          model: record.printers?.model,
+          series: record.printers?.series,
+          serial: record.printers?.serial_number,
+          location: record.printers?.location,
+          department: record.printers?.department
+        },
+        issue: record.issue_description,
+        diagnosis: record.diagnostic_notes,
+        repair_notes: record.repair_notes,
+        parts_used: record.parts_used,
+        technician: record.technician,
+        cost: record.cost,
+        dates: {
+          reported: record.reported_at,
+          started: record.started_at,
+          completed: record.completed_at
+        },
+        status: record.status,
+        generated_at: new Date().toISOString()
+      };
+      
+      let reportId;
+      
+      if (existingReports && existingReports.length > 0) {
+        // Update existing report
+        const { error: updateError } = await supabase
+          .from('maintenance_reports')
+          .update({ 
+            report_content: reportContent,
+            generated_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('maintenance_record_id', id);
+        
+        if (updateError) throw updateError;
+        
+        reportId = existingReports[0].id;
+      } else {
+        // Create new report
+        const { data: newReport, error: insertError } = await supabase
+          .from('maintenance_reports')
+          .insert([{
+            maintenance_record_id: id,
+            report_content: reportContent,
+            generated_at: new Date().toISOString()
+          }])
+          .select();
+        
+        if (insertError) throw insertError;
+        
+        reportId = newReport[0].id;
+      }
+      
+      toast({
+        title: "Service report generated",
+        description: "The service report has been created successfully.",
+      });
+      
+      // In a real app, you might navigate to a report viewer or download it
+      // For now, we'll just show a success message
+    } catch (error: any) {
+      toast({
+        title: "Error generating report",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <MobileLayout>
@@ -131,13 +233,31 @@ export default function MaintenanceDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold">Maintenance Details</h1>
+          
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">Actions</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(`/maintenance/edit/${id}`)}>
+                  <Wrench className="mr-2 h-4 w-4" />
+                  Edit Record
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generateServiceReport}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Report
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <Card className="mb-6">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Status</CardTitle>
             <Badge className={getStatusColor(record.status)}>
-              {record.status}
+              {record.status?.replace('_', ' ')}
             </Badge>
           </CardHeader>
           <CardContent>
@@ -207,6 +327,18 @@ export default function MaintenanceDetail() {
                 <span>{record.printers.serial_number}</span>
               </div>
             )}
+            {record.printers?.location && (
+              <div className="flex items-center">
+                <span className="mr-2 text-muted-foreground">Location:</span>
+                <span>{record.printers.location}</span>
+              </div>
+            )}
+            {record.printers?.department && (
+              <div className="flex items-center">
+                <span className="mr-2 text-muted-foreground">Department:</span>
+                <span>{record.printers.department}</span>
+              </div>
+            )}
             <Button 
               variant="outline" 
               onClick={() => navigate(`/printers/${record.printers?.id}`)}
@@ -219,11 +351,34 @@ export default function MaintenanceDetail() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Issue Description</CardTitle>
+            {record.reported_by && (
+              <CardDescription>
+                Reported by {record.reported_by} 
+                {record.reported_at && ` on ${format(new Date(record.reported_at), 'MMM d, yyyy')}`}
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             <p>{record.issue_description || "No description provided"}</p>
           </CardContent>
         </Card>
+
+        {record.diagnostic_notes && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Diagnostic Notes</CardTitle>
+              {record.diagnosed_by && (
+                <CardDescription>
+                  Diagnosed by {record.diagnosed_by}
+                  {record.diagnosis_date && ` on ${format(new Date(record.diagnosis_date), 'MMM d, yyyy')}`}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              <p>{record.diagnostic_notes}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {record.repair_notes && (
           <Card className="mb-6">
@@ -232,6 +387,17 @@ export default function MaintenanceDetail() {
             </CardHeader>
             <CardContent>
               <p>{record.repair_notes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {record.parts_used && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Parts Used</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{record.parts_used}</p>
             </CardContent>
           </Card>
         )}
@@ -294,26 +460,49 @@ export default function MaintenanceDetail() {
           </Card>
         )}
 
-        <Button 
-          className="w-full mb-4"
-          onClick={() => navigate(`/maintenance/${id}/edit`)}
-        >
-          Edit Maintenance Record
-        </Button>
+        {record.remarks && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Additional Remarks</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{record.remarks}</p>
+            </CardContent>
+          </Card>
+        )}
 
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={() => {
-            toast({
-              title: "Feature in development",
-              description: "Service report generation will be available soon.",
-            });
-          }}
-        >
-          <ClipboardList className="h-4 w-4 mr-2" />
-          Generate Service Report
-        </Button>
+        {record.next_maintenance_date && (
+          <Card className="mb-6">
+            <CardContent className="pt-4">
+              <div className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2 text-muted-foreground" />
+                <div>
+                  <span className="text-sm text-muted-foreground block">Next Scheduled Maintenance</span>
+                  <span>{format(new Date(record.next_maintenance_date), 'MMM d, yyyy')}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="flex flex-col gap-4">
+          <Button 
+            onClick={() => navigate(`/maintenance/edit/${id}`)}
+            className="w-full"
+          >
+            <Wrench className="h-4 w-4 mr-2" />
+            Edit Maintenance Record
+          </Button>
+
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={generateServiceReport}
+          >
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Generate Service Report
+          </Button>
+        </div>
       </div>
     </MobileLayout>
   );
