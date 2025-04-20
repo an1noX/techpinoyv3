@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -6,7 +7,6 @@ import { Import, Search, ArrowUpDown, Printer, FileText, Wrench, Check, Info, Hi
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Printer as PrinterType, PrinterStatus, OwnershipType } from '@/types/printers';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,28 +17,7 @@ import { GenerateServiceReportDialog } from '@/components/printers/GenerateServi
 import { MarkRepairedDialog } from '@/components/printers/MarkRepairedDialog';
 import { PrinterDetailsDialog } from '@/components/printers/PrinterDetailsDialog';
 import { PrinterHistoryDialog } from '@/components/printers/PrinterHistoryDialog';
-
-const getStatusColor = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return 'bg-status-available text-white';
-    case 'rented': return 'bg-status-rented text-black';
-    case 'maintenance': return 'bg-status-maintenance text-white';
-    case 'for_repair': return 'bg-status-maintenance text-white';
-    case 'deployed': return 'bg-status-rented text-black';
-    default: return 'bg-gray-500 text-white';
-  }
-};
-
-const getStatusEmoji = (status: PrinterStatus) => {
-  switch (status) {
-    case 'available': return '🟢';
-    case 'rented': return '🟡';
-    case 'maintenance': return '🔴';
-    case 'for_repair': return '🔴';
-    case 'deployed': return '🟡';
-    default: return '⚪';
-  }
-};
+import { PrinterStatusBadge } from '@/components/printers/PrinterStatus';
 
 const toOwnershipType = (val: any): OwnershipType =>
   val === 'system' ? 'system' : 'client';
@@ -120,6 +99,7 @@ export default function Printers() {
         variant: "destructive"
       });
 
+      // Mock data with correct types
       const mockPrinters: PrinterType[] = [
         {
           id: '1',
@@ -286,9 +266,7 @@ export default function Printers() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge className={`ml-2 ${getStatusColor(printer.status)}`}>
-                      {getStatusEmoji(printer.status)} {printer.status}
-                    </Badge>
+                    <PrinterStatusBadge status={printer.status} />
                     <div className="flex items-center ml-3">
                       <span className="mr-1 text-xs text-muted-foreground font-medium">For Rent</span>
                       <button
