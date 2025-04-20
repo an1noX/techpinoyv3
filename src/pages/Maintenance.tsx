@@ -1,57 +1,29 @@
 
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useState } from "react";
+import { Printer } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Hammer, SlidersHorizontal } from "lucide-react";
+import { Wrench, Printer as PrinterIcon } from "lucide-react";
 import { BottomNavigation } from "@/components/navigation/BottomNavigation";
+import { MaintenanceQuickUpdateDialog } from "@/components/printers/MaintenanceQuickUpdateDialog";
+import { usePrintersWithStatus } from "@/hooks/usePrintersWithStatus";
 
-interface MaintenanceRecord {
-  id: string;
-  printer_id: string | null;
-  status: string;
-  remarks?: string;
-  issue_description?: string;
-  repair_notes?: string;
-  started_at?: string;
-  completed_at?: string;
-  technician?: string;
-  created_at: string;
-  updated_at: string;
-}
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  "pending": { label: "Pending", color: "bg-amber-100 text-amber-800" },
+  "in_progress": { label: "In Progress", color: "bg-blue-100 text-blue-800" },
+  "completed": { label: "Completed", color: "bg-green-100 text-green-800" },
+  "not_tracked": { label: "No Record", color: "bg-muted text-muted-foreground" },
+};
 
 export default function Maintenance() {
-  const [records, setRecords] = useState<MaintenanceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { printers, loading, refetch } = usePrintersWithStatus();
+  const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    fetchRecords();
-  }, []);
-
-  const fetchRecords = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("maintenance_records")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (!error && data) {
-      setRecords(data as MaintenanceRecord[]);
-    }
-    setLoading(false);
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return <Badge variant="secondary" className="bg-amber-100 text-amber-800">Pending</Badge>;
-      case "in_progress":
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">In Progress</Badge>;
-      case "completed":
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+  const handleQuickUpdate = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setDialogOpen(true);
   };
 
   return (
@@ -61,50 +33,63 @@ export default function Maintenance() {
         <h1 className="text-2xl font-bold">Repair & Maintenance</h1>
       </div>
       <div className="mb-4 text-muted-foreground max-w-2xl">
-        Track, record, and manage printer maintenance and repair events in your fleet.
+        Quickly log and update printer repair or maintenance records for your fleet.
       </div>
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
+      ) : printers.length === 0 ? (
+        <div className="text-center text-muted-foreground py-10">
+          No printers found.
+        </div>
       ) : (
         <div className="space-y-4">
-          {records.length === 0 ? (
-            <div className="text-center text-muted-foreground py-10">
-              No repair or maintenance records found.
-            </div>
-          ) : (
-            records.map((rec) => (
-              <Card key={rec.id}>
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Hammer className="h-5 w-5" /> {rec.issue_description || "Maintenance Activity"}
-                    </CardTitle>
-                    {getStatusBadge(rec.status)}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {rec.technician ? `Technician: ${rec.technician}` : ""}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <div className="text-sm mb-2">
-                    {rec.repair_notes
-                      ? rec.repair_notes
-                      : rec.remarks
-                      ? rec.remarks
-                      : "No additional notes."}
-                  </div>
-                  <div className="text-xs text-muted-foreground flex gap-4">
-                    <span>Started: {rec.started_at ? new Date(rec.started_at).toLocaleDateString() : "-"}</span>
-                    <span>Finished: {rec.completed_at ? new Date(rec.completed_at).toLocaleDateString() : "-"}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+          {printers.map((printer) => (
+            <Card key={printer.id}>
+              <CardHeader className="p-4 pb-2 flex flex-row gap-2 items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PrinterIcon className="h-5 w-5" />
+                  <CardTitle className="text-md">{`${printer.make} ${printer.model}`}</CardTitle>
+                  <span className="ml-2">
+                    <Badge
+                      variant="secondary"
+                      className={STATUS_LABELS[printer.maintenanceStatus || "not_tracked"].color}
+                    >
+                      {STATUS_LABELS[printer.maintenanceStatus || "not_tracked"].label}
+                    </Badge>
+                  </span>
+                </div>
+                <Button size="sm" onClick={() => handleQuickUpdate(printer)}>
+                  Quick Update
+                </Button>
+              </CardHeader>
+              <CardContent className="p-4 pt-1">
+                <div className="text-xs text-muted-foreground flex flex-wrap gap-4">
+                  <span>Department: {printer.department ?? "-"}</span>
+                  <span>Status: {printer.status}</span>
+                  <span>Location: {printer.location ?? "-"}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+
+      {/* Dialog for Quick Update */}
+      {selectedPrinter && (
+        <MaintenanceQuickUpdateDialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setSelectedPrinter(null);
+            if (!open) refetch();
+          }}
+          printer={selectedPrinter}
+          onSuccess={refetch}
+        />
+      )}
+
       <BottomNavigation />
     </div>
   );
