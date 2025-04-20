@@ -7,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Printer, PrinterStatus } from "@/types/printers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Wrench } from "lucide-react";
 
 const STATUS_OPTIONS: PrinterStatus[] = [
   "available",
@@ -34,34 +33,37 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    setSelectedStatus(printer.status);
+  }, [open, printer]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedStatus === printer.status) {
       toast({
-        title: "No changes to save",
-        description: "The status hasn't changed.",
+        title: "No Status Change",
+        description: "Select a different status before saving.",
         variant: "default",
       });
       return;
     }
     setSubmitting(true);
-
     const { error } = await supabase
       .from("printers")
       .update({ status: selectedStatus, updated_at: new Date().toISOString() })
       .eq("id", printer.id);
-
     setSubmitting(false);
 
     if (error) {
       toast({
-        title: "Failed to update printer status.",
+        title: "Status Update Failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Printer status updated!",
+        title: "Printer Status Updated",
+        description: `Status updated to "${selectedStatus}".`,
         variant: "default",
       });
       onOpenChange(false);
@@ -73,8 +75,9 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
     <BaseDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Update Status – ${printer.make} ${printer.model}`}
+      title={`Update Status: ${printer.make} ${printer.model}`}
       size="sm"
+      description="Choose a new status for this printer. This will immediately update its state in the inventory."
       footer={
         <div className="flex gap-2 justify-end">
           <Button
@@ -89,10 +92,8 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
             type="submit"
             disabled={submitting}
             form="update-printer-status-form"
-            className="flex items-center gap-2"
           >
-            <Wrench className="h-4 w-4" />
-            Update Status
+            {submitting ? "Updating..." : "Update Status"}
           </Button>
         </div>
       }
@@ -107,7 +108,9 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
           {STATUS_OPTIONS.map((status) => (
             <div className="flex items-center space-x-2" key={status}>
               <RadioGroupItem value={status} id={`status-${status}`} />
-              <Label htmlFor={`status-${status}`} className="cursor-pointer capitalize">{status.replace(/_/g, " ")}</Label>
+              <Label htmlFor={`status-${status}`} className="cursor-pointer capitalize">
+                {status.replace(/_/g, " ")}
+              </Label>
             </div>
           ))}
         </RadioGroup>
