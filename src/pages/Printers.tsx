@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Printer as PrinterType, PrinterStatus } from '@/types';
+import { Printer as PrinterType, PrinterStatus, OwnershipType } from '@/types/printers';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ImportPrinterDialog } from '@/components/ImportPrinterDialog';
@@ -71,7 +71,13 @@ export default function Printers() {
         throw error;
       }
 
-      setPrinters(data as PrinterType[]);
+      // Convert string owned_by to OwnershipType
+      const typedPrinters = data?.map(printer => ({
+        ...printer,
+        owned_by: printer.owned_by as OwnershipType
+      })) as PrinterType[];
+
+      setPrinters(typedPrinters);
     } catch (error: any) {
       toast({
         title: "Error fetching printers",
