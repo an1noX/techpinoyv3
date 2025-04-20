@@ -130,42 +130,66 @@ export type Database = {
       }
       maintenance_records: {
         Row: {
+          activity_type: string | null
           completed_at: string | null
           cost: number | null
           created_at: string
+          diagnosed_by: string | null
+          diagnosis_date: string | null
+          diagnostic_notes: string | null
           id: string
           issue_description: string | null
+          next_maintenance_date: string | null
           parts_used: Json | null
           printer_id: string | null
+          remarks: string | null
           repair_notes: string | null
+          reported_at: string | null
+          reported_by: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["maintenance_status"]
           technician: string | null
           updated_at: string
         }
         Insert: {
+          activity_type?: string | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string
+          diagnosed_by?: string | null
+          diagnosis_date?: string | null
+          diagnostic_notes?: string | null
           id?: string
           issue_description?: string | null
+          next_maintenance_date?: string | null
           parts_used?: Json | null
           printer_id?: string | null
+          remarks?: string | null
           repair_notes?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["maintenance_status"]
           technician?: string | null
           updated_at?: string
         }
         Update: {
+          activity_type?: string | null
           completed_at?: string | null
           cost?: number | null
           created_at?: string
+          diagnosed_by?: string | null
+          diagnosis_date?: string | null
+          diagnostic_notes?: string | null
           id?: string
           issue_description?: string | null
+          next_maintenance_date?: string | null
           parts_used?: Json | null
           printer_id?: string | null
+          remarks?: string | null
           repair_notes?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["maintenance_status"]
           technician?: string | null

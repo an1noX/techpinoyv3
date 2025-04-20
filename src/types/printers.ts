@@ -1,5 +1,19 @@
+export type PrinterStatus = 
+  | 'available' 
+  | 'rented' 
+  | 'maintenance' 
+  | 'for_repair' 
+  | 'unknown' 
+  | 'deployed' 
+  | 'retired';
 
-export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+export type MaintenanceStatus = 
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'unrepairable'
+  | 'decommissioned';
+
 export type OwnershipType = 'system' | 'client';
 
 export interface Client {
