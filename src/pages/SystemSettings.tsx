@@ -74,7 +74,7 @@ export default function SystemSettings() {
     resolver: zodResolver(maintenanceSettingsSchema),
     defaultValues: {
       enableScheduledMaintenance: false,
-      defaultMaintenancePeriod: 90, // 90 days
+      defaultMaintenancePeriod: 90,
       notifyBeforeDays: 7,
       defaultTechnicians: '',
       autoGenerateReports: false,
