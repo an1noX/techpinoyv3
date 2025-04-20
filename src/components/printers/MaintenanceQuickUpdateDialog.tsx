@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Printer } from "@/types/printers";
+import { Printer, MaintenanceStatus } from "@/types/printers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -85,7 +85,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
           ? customError
           : PREDEFINED_ERRORS.find((e) => e.key === selectedError)?.label,
       repair_notes: getSolution(),
-      status: "completed",
+      status: "completed" as MaintenanceStatus,
     };
 
     const { error } = await supabase.from("maintenance_records").insert(maintenanceData);
@@ -127,7 +127,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       printer_id: printer.id,
       issue_description: `Maintenance report for ${printer.make} ${printer.model}`,
       repair_notes: reportNotes,
-      status: "completed",
+      status: "completed" as MaintenanceStatus,
       activity_type: "report",
     };
 
@@ -160,7 +160,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       printer_id: printer.id,
       issue_description: "Routine maintenance",
       repair_notes: "Device repaired and operational",
-      status: "completed",
+      status: "completed" as MaintenanceStatus,
       activity_type: "repair",
     };
 
