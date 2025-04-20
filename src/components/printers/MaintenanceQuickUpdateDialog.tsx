@@ -85,7 +85,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
           ? customError
           : PREDEFINED_ERRORS.find((e) => e.key === selectedError)?.label,
       repair_notes: getSolution(),
-      status: "completed" as const, // Using type assertion to match enum type
+      status: "completed",
     };
 
     const { error } = await supabase.from("maintenance_records").insert(maintenanceData);
@@ -127,7 +127,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       printer_id: printer.id,
       issue_description: `Maintenance report for ${printer.make} ${printer.model}`,
       repair_notes: reportNotes,
-      status: "completed" as const,
+      status: "completed",
       activity_type: "report",
     };
 
@@ -160,7 +160,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
       printer_id: printer.id,
       issue_description: "Routine maintenance",
       repair_notes: "Device repaired and operational",
-      status: "completed" as const,
+      status: "completed",
       activity_type: "repair",
     };
 

@@ -1,5 +1,5 @@
 
-export type PrinterStatus = 'available' | 'rented' | 'maintenance';
+export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
 
 export interface Client {
@@ -24,6 +24,8 @@ export interface Printer {
   is_for_rent?: boolean;
   created_at: string;
   updated_at: string;
+  serialNumber?: string;
+  notes?: string;
 }
 
 export interface Department {
