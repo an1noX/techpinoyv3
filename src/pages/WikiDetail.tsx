@@ -8,6 +8,7 @@ import { Pencil, ArrowLeft, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { TonerCompatibilityManager } from '@/components/TonerCompatibilityManager';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface WikiPrinter {
   id: string;
@@ -27,6 +28,9 @@ export default function WikiDetail() {
   const [printer, setPrinter] = useState<WikiPrinter | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('specs');
+  const [detailsModal, setDetailsModal] = useState(false);
+  const [specsModal, setSpecsModal] = useState(false);
+  const [tonersModal, setTonersModal] = useState(false);
   
   useEffect(() => {
     if (id) {
@@ -56,7 +60,6 @@ export default function WikiDetail() {
         variant: "destructive"
       });
       
-      // If we can't fetch the printer, create mock data for development
       const mockPrinter: WikiPrinter = {
         id: '1',
         make: 'HP',
@@ -173,6 +176,18 @@ export default function WikiDetail() {
               </CardContent>
             </Card>
             
+            <div className="flex gap-2 mb-6">
+              <Button variant="outline" onClick={() => setDetailsModal(true)}>
+                Details
+              </Button>
+              <Button variant="outline" onClick={() => setSpecsModal(true)}>
+                Specification
+              </Button>
+              <Button variant="outline" onClick={() => setTonersModal(true)}>
+                Toners
+              </Button>
+            </div>
+            
             <Tabs 
               defaultValue="specs" 
               value={activeTab}
@@ -240,6 +255,69 @@ export default function WikiDetail() {
               </TabsContent>
             </Tabs>
             
+            <Dialog open={detailsModal} onOpenChange={setDetailsModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Printer Details</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Make:</span>
+                    <span className="font-medium">{printer.make}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Series:</span>
+                    <span className="font-medium">{printer.series}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Model:</span>
+                    <span className="font-medium">{printer.model}</span>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setDetailsModal(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={specsModal} onOpenChange={setSpecsModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Technical Specifications</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 py-2">
+                  {printer.specs ? (
+                    Object.entries(printer.specs).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-muted-foreground capitalize">{key}:</span>
+                        <span className="font-medium">{String(value)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      No specifications available for this printer.
+                    </p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setSpecsModal(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={tonersModal} onOpenChange={setTonersModal}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Toners & Compatibility</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <TonerCompatibilityManager printerId={printer.id} />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setTonersModal(false)}>Close</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         ) : (
           <div className="text-center py-8">

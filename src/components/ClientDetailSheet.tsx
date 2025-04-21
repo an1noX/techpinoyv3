@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { EditIcon, Trash2Icon, PlusIcon, Save, XCircle } from 'lucide-react';
+import { EditIcon, Trash2Icon, PlusIcon, Save, XCircle, Printer, Building, User } from 'lucide-react';
 import { Client, PrinterSummary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +38,10 @@ export function ClientDetailSheet({
   });
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  const [printersModal, setPrintersModal] = useState(false);
+  const [departmentsModal, setDepartmentsModal] = useState(false);
+  const [usersModal, setUsersModal] = useState(false);
+
   useEffect(() => {
     if (client) {
       setFormData({
@@ -48,12 +52,10 @@ export function ClientDetailSheet({
         address: client.address || '',
         notes: client.notes || ''
       });
-      
       if (client.printers) {
         const depts = client.printers
           .map(printer => printer.location || '')
           .filter(loc => loc.trim() !== '');
-        
         setDepartments([...new Set(depts)]);
       }
     }
@@ -251,7 +253,22 @@ export function ClientDetailSheet({
               </div>
             </SheetTitle>
           </SheetHeader>
-          
+
+          <div className="flex gap-2 mb-4">
+            <Button variant="outline" className="flex gap-1 items-center" onClick={() => setPrintersModal(true)}>
+              <Printer size={16} />
+              Printers
+            </Button>
+            <Button variant="outline" className="flex gap-1 items-center" onClick={() => setDepartmentsModal(true)}>
+              <Building size={16} />
+              Departments
+            </Button>
+            <Button variant="outline" className="flex gap-1 items-center" onClick={() => setUsersModal(true)}>
+              <User size={16} />
+              Users
+            </Button>
+          </div>
+
           <div className="space-y-6">
             {editMode ? (
               <div className="space-y-4">
@@ -431,7 +448,73 @@ export function ClientDetailSheet({
           </div>
         </SheetContent>
       </Sheet>
-      
+
+      <Dialog open={printersModal} onOpenChange={setPrintersModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigned Printers</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {client.printers && client.printers.length > 0 ? (
+              <div className="space-y-2">
+                {client.printers.map((printer, idx) => (
+                  <Card key={idx} className="mb-2">
+                    <CardContent className="p-2 flex justify-between items-center">
+                      <span>{printer.make} {printer.model}</span>
+                      <Badge>{printer.status}</Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No printers assigned to this client.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPrintersModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={departmentsModal} onOpenChange={setDepartmentsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Departments</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {departments.length > 0 ? (
+              <ul className="space-y-2">
+                {departments.map((d, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <Building size={16} />
+                    <span>{d}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">No departments found for this client.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDepartmentsModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={usersModal} onOpenChange={setUsersModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Users</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-muted-foreground text-sm">No users associated with this client yet.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUsersModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
         <DialogContent>
           <DialogHeader>
