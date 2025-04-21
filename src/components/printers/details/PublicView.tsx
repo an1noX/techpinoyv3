@@ -11,6 +11,7 @@ import { RelatedToners } from "../RelatedToners";
 import { PrinterOverview } from "./PrinterOverview";
 import { PrinterDetailCards } from "./PrinterDetailCards";
 import { ProductBenefits } from "./ProductBenefits";
+import { toFrontendMaintenanceLog, toFrontendTransferLog } from "@/utils/typeHelpers";
 
 interface PublicViewProps {
   printer: PrinterType;
@@ -42,8 +43,8 @@ export function PublicView({
         
         <PrinterOverview 
           printer={printer} 
-          maintenanceLogsCount={maintenanceLogs.filter(log => log.printerId === printer.id).length}
-          transferLogsCount={transferLogs.filter(log => log.printerId === printer.id).length}
+          maintenanceLogsCount={maintenanceLogs.filter(log => log.printer_id === printer.id).length}
+          transferLogsCount={transferLogs.filter(log => log.printer_id === printer.id).length}
           compatibleToners={compatibleToners}
         />
       </div>

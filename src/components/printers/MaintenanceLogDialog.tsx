@@ -49,13 +49,15 @@ export function MaintenanceLogDialog({
   const onSubmit = (data: MaintenanceFormValues) => {
     const newLog: MaintenanceLogType = {
       id: crypto.randomUUID(),
-      printerId,
-      printerModel,
+      printer_id: printerId, // Changed from printerId to printer_id to match type
+      printer_model: printerModel,
       date: format(data.date, "yyyy-MM-dd"),
-      scheduledDate: data.scheduledDate ? format(data.scheduledDate, "yyyy-MM-dd") : undefined,
+      scheduled_date: data.scheduledDate ? format(data.scheduledDate, "yyyy-MM-dd") : undefined,
       notes: data.notes,
       scheduled: data.scheduled,
-      performedBy: "Current User" // In a real app, this would come from auth context
+      performed_by: "Current User", // In a real app, this would come from auth context
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
     onAddLog(newLog);

@@ -16,7 +16,7 @@ import { WikiTonerForm } from '@/components/wiki/WikiTonerForm';
 import { WikiPrinterForm } from '@/components/wiki/WikiPrinterForm';
 import { WikiMaintenanceGuideForm } from '@/components/wiki/WikiMaintenanceGuideForm';
 import { WikiArticleForm } from '@/components/wiki/WikiArticleForm';
-import { WikiArticleType, ArticleStatus, WikiPrinter, WikiToner } from "@/types/types";
+import { WikiArticleType, ArticleStatus, WikiPrinter, WikiToner, Json } from "@/types/types";
 
 export default function Wiki() {
   const { toast } = useToast();

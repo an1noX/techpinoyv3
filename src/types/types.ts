@@ -1,8 +1,11 @@
 
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
+export type PrinterOwnershipType = 'system_asset' | 'client_owned'; // Added this missing type
+export type PrinterStatusType = PrinterStatus; // Added alias for consistency
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
 export type UserRole = 'admin' | 'user' | 'technician' | 'client';
+export type ArticleStatus = 'published' | 'pending' | 'rejected';
 
 export interface Client {
   id: string;
@@ -42,7 +45,7 @@ export interface PrinterType extends Printer {
   isRentalAvailable?: boolean;
   isFeatured?: boolean;
   toners?: string[];
-  ownership?: string;
+  ownership?: PrinterOwnershipType;
   clientId?: string;
   oemToner?: string;
   // Fields for UI display
@@ -66,7 +69,7 @@ export interface WikiArticleType {
   created_at: string;
   updated_at: string;
   associated_with?: string;
-  status: 'published' | 'pending' | 'rejected';
+  status: ArticleStatus;
   submitted_by?: string;
   videoUrl?: string;
 }
@@ -152,6 +155,12 @@ export interface TonerType {
   manufacturer?: string;
   image_url?: string; // Updated to match WikiToner
   price?: number; // For display in UI components
+  // Add missing properties to match WikiToner for compatibility
+  stock?: number;
+  threshold?: number;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
 export interface OEMToner {
@@ -227,3 +236,6 @@ export interface PrinterSeries {
   name: string;
   makeId: string;
 }
+
+// Add JSON type to handle Supabase JSON fields
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];

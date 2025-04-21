@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Edit2, X, Save, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { EditableToner, TonerBase, WikiToner } from '@/types/types';
-import { Json } from '@/integrations/supabase/types';
+import { EditableToner, TonerBase, WikiToner, Json } from '@/types/types';
 
 export function TonerList() {
   const { toast } = useToast();
@@ -55,7 +55,15 @@ export function TonerList() {
 
       if (error) throw error;
 
-      setToners(data || []);
+      // Transform the data to match the EditableToner type
+      const transformedData: EditableToner[] = (data || []).map(item => ({
+        ...item,
+        compatible_printers: item.compatible_printers as Record<string, any> || {},
+        variant_details: item.variant_details as Record<string, any> || {},
+        aliases: item.aliases as any[] || []
+      }));
+
+      setToners(transformedData);
     } catch (error: any) {
       toast({
         title: "Error fetching toners",
