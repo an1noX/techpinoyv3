@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { PrinterType, TransferLogType, MaintenanceLogType, TonerType } from "@/types/types";
+import { PrinterType, TransferLogType, MaintenanceLogType, TonerType, WikiToner } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { BaseDialog } from "@/components/common/BaseDialog";
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, Info, Wrench, Clock, PenTool, CircleAlert, ChevronRight, Star } from "lucide-react";
 import { TonerSlideshow } from "../TonerSlideshow";
 import { RelatedToners } from "../RelatedToners";
+import { tonerTypesToWikiToners } from "@/utils/typeHelpers";
 
 // Define the Department interface to match the database structure
 interface Department {
@@ -58,6 +60,9 @@ export function PrinterDetailsDialog({
   const [isMaintenanceDialogOpen, setIsMaintenanceDialogOpen] = useState(false);
   const { user, hasPermission } = useAuth();
   const isLoggedIn = !!user;
+  
+  // Convert TonerType[] to WikiToner[] for compatibility
+  const wikiToners = tonerTypesToWikiToners(toners);
   
   // Fix: Update permission checks to use single string format
   const canEdit = hasPermission("update:printers");
@@ -151,7 +156,7 @@ export function PrinterDetailsDialog({
               <TabsContent value="toners">
                 <PrinterTonerTab 
                   printer={printer}
-                  toners={toners}
+                  toners={wikiToners}
                   onUpdate={(updatedPrinter) => onUpdate(updatedPrinter)}
                 />
               </TabsContent>
@@ -327,7 +332,7 @@ export function PrinterDetailsDialog({
       <TransferDialog 
         open={isTransferDialogOpen}
         onOpenChange={setIsTransferDialogOpen}
-        printerId={printer.id}
+        printer={printer.id}
         printerModel={printer.model}
         currentClient={printer.client}
         currentClientId={printer.clientId}

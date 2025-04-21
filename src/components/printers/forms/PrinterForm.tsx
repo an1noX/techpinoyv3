@@ -1,4 +1,5 @@
-import { PrinterType, TonerType, OwnershipType, PrinterStatus } from "@/types/types";
+
+import { PrinterType, TonerType, OwnershipType, PrinterStatus, WikiToner } from "@/types/types";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { FormContainer } from "./components/FormContainer";
@@ -13,6 +14,7 @@ import { ImageSection } from "./sections/ImageSection";
 import { PrinterOwnershipSection } from "./PrinterOwnershipSection";
 import { usePrinterMakesAndSeries } from "@/hooks/usePrinterMakesAndSeries";
 import { usePrinterFormState } from "./hooks/usePrinterFormState";
+import { tonerTypesToWikiToners } from "@/utils/typeHelpers";
 
 interface PrinterFormProps {
   printer?: PrinterType;
@@ -49,6 +51,9 @@ export function PrinterForm({
   } = usePrinterFormState(printer, onAddToner);
 
   const { makes, series, addNewMake, addNewSeries } = usePrinterMakesAndSeries();
+  
+  // Convert TonerType[] to WikiToner[] for compatibility
+  const wikiToners = tonerTypesToWikiToners(toners);
 
   const onSubmitData = (data: PrinterFormValues) => {
     // Create printer data with the form values and selected toners
@@ -119,15 +124,16 @@ export function PrinterForm({
             <FeaturesSection form={form} />
             <PrinterOwnershipSection 
               form={form} 
-              ownershipType={ownershipType}
               clients={clients}
             />
             <TonerSection 
               form={form} 
-              toners={toners} 
+              toners={wikiToners} 
               selectedToners={selectedToners} 
               onTonerChange={handleTonerChange} 
-              onAddToner={onAddToner} 
+              onAddToner={onAddToner ? 
+                ((toner: WikiToner) => onAddToner(toner as unknown as TonerType)) : 
+                undefined} 
             />
             <ImageSection 
               imageUrl={imageUrl} 

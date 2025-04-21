@@ -1,5 +1,5 @@
 
-import { PrinterType, TransferLogType, MaintenanceLogType, TonerType } from "@/types/types";
+import { PrinterType, TransferLogType, MaintenanceLogType, TonerType, WikiToner } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { PrinterDetailsTab } from "../tabs/details/PrinterDetailsTab";
@@ -9,6 +9,7 @@ import { PrinterMaintenanceTab } from "../tabs/PrinterMaintenanceTab";
 import { PrinterTonerTab } from "../tabs/PrinterTonerTab";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { tonerTypesToWikiToners } from "@/utils/typeHelpers";
 
 interface LoggedInViewProps {
   printer: PrinterType;
@@ -63,6 +64,9 @@ export function LoggedInView({
       console.error('Error in checkAssignment:', error);
     }
   };
+  
+  // Convert TonerType[] to WikiToner[] for compatibility
+  const wikiToners = tonerTypesToWikiToners(toners);
   
   // Permission checks
   const canEdit = hasPermission("update:printers") && (hasPermission("admin") || isAssignedTechnician);
@@ -122,7 +126,7 @@ export function LoggedInView({
         <TabsContent value="toners">
           <PrinterTonerTab 
             printer={printer}
-            toners={toners}
+            toners={wikiToners}
             onUpdate={(updatedPrinter) => onUpdate(updatedPrinter)}
           />
         </TabsContent>

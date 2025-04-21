@@ -129,10 +129,39 @@ export function wikiTonerToTonerType(wikiToner: WikiToner): TonerType {
 }
 
 /**
+ * Converts TonerType to WikiToner for compatibility
+ */
+export function tonerTypeToWikiToner(toner: TonerType): WikiToner {
+  return {
+    id: toner.id,
+    name: toner.name,
+    brand: toner.brand,
+    model: toner.model,
+    color: toner.color,
+    page_yield: toner.page_yield,
+    oem_code: toner.oem_code,
+    aliases: toner.aliases as any[] || [],
+    image_url: toner.image_url,
+    stock: toner.stock || 0,
+    threshold: toner.threshold || 5,
+    created_at: toner.created_at,
+    updated_at: toner.updated_at,
+    is_active: toner.is_active !== undefined ? toner.is_active : true
+  };
+}
+
+/**
  * Converts an array of WikiToner to TonerType for compatibility
  */
 export function wikiTonersToTonerTypes(wikiToners: WikiToner[]): TonerType[] {
   return wikiToners.map(wikiTonerToTonerType);
+}
+
+/**
+ * Converts an array of TonerType to WikiToner for compatibility
+ */
+export function tonerTypesToWikiToners(toners: TonerType[]): WikiToner[] {
+  return toners.map(tonerTypeToWikiToner);
 }
 
 /**

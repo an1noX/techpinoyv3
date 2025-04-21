@@ -1,4 +1,4 @@
-
+import { fixDataMigration } from './typeHelpers';
 import { supabase } from '@/integrations/supabase/client';
 
 // This function checks if we need to migrate data

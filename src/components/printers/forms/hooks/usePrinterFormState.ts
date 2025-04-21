@@ -82,7 +82,12 @@ export const usePrinterFormState = (
         brand: '',
         model: '',
         color: 'black',
-        page_yield: 0
+        page_yield: 0,
+        stock: 0,
+        threshold: 5,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_active: true
       };
       
       onAddToner(newToner);

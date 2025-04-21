@@ -169,9 +169,9 @@ export interface TonerType {
   price?: number;
   stock: number; // Make this required to match WikiToner
   threshold: number; // Make this required to match WikiToner
-  created_at: string; // Change to required to match WikiToner
-  updated_at: string; // Change to required to match WikiToner
-  is_active?: boolean;
+  created_at: string; // Make this required to match WikiToner
+  updated_at: string; // Make this required to match WikiToner
+  is_active: boolean; // Change to required to match WikiToner
 }
 
 export interface OEMToner {
