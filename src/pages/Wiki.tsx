@@ -31,7 +31,6 @@ export default function Wiki() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tab, setTab] = useState('printerkb');
-  // PrinterKB modals & state
   const [detailsModal, setDetailsModal] = useState(false);
   const [specsModal, setSpecsModal] = useState(false);
   const [tonersModal, setTonersModal] = useState(false);
@@ -39,18 +38,15 @@ export default function Wiki() {
   const [selectedPrinter, setSelectedPrinter] = useState<WikiPrinter | null>(null);
   const [editDetails, setEditDetails] = useState(false);
   const [editSpecs, setEditSpecs] = useState(false);
-  // For editing details/specs inline
   const [editableDetails, setEditableDetails] = useState<{ make: string; series: string; model: string }>({ make: '', series: '', model: '' });
   const [editableSpecs, setEditableSpecs] = useState<Record<string, string>>({});
 
-  // TonerKB
   const [toners, setToners] = useState<Toner[]>([]);
   const [tonersLoading, setTonersLoading] = useState(true);
   const [tonerDialogOpen, setTonerDialogOpen] = useState(false);
   const [tonerToEdit, setTonerToEdit] = useState<Toner | null>(null);
   const [deleteTonerId, setDeleteTonerId] = useState<string | null>(null);
 
-  // -- ARTICLE state: now purely dynamic/live from Supabase
   const [articles, setArticles] = useState<WikiArticle[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
   const [articleDialogOpen, setArticleDialogOpen] = useState(false);
@@ -59,7 +55,6 @@ export default function Wiki() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([...ARTICLE_CATEGORIES]);
 
-  // New: Fetch articles from Supabase
   const fetchArticles = async () => {
     setArticlesLoading(true);
     try {
@@ -69,7 +64,6 @@ export default function Wiki() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       
-      // Transform the data to match our interface
       const transformedArticles = (data || []).map(article => ({
         id: article.id,
         title: article.title,
@@ -108,7 +102,6 @@ export default function Wiki() {
         description: error.message,
         variant: "destructive"
       });
-      // Mock data as fallback
       setPrinters([
         {
           id: '1',
@@ -146,7 +139,6 @@ export default function Wiki() {
     }
   };
 
-  // Modal controls
   const handleOpenModal = (printer: WikiPrinter, modal: 'details' | 'specs' | 'toners' | 'help') => {
     setSelectedPrinter(printer);
     setDetailsModal(modal === 'details');
@@ -155,7 +147,6 @@ export default function Wiki() {
     setHelpModal(modal === 'help');
     setEditDetails(false);
     setEditSpecs(false);
-    // prefill edit states
     if (modal === 'details') {
       setEditableDetails({
         make: printer.make,
@@ -168,11 +159,9 @@ export default function Wiki() {
     }
   };
 
-  // Details edit/save
   const handleEditDetails = () => setEditDetails(true);
   const handleSaveDetails = () => {
     if (!selectedPrinter) return;
-    // Here, you would update the details in Supabase, for now update local
     setPrinters(printers.map(p => p.id === selectedPrinter.id
       ? { ...p, ...editableDetails }
       : p
@@ -182,7 +171,6 @@ export default function Wiki() {
     toast({ title: "Updated", description: "Details updated." });
   };
 
-  // Specs edit/save
   const handleEditSpecs = () => setEditSpecs(true);
   const handleAddSpec = () => setEditableSpecs({ ...editableSpecs, '': '' });
   const handleSpecChange = (key: string, value: string) => {
@@ -196,7 +184,7 @@ export default function Wiki() {
   const handleSpecFieldChange = (k: string, v: string) => {
     setEditableSpecs(specs => {
       const copy = { ...specs };
-      delete copy[k];  // remove old
+      delete copy[k];
       copy[v] = '';
       return copy;
     });
@@ -212,7 +200,6 @@ export default function Wiki() {
     toast({ title: "Updated", description: "Specs updated." });
   };
 
-  // ------ TonerKB CRUD ------
   useEffect(() => { fetchToners(); }, []);
 
   const fetchToners = async () => {
@@ -223,7 +210,6 @@ export default function Wiki() {
       setToners(data as Toner[]);
     } catch (error: any) {
       toast({ title: "Error fetching toners", description: error.message, variant: "destructive" });
-      // Fallback mock
       setToners([
         {
           id: '1',
@@ -242,7 +228,6 @@ export default function Wiki() {
     }
   };
 
-  // Toner Form state
   const [tonerForm, setTonerForm] = useState<Omit<Toner, 'id'|'created_at'|'updated_at'>>({
     brand: '',
     model: '',
@@ -252,7 +237,6 @@ export default function Wiki() {
     threshold: 2,
   });
 
-  // Open add/edit toner dialog
   const openAddToner = () => {
     setTonerToEdit(null);
     setTonerForm({ brand: '', model: '', color: 'black', page_yield: 0, stock: 0, threshold: 2 });
@@ -264,13 +248,11 @@ export default function Wiki() {
     setTonerDialogOpen(true);
   };
 
-  // Save (add/edit) toner
   const handleSaveToner = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       let result;
       if (tonerToEdit) {
-        // Update
         const { error } = await supabase
           .from('toners')
           .update({ ...tonerForm })
@@ -278,7 +260,6 @@ export default function Wiki() {
         if (error) throw error;
         toast({ title: "Toner Updated" });
       } else {
-        // Insert
         const { error } = await supabase
           .from('toners')
           .insert([tonerForm]);
@@ -292,7 +273,6 @@ export default function Wiki() {
     }
   };
 
-  // Delete toner
   const handleDeleteToner = async () => {
     if (!deleteTonerId) return;
     try {
@@ -310,7 +290,6 @@ export default function Wiki() {
     fetchArticles();
   }, []);
 
-  // Article Form state
   const [articleForm, setArticleForm] = useState<Omit<WikiArticle, "id">>({
     title: "",
     tags: [],
@@ -319,7 +298,6 @@ export default function Wiki() {
     category: "",
   });
 
-  // Modify openAddArticle, saveArticle logic to handle categories and videoUrl
   const openAddArticle = () => {
     setArticleToEdit(null);
     setArticleForm({ title: "", tags: [], content: "", associatedWith: "", category: "", videoUrl: "" });
@@ -338,14 +316,10 @@ export default function Wiki() {
     setArticleDialogOpen(true);
   };
 
-  // Add Article Dialog (calls new dialog)
-
-  // Single Article view navigation
   const handleViewArticle = (article: WikiArticle) => {
     navigate(`/wiki/article/${article.id}`, { state: { article } });
   };
 
-  // Add state for floating dialogs
   const [showAddToner, setShowAddToner] = useState(false);
   const [showAddArticle, setShowAddArticle] = useState(false);
 
@@ -376,7 +350,6 @@ export default function Wiki() {
             <TabsTrigger value="article">Article</TabsTrigger>
           </TabsList>
         
-          {/* PRINTERKB TAB */}
           <TabsContent value="printerkb">
             <div className="mb-4 flex items-center space-x-2">
               <Input
@@ -456,7 +429,6 @@ export default function Wiki() {
               </div>
             )}
 
-            {/* Details Modal */}
             <Dialog open={detailsModal} onOpenChange={setDetailsModal}>
               <DialogContent>
                 <DialogHeader>
@@ -519,7 +491,6 @@ export default function Wiki() {
               </DialogContent>
             </Dialog>
 
-            {/* Specification Modal */}
             <Dialog open={specsModal} onOpenChange={setSpecsModal}>
               <DialogContent>
                 <DialogHeader>
@@ -576,7 +547,6 @@ export default function Wiki() {
               </DialogContent>
             </Dialog>
 
-            {/* Toners Modal */}
             <Dialog open={tonersModal} onOpenChange={setTonersModal}>
               <DialogContent>
                 <DialogHeader>
@@ -593,7 +563,6 @@ export default function Wiki() {
               </DialogContent>
             </Dialog>
 
-            {/* Help Modal (Article Filtered by Tag) */}
             <Dialog open={helpModal} onOpenChange={setHelpModal}>
               <DialogContent>
                 <DialogHeader>
@@ -601,11 +570,9 @@ export default function Wiki() {
                 </DialogHeader>
                 {selectedPrinter ? (
                   <div>
-                    {
-                      <p className="text-muted-foreground text-center py-4">
-                        No instructions/guides found for this printer.
-                      </p>
-                    }
+                    <p className="text-muted-foreground text-center py-4">
+                      No instructions/guides found for this printer.
+                    </p>
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-4">Select a printer to see help articles.</p>
@@ -617,7 +584,6 @@ export default function Wiki() {
             </Dialog>
           </TabsContent>
 
-          {/* TONERKB TAB */}
           <TabsContent value="tonerkb">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">TonerKB</h2>
@@ -660,7 +626,6 @@ export default function Wiki() {
                 ))}
               </div>
             )}
-            {/* Toner Dialogs */}
             <WikiAddTonerDialog
               open={showAddToner}
               onOpenChange={setShowAddToner}
@@ -669,7 +634,6 @@ export default function Wiki() {
                 fetchToners();
               }}
             />
-            {/* Confirm Delete Dialog */}
             <Dialog open={!!deleteTonerId} onOpenChange={v => !v && setDeleteTonerId(null)}>
               <DialogContent>
                 <DialogHeader>
@@ -684,12 +648,14 @@ export default function Wiki() {
             </Dialog>
           </TabsContent>
 
-          {/* ARTICLE TAB */}
           <TabsContent value="article">
             <div className="max-w-xl mx-auto space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Articles</h2>
-                <Button onClick={openAddArticle}><Plus size={16} className="mr-1" />Add</Button>
+                <Button onClick={openAddArticle}>
+                  <Plus size={16} className="mr-1" />
+                  Add
+                </Button>
               </div>
               {articlesLoading ? (
                 <div className="flex justify-center py-8">
@@ -714,13 +680,23 @@ export default function Wiki() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={e => { e.stopPropagation(); openEditArticle(article); }}
-                            >Edit</Button>
+                              onClick={e => {
+                                e.stopPropagation();
+                                openEditArticle(article);
+                              }}
+                            >
+                              Edit
+                            </Button>
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={e => { e.stopPropagation(); setDeleteArticleId(article.id); }}
-                            >Delete</Button>
+                              onClick={e => {
+                                e.stopPropagation();
+                                setDeleteArticleId(article.id);
+                              }}
+                            >
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </CardHeader>
@@ -731,13 +707,24 @@ export default function Wiki() {
                         <div className="mb-1 text-muted-foreground text-xs">
                           Category: {article.category}
                         </div>
-                        <p>{article.content.length > 100 ? article.content.slice(0, 100) + "..." : article.content}</p>
+                        <p>
+                          {article.content.length > 100
+                            ? article.content.slice(0, 100) + "..."
+                            : article.content}
+                        </p>
                         <div className="mt-2 text-xs text-muted-foreground">
                           Associated with: {article.associatedWith || "—"}
                         </div>
                         {article.videoUrl && (
                           <div className="mt-2 text-xs text-blue-700 underline">
-                            <a href={article.videoUrl} onClick={e => e.stopPropagation()} target="_blank" rel="noopener">View Video</a>
+                            <a
+                              href={article.videoUrl}
+                              onClick={e => e.stopPropagation()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View Video
+                            </a>
                           </div>
                         )}
                       </CardContent>
@@ -746,7 +733,6 @@ export default function Wiki() {
                 </div>
               )}
 
-              {/* Add/Edit Article Dialog */}
               <WikiAddArticleDialog
                 open={articleDialogOpen}
                 onOpenChange={setArticleDialogOpen}
@@ -754,68 +740,73 @@ export default function Wiki() {
                   setSaving && setSaving(true);
                   try {
                     if (articleToEdit) {
-                      // Update
                       const { error } = await supabase
                         .from("wiki_articles")
                         .update({
                           title: data.title,
                           tags: data.tags,
                           content: data.content,
-                          associated_with: data.associatedWith, // model string
+                          associated_with: data.associatedWith,
                           category: data.category,
                           video_url: data.videoUrl || null,
                           updated_at: new Date().toISOString(),
                         })
                         .eq("id", articleToEdit.id);
-                    if (error) throw error;
-                    toast({ title: "Article updated" });
-                  } else {
-                    // Insert
-                    const { error } = await supabase
-                      .from("wiki_articles")
-                      .insert([{
-                        title: data.title,
-                        tags: data.tags,
-                        content: data.content,
-                        associated_with: data.associatedWith,
-                        category: data.category,
-                        video_url: data.videoUrl || null,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                      }]);
-                    if (error) throw error;
-                    toast({ title: "Article added" });
+                      if (error) throw error;
+                      toast({ title: "Article updated" });
+                    } else {
+                      const { error } = await supabase
+                        .from("wiki_articles")
+                        .insert([
+                          {
+                            title: data.title,
+                            tags: data.tags,
+                            content: data.content,
+                            associated_with: data.associatedWith,
+                            category: data.category,
+                            video_url: data.videoUrl || null,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                          },
+                        ]);
+                      if (error) throw error;
+                      toast({ title: "Article added" });
+                    }
+                    setArticleDialogOpen(false);
+                    fetchArticles();
+                  } catch (error: any) {
+                    toast({ title: "Error saving article", description: error.message, variant: "destructive" });
                   }
-                  setArticleDialogOpen(false);
-                  fetchArticles();
-                } catch (error: any) {
-                  toast({ title: "Error saving article", description: error.message, variant: "destructive" });
-                }
-                setSaving && setSaving(false);
-              }}
-              printers={printers}
-              categories={categories}
-              setCategories={setCategories}
-            />
+                  setSaving && setSaving(false);
+                }}
+                printers={printers}
+                categories={categories}
+                setCategories={setCategories}
+              />
 
-            {/* Confirm Delete Dialog */}
-            <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Confirm Delete</DialogTitle>
-                </DialogHeader>
-                <p>Are you sure you want to delete this article?</p>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </TabsContent>
-        {/* ... keep other TabsContent ... */}
-      </Tabs>
-      {/* ... keep rest of page ... */}
+              <Dialog
+                open={!!deleteArticleId}
+                onOpenChange={v => !v && setDeleteArticleId(null)}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Delete</DialogTitle>
+                  </DialogHeader>
+                  <p>Are you sure you want to delete this article?</p>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleDeleteArticle}>
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </MobileLayout>
   );
 }
