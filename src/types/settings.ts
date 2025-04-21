@@ -31,6 +31,16 @@ export interface StoreInfo {
   socialMedia: SocialMedia;
 }
 
+export interface VideoAds1 {
+  videoType: 'placeholder' | 'youtube' | 'mp4' | 'file';
+  videoUrl: string;
+  title: string;
+  description: string;
+  features: string[];
+  buttonText: string;
+  buttonLink: string;
+}
+
 // Rename StoreSettings to Settings everywhere
 export interface Settings {
   id: string;
@@ -44,6 +54,7 @@ export interface Settings {
   social_media: SocialMedia;
   updated_at: string;
   storeInfo?: StoreInfo;
+  video_ads1?: VideoAds1;
 }
 
 // Update SettingsContextType to use Settings

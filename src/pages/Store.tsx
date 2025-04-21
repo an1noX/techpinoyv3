@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { ProductDetailsDialog } from "@/components/products/ProductDetailsDialog";
 import { HomeHeader } from "@/components/layout/HomeHeader";
@@ -5,7 +6,7 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { PopularProductsSection } from "@/components/home/PopularProductsSection";
 import { NewReleasesSection } from "@/components/home/NewReleasesSection";
 import { PrinterSolutionsSection } from "@/components/home/PrinterSolutionsSection";
-import { AboutSection } from "@/components/home/AboutSection";
+import { VideoAds1 } from "@/components/home/VideoAds1";
 import { ShopByBrandSection } from "@/components/home/ShopByBrandSection";
 import { FAQSection } from "@/components/home/FAQSection";
 import { AdditionalInfoSection } from "@/components/home/AdditionalInfoSection";
@@ -155,7 +156,7 @@ const StoreContent = () => {
           onProductClick={handleProductClick} 
         />
         <PrinterSolutionsSection />
-        <AboutSection />
+        <VideoAds1 />
         <ShopByBrandSection />
         <FAQSection />
         <AdditionalInfoSection />
