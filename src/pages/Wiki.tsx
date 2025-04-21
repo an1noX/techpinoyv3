@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -57,6 +56,8 @@ export default function Wiki() {
   const [articleDialogOpen, setArticleDialogOpen] = useState(false);
   const [articleToEdit, setArticleToEdit] = useState<WikiArticle | null>(null);
   const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState([...ARTICLE_CATEGORIES]);
 
   // New: Fetch articles from Supabase
   const fetchArticles = async () => {
@@ -77,7 +78,8 @@ export default function Wiki() {
         associatedWith: article.associated_with || "",
         category: article.category,
         created_at: article.created_at,
-        updated_at: article.updated_at
+        updated_at: article.updated_at,
+        videoUrl: article.video_url || "",
       }));
       
       setArticles(transformedArticles as WikiArticle[]);
@@ -317,10 +319,10 @@ export default function Wiki() {
     category: "",
   });
 
-  // Open add/edit dialog
+  // Modify openAddArticle, saveArticle logic to handle categories and videoUrl
   const openAddArticle = () => {
     setArticleToEdit(null);
-    setArticleForm({ title: "", tags: [], content: "", associatedWith: "", category: "" });
+    setArticleForm({ title: "", tags: [], content: "", associatedWith: "", category: "", videoUrl: "" });
     setArticleDialogOpen(true);
   };
   const openEditArticle = (article: WikiArticle) => {
@@ -331,67 +333,16 @@ export default function Wiki() {
       content: article.content,
       associatedWith: article.associatedWith,
       category: article.category,
+      videoUrl: article.videoUrl || "",
     });
     setArticleDialogOpen(true);
   };
 
-  // Save (add/edit) article directly to Supabase
-  const handleSaveArticle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (articleToEdit) {
-        // Update
-        const { error } = await supabase
-          .from("wiki_articles")
-          .update({
-            title: articleForm.title,
-            tags: articleForm.tags,
-            content: articleForm.content,
-            associated_with: articleForm.associatedWith, // Map camelCase to snake_case
-            category: articleForm.category,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", articleToEdit.id);
-        if (error) throw error;
-        toast({ title: "Article updated" });
-      } else {
-        // Insert
-        const { error } = await supabase
-          .from("wiki_articles")
-          .insert([{
-            title: articleForm.title,
-            tags: articleForm.tags,
-            content: articleForm.content,
-            associated_with: articleForm.associatedWith, // Map camelCase to snake_case
-            category: articleForm.category,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }]);
-        if (error) throw error;
-        toast({ title: "Article added" });
-      }
-      setArticleDialogOpen(false);
-      fetchArticles();
-    } catch (error: any) {
-      toast({ title: "Error saving article", description: error.message, variant: "destructive" });
-    }
-  };
+  // Add Article Dialog (calls new dialog)
 
-  // Delete article in Supabase
-  const handleDeleteArticle = async () => {
-    if (!deleteArticleId) return;
-    try {
-      const { error } = await supabase
-        .from("wiki_articles")
-        .delete()
-        .eq("id", deleteArticleId);
-      if (error) throw error;
-      toast({ title: "Article deleted" });
-      setDeleteArticleId(null);
-      fetchArticles();
-    } catch (error: any) {
-      toast({ title: "Error deleting article", description: error.message, variant: "destructive" });
-    }
+  // Single Article view navigation
+  const handleViewArticle = (article: WikiArticle) => {
+    navigate(`/wiki/article/${article.id}`, { state: { article } });
   };
 
   // Add state for floating dialogs
@@ -751,7 +702,11 @@ export default function Wiki() {
               ) : (
                 <div className="space-y-4">
                   {articles.map(article => (
-                    <Card key={article.id}>
+                    <Card
+                      key={article.id}
+                      className="cursor-pointer hover:shadow-lg transition-all animate-fade-in"
+                      onClick={() => handleViewArticle(article)}
+                    >
                       <CardHeader>
                         <div className="flex justify-between">
                           <CardTitle>{article.title}</CardTitle>
@@ -759,12 +714,12 @@ export default function Wiki() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => openEditArticle(article)}
+                              onClick={e => { e.stopPropagation(); openEditArticle(article); }}
                             >Edit</Button>
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => setDeleteArticleId(article.id)}
+                              onClick={e => { e.stopPropagation(); setDeleteArticleId(article.id); }}
                             >Delete</Button>
                           </div>
                         </div>
@@ -776,96 +731,91 @@ export default function Wiki() {
                         <div className="mb-1 text-muted-foreground text-xs">
                           Category: {article.category}
                         </div>
-                        <p>{article.content}</p>
+                        <p>{article.content.length > 100 ? article.content.slice(0, 100) + "..." : article.content}</p>
                         <div className="mt-2 text-xs text-muted-foreground">
                           Associated with: {article.associatedWith || "—"}
                         </div>
+                        {article.videoUrl && (
+                          <div className="mt-2 text-xs text-blue-700 underline">
+                            <a href={article.videoUrl} onClick={e => e.stopPropagation()} target="_blank" rel="noopener">View Video</a>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               )}
 
-              {/* Article Dialog: now saves to Supabase directly */}
-              <Dialog open={articleDialogOpen} onOpenChange={setArticleDialogOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{articleToEdit ? "Edit Article" : "Add Article"}</DialogTitle>
-                  </DialogHeader>
-                  <form className="space-y-2 py-2" onSubmit={handleSaveArticle}>
-                    <div>
-                      <label className="text-sm">Title*</label>
-                      <Input value={articleForm.title} onChange={e => setArticleForm(f => ({ ...f, title: e.target.value }))} required />
-                    </div>
-                    <div>
-                      <label className="text-sm">Tags (comma separated)</label>
-                      <Input
-                        value={articleForm.tags.join(",")}
-                        onChange={e => setArticleForm(f => ({ ...f, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) }))}
-                        placeholder="e.g. HP M402dn, PrinterKB"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm">Associated With (optional)</label>
-                      <select
-                        className="w-full border rounded p-2"
-                        value={articleForm.associatedWith}
-                        onChange={e => setArticleForm(f => ({ ...f, associatedWith: e.target.value }))}
-                      >
-                        <option value="">Select a printer...</option>
-                        {printers.map(pr => (
-                          <option key={pr.id} value={pr.model}>{`${pr.make} ${pr.model}`}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm">Category*</label>
-                      <select
-                        className="w-full border rounded p-2"
-                        value={articleForm.category}
-                        onChange={e => setArticleForm(f => ({ ...f, category: e.target.value }))}
-                        required
-                      >
-                        <option value="">Select...</option>
-                        {ARTICLE_CATEGORIES.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm">Content*</label>
-                      <textarea
-                        className="w-full rounded border p-2 min-h-[90px]"
-                        value={articleForm.content}
-                        onChange={e => setArticleForm(f => ({ ...f, content: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <DialogFooter className="gap-2 pt-4">
-                      <Button type="submit" variant="default">{articleToEdit ? "Save" : "Add"}</Button>
-                      <Button variant="ghost" type="button" onClick={() => setArticleDialogOpen(false)}>Cancel</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              {/* Add/Edit Article Dialog */}
+              <WikiAddArticleDialog
+                open={articleDialogOpen}
+                onOpenChange={setArticleDialogOpen}
+                onSave={async (data) => {
+                  setSaving && setSaving(true);
+                  try {
+                    if (articleToEdit) {
+                      // Update
+                      const { error } = await supabase
+                        .from("wiki_articles")
+                        .update({
+                          title: data.title,
+                          tags: data.tags,
+                          content: data.content,
+                          associated_with: data.associatedWith, // model string
+                          category: data.category,
+                          video_url: data.videoUrl || null,
+                          updated_at: new Date().toISOString(),
+                        })
+                        .eq("id", articleToEdit.id);
+                    if (error) throw error;
+                    toast({ title: "Article updated" });
+                  } else {
+                    // Insert
+                    const { error } = await supabase
+                      .from("wiki_articles")
+                      .insert([{
+                        title: data.title,
+                        tags: data.tags,
+                        content: data.content,
+                        associated_with: data.associatedWith,
+                        category: data.category,
+                        video_url: data.videoUrl || null,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                      }]);
+                    if (error) throw error;
+                    toast({ title: "Article added" });
+                  }
+                  setArticleDialogOpen(false);
+                  fetchArticles();
+                } catch (error: any) {
+                  toast({ title: "Error saving article", description: error.message, variant: "destructive" });
+                }
+                setSaving && setSaving(false);
+              }}
+              printers={printers}
+              categories={categories}
+              setCategories={setCategories}
+            />
 
-              {/* Confirm Delete Dialog */}
-              <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirm Delete</DialogTitle>
-                  </DialogHeader>
-                  <p>Are you sure you want to delete this article?</p>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+            {/* Confirm Delete Dialog */}
+            <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Delete</DialogTitle>
+                </DialogHeader>
+                <p>Are you sure you want to delete this article?</p>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
+                  <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </TabsContent>
+        {/* ... keep other TabsContent ... */}
+      </Tabs>
+      {/* ... keep rest of page ... */}
     </MobileLayout>
   );
 }
