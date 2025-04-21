@@ -321,18 +321,19 @@ export function PrinterDetailsDialog({
       <TransferDialog 
         open={isTransferDialogOpen}
         onOpenChange={setIsTransferDialogOpen}
-        printer={printer} 
-        printerModel={printer.model}
-        currentClient={printer.client}
-        currentClientId={printer.clientId}
-        currentDepartment={printer.department}
-        currentDepartmentId={printer.departmentId}
-        currentUser={printer.assignedAdmin}
-        currentUserId={printer.assignedUserId}
-        clients={clients}
-        departments={departments}
-        users={users}
-        onTransfer={onAddTransferLog}
+        printer={printer}
+        onSuccess={() => {
+          onAddTransferLog({
+            id: crypto.randomUUID(),
+            printer_id: printer.id,
+            printerId: printer.id,
+            printer_model: `${printer.make} ${printer.model}`,
+            date: new Date().toISOString(),
+            transferred_by: user?.email || 'System',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }}
       />
       
       <MaintenanceLogDialog
