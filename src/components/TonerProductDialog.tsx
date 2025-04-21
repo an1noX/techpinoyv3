@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -94,7 +95,7 @@ export function TonerProductDialog({
           oem_code: toner.oem_code || null,
           page_yield: toner.page_yield || 0,
           aliases: Array.isArray(toner.aliases) ? toner.aliases : [],
-          compatible_printers: toner.compatible_printers || [],
+          compatible_printers: toner.compatible_printers || {},
           created_at: toner.created_at,
           updated_at: toner.updated_at
         } as OEMToner;

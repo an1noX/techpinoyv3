@@ -2,6 +2,7 @@
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
+export type UserRole = 'admin' | 'user' | 'technician' | 'client';
 
 export interface Client {
   id: string;
@@ -155,4 +156,12 @@ export interface TonerBase {
   is_base_model?: boolean;
   base_model_reference?: string | null;
   variant_name?: string | null;
+}
+
+export interface UserWithRole {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: UserRole;
 }

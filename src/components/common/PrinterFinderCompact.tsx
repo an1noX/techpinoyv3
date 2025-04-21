@@ -21,7 +21,7 @@ export function PrinterFinderCompact() {
     try {
       // Search for printers in the Wiki
       const { data: printerData, error: printerError } = await supabase
-        .from('printer_wiki')
+        .from('wiki_printers')
         .select('*')
         .or(`make.ilike.%${query}%,model.ilike.%${query}%,series.ilike.%${query}%`)
         .limit(3);
@@ -30,10 +30,10 @@ export function PrinterFinderCompact() {
       
       // Search for toners by name or model
       const { data: tonerData, error: tonerError } = await supabase
-        .from('commercial_toner_products')
+        .from('product_toners')
         .select(`
           *,
-          toner:toners (
+          toner:toner_id (
             id,
             brand,
             model,
