@@ -1,4 +1,6 @@
-import { fixDataMigration } from './typeHelpers';
+
+// Import the fixDataMigration function from the typeHelpers module
+import { fixDataMigration as importedFixDataMigration } from './typeHelpers';
 import { supabase } from '@/integrations/supabase/client';
 
 // This function checks if we need to migrate data
@@ -21,7 +23,7 @@ export const checkDataMigrationNeeded = async () => {
 export const runDataMigration = async () => {
   try {
     // Fix: Call utility function to ensure we're using the right table names
-    fixDataMigration();
+    importedFixDataMigration();
     
     const printersMigrated = await migrateWikiPrinters();
     const tonersMigrated = await migrateWikiToners();
@@ -110,8 +112,7 @@ const migrateWikiPrinters = async () => {
     // Use correct table name
     const { error, count } = await supabase
       .from('wiki_printers')
-      .insert(printersToMigrate)
-      .select('id', { count: 'exact' });
+      .insert(printersToMigrate);
     
     if (error) throw error;
     
@@ -186,8 +187,7 @@ const migrateWikiToners = async () => {
     // Insert the toners
     const { error, count } = await supabase
       .from('wiki_toners')
-      .insert(tonersToMigrate)
-      .select('id', { count: 'exact' });
+      .insert(tonersToMigrate);
       
     if (error) throw error;
     
@@ -198,10 +198,5 @@ const migrateWikiToners = async () => {
   }
 };
 
-// Helper function to ensure we're using the correct table names
-export const fixDataMigration = () => {
-  console.log('Using wiki_printers and wiki_toners tables for migrations');
-};
-
-// Export this for compatibility
+// Use the imported function instead of defining a new one
 export const migrateMockData = runDataMigration;

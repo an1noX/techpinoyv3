@@ -10,9 +10,10 @@ import { PrinterOwnershipType } from '@/types/types';
 interface PrinterOwnershipSectionProps {
   form: UseFormReturn<PrinterFormValues>;
   onOwnershipChange?: (value: PrinterOwnershipType) => void;
+  clients?: Array<{ id: string; name: string }>; // Add clients prop
 }
 
-export function PrinterOwnershipSection({ form, onOwnershipChange }: PrinterOwnershipSectionProps) {
+export function PrinterOwnershipSection({ form, onOwnershipChange, clients }: PrinterOwnershipSectionProps) {
   const handleOwnershipChange = (value: PrinterOwnershipType) => {
     if (onOwnershipChange) {
       onOwnershipChange(value);
@@ -51,6 +52,8 @@ export function PrinterOwnershipSection({ form, onOwnershipChange }: PrinterOwne
               </div>
             </RadioGroup>
           </FormControl>
+          
+          {/* We could add client selection here if needed, using the clients prop */}
         </FormItem>
       )}
     />

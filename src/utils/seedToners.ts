@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export async function seedTonerData() {
@@ -128,13 +129,15 @@ export async function seedCommercialTonerProducts() {
   }
 }
 
+// Add alias to match import in Store.tsx
+export const seedTonerProducts = seedCommercialTonerProducts;
+
 export async function getCommercialTonerProducts() {
   try {
     // Fetch commercial toner products with related toner information
     const { data, error } = await supabase
       .from('product_toners')
       .select('*')
-      // .eq('is_active', true) // Remove is_active filter
       .order('created_at', { ascending: false });
 
     if (error) {

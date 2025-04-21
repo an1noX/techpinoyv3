@@ -1,4 +1,3 @@
-
 import { PrinterType, TransferLogType, MaintenanceLogType, TonerType, WikiToner } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,7 +65,7 @@ export function LoggedInView({
   };
   
   // Convert TonerType[] to WikiToner[] for compatibility
-  const wikiToners = tonerTypesToWikiToners(toners);
+  const wikiToners = toners ? tonerTypesToWikiToners(toners) : [];
   
   // Permission checks
   const canEdit = hasPermission("update:printers") && (hasPermission("admin") || isAssignedTechnician);

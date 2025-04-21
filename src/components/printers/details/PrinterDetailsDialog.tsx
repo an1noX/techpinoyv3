@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { PrinterType, TransferLogType, MaintenanceLogType, TonerType, WikiToner } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +18,6 @@ import { TonerSlideshow } from "../TonerSlideshow";
 import { RelatedToners } from "../RelatedToners";
 import { tonerTypesToWikiToners } from "@/utils/typeHelpers";
 
-// Define the Department interface to match the database structure
 interface Department {
   id: string;
   name: string;
@@ -38,7 +36,7 @@ interface PrinterDetailsDialogProps {
   clients: Array<{ id: string; name: string }>;
   departments: Array<Department>;
   users: Array<{ id: string; name: string }>;
-  toners?: TonerType[]; // Added to show and manage compatible toners
+  toners?: TonerType[];
 }
 
 export function PrinterDetailsDialog({ 
@@ -53,7 +51,7 @@ export function PrinterDetailsDialog({
   clients,
   departments,
   users,
-  toners = [] // Default to empty array if not provided
+  toners = []
 }: PrinterDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState("details");
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
@@ -61,17 +59,14 @@ export function PrinterDetailsDialog({
   const { user, hasPermission } = useAuth();
   const isLoggedIn = !!user;
   
-  // Convert TonerType[] to WikiToner[] for compatibility
   const wikiToners = tonerTypesToWikiToners(toners);
   
-  // Fix: Update permission checks to use single string format
   const canEdit = hasPermission("update:printers");
   const canTransfer = hasPermission("transfer:printers");
   const canViewHistory = hasPermission("read:printers");
   const canManageMaintenance = hasPermission("update:maintenance") || hasPermission("create:maintenance");
   const canManageToners = hasPermission("update:printers");
   
-  // Get compatible toners - improved matching logic
   const compatibleToners = toners.filter(toner => 
     toner.compatibility?.some(model => 
       model.toLowerCase().includes(printer.model.toLowerCase()) || 
@@ -79,10 +74,9 @@ export function PrinterDetailsDialog({
     )
   );
   
-  // Get related toners - improved matching for manufacturers
   const relatedToners = toners.filter(toner => 
     !compatibleToners.includes(toner) && 
-    printer.make && // Check if make exists
+    printer.make && 
     toner.compatibility?.some(model => 
       model.toLowerCase().includes(printer.make?.toLowerCase() || '') ||
       (toner.manufacturer && toner.manufacturer.toLowerCase() === printer.make.toLowerCase())
@@ -91,7 +85,6 @@ export function PrinterDetailsDialog({
   
   const placeholderImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/832px-No-Image-Placeholder.svg.png";
 
-  // Include description for DialogContent to fix the warning
   const dialogDescription = isLoggedIn 
     ? `Details for ${printer.model} printer`
     : `Information about ${printer.model} printer and compatible toners`;
@@ -163,7 +156,6 @@ export function PrinterDetailsDialog({
             )}
           </Tabs>
         ) : (
-          // Public printer details with toner slider
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="p-4 flex items-center justify-center bg-white border rounded-md">
@@ -272,7 +264,6 @@ export function PrinterDetailsDialog({
               </div>
             </div>
             
-            {/* Compatible Toners Carousel */}
             {compatibleToners.length > 0 && (
               <div className="mb-10">
                 <div className="flex justify-between items-center mb-4">
@@ -283,7 +274,6 @@ export function PrinterDetailsDialog({
               </div>
             )}
             
-            {/* Related Toners - Vertical List */}
             {relatedToners.length > 0 && (
               <div>
                 <h3 className="text-xl font-bold text-[#004165] mb-4">Related Products You May Also Need</h3>
@@ -291,7 +281,6 @@ export function PrinterDetailsDialog({
               </div>
             )}
             
-            {/* Additional Product Information */}
             <div>
               <h3 className="text-xl font-bold text-[#004165] mb-4">Why Choose Our Compatible Toners?</h3>
               
