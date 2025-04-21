@@ -18,9 +18,9 @@ interface WikiPrinter {
 
 interface Toner {
   id: string;
-  name: string;
+  model: string; // Changed from 'name' to 'model' to match database schema
   oem_code?: string;
-  model?: string;
+  brand?: string; // Added to match database schema
   color?: string;
 }
 
@@ -89,9 +89,10 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
       const tonerIds = compatibility.map((c) => c.toner_id);
 
       // 3. Get toner details for these toner ids
+      // Updated to match the actual database schema
       const { data: toners, error: tonersErr } = await supabase
         .from("toners")
-        .select("id, name, oem_code, model, color")
+        .select("id, model, brand, oem_code, color")
         .in("id", tonerIds);
 
       if (!toners || tonersErr) {
@@ -187,7 +188,7 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
                         className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-900 rounded"
                         title={`OEM: ${t.oem_code || ""}${t.model ? ` (${t.model})` : ""}`}
                       >
-                        {t.name}{t.color ? ` (${t.color})` : ""}
+                        {t.brand && `${t.brand} `}{t.model}{t.color ? ` (${t.color})` : ""}
                       </span>
                     ))}
                   </div>
