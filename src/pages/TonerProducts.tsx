@@ -118,7 +118,7 @@ export default function TonerProducts() {
         />
       }
     >
-      <div className="container px-4 py-4">
+      <div className="container px-4 py-4 pb-20">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Toner Products</h1>
           <div className="text-sm bg-blue-100 text-blue-800 rounded-md px-2 py-1">

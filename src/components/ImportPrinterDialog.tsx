@@ -33,7 +33,7 @@ export function ImportPrinterDialog({ open, onOpenChange, onImportSuccess }: Imp
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('printer_wiki')
+        .from('wiki_printers')
         .select('*');
       
       if (error) {

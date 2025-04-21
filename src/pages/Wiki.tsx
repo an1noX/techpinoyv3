@@ -89,8 +89,12 @@ export default function Wiki() {
 
   const canCreateArticle = hasPermission('create:wiki');
 
+  const handleArticleClick = (article: WikiArticleType) => {
+    navigate(`/wiki/article/${article.id}`, { state: { article } });
+  };
+
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-6 px-4 pb-20">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Printer Wiki</h1>
         {canCreateArticle && (
@@ -136,10 +140,10 @@ export default function Wiki() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArticles.map((article) => (
-            <Link 
-              to={`/wiki/article/${article.id}`} 
+            <div 
               key={article.id}
-              state={{ article }} // Pass the article data in state
+              onClick={() => handleArticleClick(article)}
+              className="cursor-pointer"
             >
               <Card className="h-full hover:shadow-md transition-shadow">
                 <CardHeader>
@@ -165,7 +169,7 @@ export default function Wiki() {
                   </p>
                 </CardFooter>
               </Card>
-            </Link>
+            </div>
           ))}
         </div>
       )}

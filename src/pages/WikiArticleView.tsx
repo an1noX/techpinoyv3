@@ -132,7 +132,7 @@ export default function WikiArticleView() {
   const ytId = getYouTubeId(article.videoUrl || "");
 
   return (
-    <div className="container max-w-xl mx-auto py-4">
+    <div className="container max-w-xl mx-auto py-4 pb-20">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{article.title}</CardTitle>

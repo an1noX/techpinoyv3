@@ -131,7 +131,7 @@ const ProductsContent = () => {
   };
 
   return (
-    <div className="container px-4 py-8">
+    <div className="container px-4 py-8 pb-20">
       <form onSubmit={handleSearch} className="mb-8">
         <div className="relative max-w-md mx-auto">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
