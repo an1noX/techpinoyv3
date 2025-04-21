@@ -1,82 +1,96 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PrinterType, TonerType, PrinterStatus, OwnershipType } from "@/types/types"; 
-import { printerFormSchema, type PrinterFormValues } from "../printer-form-schema";
+import { PrinterType, TonerType, PrinterStatusType, OwnershipType } from "@/types/types";
+import { printerFormSchema, PrinterFormValues } from "../printer-form-schema";
+import { toast } from "sonner";
 
-export function usePrinterFormState(printer?: PrinterType, onAddToner?: (toner: TonerType) => void) {
-  const [selectedToners, setSelectedToners] = useState<string[]>(printer?.toners || []);
-  const [imageUrl, setImageUrl] = useState<string>(printer?.imageUrl || "");
-  const [ownershipType, setOwnershipType] = useState<OwnershipType>(printer?.ownership || "system");
-  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState<boolean>(false);
-
+export const usePrinterFormState = (
+  printer?: PrinterType, 
+  onAddToner?: (toner: TonerType) => void
+) => {
+  const [selectedToners, setSelectedToners] = useState<string[]>(
+    printer?.toners || []
+  );
+  
+  const [imageUrl, setImageUrl] = useState<string>(
+    printer?.imageUrl || ''
+  );
+  
+  const [isAlertDialogOpen, setIsAlertDialogOpen] = useState(false);
+  
+  const defaultValues: Partial<PrinterFormValues> = {
+    make: printer?.make || '',
+    series: printer?.series || '',
+    model: printer?.model || '',
+    type: printer?.type || '',
+    status: printer?.status as PrinterStatusType || 'available',
+    description: printer?.description || '',
+    category: printer?.category || '',
+    price: printer?.price || 0,
+    rentalPrice: printer?.rentalPrice || 0,
+    quantityInStock: printer?.quantityInStock || 0,
+    isRentalAvailable: printer?.isRentalAvailable || false,
+    isFeatured: printer?.isFeatured || false,
+    serialNumber: printer?.serialNumber || '',
+    department: printer?.department || '',
+    location: printer?.location || '',
+    ownership: printer?.ownership as OwnershipType || 'system',
+    clientId: printer?.clientId || '',
+    oemToner: printer?.oemToner || '',
+    notes: printer?.notes || '',
+  };
+  
   const form = useForm<PrinterFormValues>({
     resolver: zodResolver(printerFormSchema),
-    defaultValues: {
-      make: printer?.make || "",
-      series: printer?.series || "",
-      model: printer?.model || "",
-      type: printer?.type || "",
-      status: printer?.status || "available",
-      description: printer?.description || "",
-      category: printer?.category || "",
-      price: printer?.price || 0,
-      rentalPrice: printer?.rentalPrice || 0,
-      quantityInStock: printer?.quantityInStock || 0,
-      isRentalAvailable: printer?.isRentalAvailable || false,
-      isFeatured: printer?.isFeatured || false,
-      serialNumber: printer?.serialNumber || "",
-      department: printer?.department || "",
-      location: printer?.location || "",
-      ownership: printer?.ownership || "system",
-      clientId: printer?.clientId || "",
-      oemToner: printer?.oemToner || "",
-      notes: printer?.notes || "",
-    },
+    defaultValues,
   });
-
+  
+  const formIsDirty = Object.keys(form.formState.dirtyFields).length > 0;
+  
   const handleClose = () => {
-    if (form.isDirty) {
+    if (formIsDirty) {
       setIsAlertDialogOpen(true);
     } else {
-      onClose();
+      // Assuming onOpenChange is passed to this hook or function is called directly
+      form.reset();
     }
   };
-
+  
   const handleConfirmCancel = () => {
-    form.reset();
     setIsAlertDialogOpen(false);
-    onClose();
+    form.reset();
   };
-
+  
   const handleTonerChange = (tonerId: string) => {
-    setSelectedToners((prevSelectedToners) => {
-      if (prevSelectedToners.includes(tonerId)) {
-        return prevSelectedToners.filter((id) => id !== tonerId);
+    setSelectedToners(prevToners => {
+      if (prevToners.includes(tonerId)) {
+        return prevToners.filter(id => id !== tonerId);
       } else {
-        return [...prevSelectedToners, tonerId];
+        return [...prevToners, tonerId];
       }
     });
   };
-
-  // When creating a new toner, update to include all required fields
+  
   const handleAddNewToner = () => {
     if (onAddToner) {
+      // Create a simplified toner object for the new toner modal to use
       const newToner: TonerType = {
         id: crypto.randomUUID(),
-        name: "New Toner",
-        brand: "Generic",
-        model: "Model",
-        color: "black",
-        page_yield: 1000,
-        stock: 0,
-        threshold: 5,
-        is_active: true
+        name: 'New Toner',
+        brand: '',
+        model: '',
+        color: 'black',
+        page_yield: 0
       };
+      
       onAddToner(newToner);
     }
   };
-
+  
+  const ownershipType = form.watch('ownership');
+  
   return {
     form,
     selectedToners,
@@ -84,11 +98,11 @@ export function usePrinterFormState(printer?: PrinterType, onAddToner?: (toner: 
     imageUrl,
     setImageUrl,
     ownershipType,
-    isAlertDialogOpen, 
+    isAlertDialogOpen,
     setIsAlertDialogOpen,
     handleClose,
     handleConfirmCancel,
     handleTonerChange,
     handleAddNewToner
   };
-}
+};

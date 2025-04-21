@@ -1,79 +1,336 @@
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useForm } from 'react-hook-form';
+import { Toner, WikiToner } from '@/types/types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Toner } from "@/types/types";
+const tonerFormSchema = z.object({
+  brand: z.string().min(1, { message: 'Brand is required' }),
+  model: z.string().min(1, { message: 'Model is required' }),
+  color: z.string().min(1, { message: 'Color is required' }),
+  page_yield: z.coerce.number().min(1, { message: 'Page yield must be a positive number' }),
+  oem_code: z.string().optional(),
+  aliases: z.string().optional(),
+  compatibility: z.string().optional(),
+  manufacturer: z.string().optional(),
+  image_url: z.string().optional(),
+  price: z.coerce.number().optional(),
+  stock: z.coerce.number().optional(),
+  threshold: z.coerce.number().optional(),
+  is_active: z.boolean().default(true),
+  description: z.string().optional(),
+});
+
+type TonerFormValues = z.infer<typeof tonerFormSchema>;
 
 interface WikiAddTonerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => void;
-  editToner?: Toner | null;
+  onSuccess?: () => void;
 }
 
-export const WikiAddTonerDialog: React.FC<WikiAddTonerDialogProps> = ({
-  open,
-  onOpenChange,
-  onSave,
-  editToner,
-}) => {
-  const [toner, setToner] = useState<Omit<Toner, "id"|"created_at"|"updated_at">>({
-    brand: editToner?.brand || "",
-    model: editToner?.model || "",
-    color: editToner?.color || "black",
-    page_yield: editToner?.page_yield || 0,
-    stock: editToner?.stock || 0,
-    threshold: editToner?.threshold || 2,
-  });
-  const [saving, setSaving] = useState(false);
+export function WikiAddTonerDialog({ open, onOpenChange, onSuccess }: WikiAddTonerDialogProps) {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    // Implementation will call prop onSave (parent fetchToners)
-    onSave();
-    setSaving(false);
-    setToner({ brand: "", model: "", color: "black", page_yield: 0, stock: 0, threshold: 2 });
+  const form = useForm<TonerFormValues>({
+    resolver: zodResolver(tonerFormSchema),
+    defaultValues: {
+      brand: '',
+      model: '',
+      color: '',
+      page_yield: 0,
+      oem_code: '',
+      aliases: '',
+      compatibility: '',
+      manufacturer: '',
+      image_url: '',
+      price: 0,
+      stock: 0,
+      threshold: 0,
+      is_active: true,
+      description: '',
+    },
+  });
+
+  const onSubmit = async (data: TonerFormValues) => {
+    try {
+      setIsSubmitting(true);
+
+      const tonerData: WikiToner = {
+        id: crypto.randomUUID(),
+        brand: data.brand,
+        model: data.model,
+        color: data.color,
+        page_yield: data.page_yield,
+        oem_code: data.oem_code,
+        aliases: data.aliases ? data.aliases.split(',').map((alias) => alias.trim()) : [],
+        compatible_printers: data.compatibility ? data.compatibility.split(',').map((printer) => printer.trim()) : [],
+        stock: data.stock || 0,
+        threshold: data.threshold || 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        image_url: data.image_url,
+        is_active: data.is_active || true,
+        is_commercial_product: false,
+        variant_details: {},
+        is_base_model: true,
+        base_model_reference: '',
+        variant_group_id: '',
+        variant_name: '',
+        description: data.description,
+        sku: '',
+        category: [],
+        name: `${data.brand} ${data.model}`,
+      };
+
+      const { error } = await supabase.from('wiki_toners').insert(tonerData);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Toner created successfully',
+        className: 'bg-green-500',
+        duration: 3000,
+      });
+
+      form.reset();
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Use the correct Toner type from src/types/types.ts
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{editToner ? "Edit Toner" : "Add Toner"}</DialogTitle>
-        </DialogHeader>
-        <form className="space-y-2 py-2" onSubmit={handleSave}>
-          <div>
-            <label className="text-sm">Brand*</label>
-            <Input value={toner.brand} onChange={e => setToner(f => ({ ...f, brand: e.target.value }))} required />
-          </div>
-          <div>
-            <label className="text-sm">Model*</label>
-            <Input value={toner.model} onChange={e => setToner(f => ({ ...f, model: e.target.value }))} required />
-          </div>
-          <div>
-            <label className="text-sm">Color*</label>
-            <Input value={toner.color} onChange={e => setToner(f => ({ ...f, color: e.target.value }))} required />
-          </div>
-          <div>
-            <label className="text-sm">Page Yield*</label>
-            <Input type="number" value={toner.page_yield} onChange={e => setToner(f => ({ ...f, page_yield: Number(e.target.value) }))} required />
-          </div>
-          <div>
-            <label className="text-sm">Stock*</label>
-            <Input type="number" value={toner.stock} onChange={e => setToner(f => ({ ...f, stock: Number(e.target.value) }))} required />
-          </div>
-          <div>
-            <label className="text-sm">Alert Threshold*</label>
-            <Input type="number" value={toner.threshold} onChange={e => setToner(f => ({ ...f, threshold: Number(e.target.value) }))} required />
-          </div>
-          <DialogFooter className="gap-2 pt-4">
-            <Button type="submit" variant="default" disabled={saving}>Save</Button>
-            <Button variant="ghost" type="button" onClick={() => onOpenChange(false)}>Cancel</Button>
-          </DialogFooter>
-        </form>
+      <DialogHeader>
+        <DialogTitle>Add New Toner</DialogTitle>
+      </DialogHeader>
+      <DialogContent className="max-h-[70vh] overflow-y-auto">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Brand</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Toner Brand" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Model</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Toner Model" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Color</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Toner Color" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="page_yield"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Page Yield</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Page Yield" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="oem_code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>OEM Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="OEM Code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="aliases"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Aliases (comma-separated)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Aliases" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="compatibility"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Compatible Printers (comma-separated)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Compatible Printers" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="manufacturer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Manufacturer</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Manufacturer" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="image_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Image URL</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Image URL" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Price" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Stock</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Stock" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="threshold"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Threshold</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="Threshold" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="is_active"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Is Active</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">True</SelectItem>
+                        <SelectItem value="false">False</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Submitting...' : 'Submit'}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
-};
+}

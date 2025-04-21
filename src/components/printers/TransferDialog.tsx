@@ -1,29 +1,23 @@
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { TransferLogType } from "@/types/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from 'react';
+import { TransferLogType } from '@/types/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { toBackendTransferLog } from '@/utils/typeHelpers';
 
-export interface Department {
-  id: string;
-  name: string;
-  client_id?: string;
-}
+const transferFormSchema = z.object({
+  toClient: z.string().optional(),
+  toDepartment: z.string().optional(),
+  toUser: z.string().optional(),
+  notes: z.string().optional()
+});
+
+type TransferFormValues = z.infer<typeof transferFormSchema>;
 
 interface TransferDialogProps {
   open: boolean;
@@ -37,7 +31,7 @@ interface TransferDialogProps {
   currentUser?: string;
   currentUserId?: string;
   clients: Array<{ id: string; name: string }>;
-  departments: Department[];
+  departments: Array<{ id: string; name: string, client_id?: string }>;
   users: Array<{ id: string; name: string }>;
   onTransfer: (log: TransferLogType) => void;
 }
@@ -56,67 +50,75 @@ export function TransferDialog({
   clients,
   departments,
   users,
-  onTransfer,
+  onTransfer
 }: TransferDialogProps) {
-  const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [notes, setNotes] = useState("");
+  const [filteredDepartments, setFilteredDepartments] = useState(departments);
 
-  const filteredDepartments = selectedClientId
-    ? departments.filter((dept) => dept.client_id === selectedClientId)
-    : departments;
+  const form = useForm<TransferFormValues>({
+    resolver: zodResolver(transferFormSchema),
+    defaultValues: {
+      toClient: '',
+      toDepartment: '',
+      toUser: '',
+      notes: ''
+    }
+  });
 
-  const handleReset = () => {
-    setSelectedClientId("");
-    setSelectedDepartmentId("");
-    setSelectedUserId("");
-    setNotes("");
-  };
-
-  const handleTransfer = () => {
-    const selectedClient = clients.find((c) => c.id === selectedClientId);
-    const selectedDepartment = departments.find((d) => d.id === selectedDepartmentId);
-    const selectedUser = users.find((u) => u.id === selectedUserId);
-
+  const onSubmit = (data: TransferFormValues) => {
     const transferLog: TransferLogType = {
       id: crypto.randomUUID(),
       printer_id: printerId,
-      printerId: printerId,
       printer_model: printerModel,
       from_client: currentClient,
-      fromClient: currentClient,
       from_client_id: currentClientId,
-      fromClientId: currentClientId,
       from_department: currentDepartment,
-      fromDepartment: currentDepartment,
       from_department_id: currentDepartmentId,
-      fromDepartmentId: currentDepartmentId,
       from_user: currentUser,
-      fromUser: currentUser,
       from_user_id: currentUserId,
-      fromUserId: currentUserId,
-      to_client: selectedClient?.name,
-      toClient: selectedClient?.name,
-      to_client_id: selectedClientId,
-      toClientId: selectedClientId,
-      to_department: selectedDepartment?.name,
-      toDepartment: selectedDepartment?.name,
-      to_department_id: selectedDepartmentId,
-      toDepartmentId: selectedDepartmentId,
-      to_user: selectedUser?.name,
-      toUser: selectedUser?.name,
-      to_user_id: selectedUserId,
-      toUserId: selectedUserId,
+      to_client: clients.find(c => c.id === data.toClient)?.name,
+      to_client_id: data.toClient,
+      to_department: departments.find(d => d.id === data.toDepartment)?.name,
+      to_department_id: data.toDepartment,
+      to_user: users.find(u => u.id === data.toUser)?.name,
+      to_user_id: data.toUser,
+      transferred_by: 'Admin User', // This should come from auth context in a real app
       date: new Date().toISOString(),
-      notes: notes,
-      transferred_by: "Current User",
+      notes: data.notes,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      
+      // Add frontend compatibility fields
+      printerId,
+      fromClient: currentClient,
+      fromClientId: currentClientId,
+      fromDepartment: currentDepartment,
+      fromDepartmentId: currentDepartmentId,
+      fromUser: currentUser,
+      fromUserId: currentUserId,
+      toClient: clients.find(c => c.id === data.toClient)?.name,
+      toClientId: data.toClient,
+      toDepartment: departments.find(d => d.id === data.toDepartment)?.name,
+      toDepartmentId: data.toDepartment,
+      toUser: users.find(u => u.id === data.toUser)?.name,
+      toUserId: data.toUser
     };
 
     onTransfer(transferLog);
-    handleReset();
+    onOpenChange(false);
+    form.reset();
+  };
+
+  // Filter departments when client selection changes
+  const handleClientChange = (value: string) => {
+    form.setValue('toClient', value);
+    form.setValue('toDepartment', ''); // Reset department when client changes
+    
+    if (value) {
+      const filtered = departments.filter(dept => dept.client_id === value);
+      setFilteredDepartments(filtered);
+    } else {
+      setFilteredDepartments(departments);
+    }
   };
 
   return (
@@ -129,99 +131,103 @@ export function TransferDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="client" className="text-right">
-              Client
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={selectedClientId}
-                onValueChange={setSelectedClientId}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="client" className="text-right">
+                  Client
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={form.watch('toClient')}
+                    onValueChange={handleClientChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select client" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="department" className="text-right">
+                  Department
+                </Label>
+                <div className="col-span-3">
+                  <Select
+                    value={form.watch('toDepartment')}
+                    onValueChange={form.setValue('toDepartment')}
+                    disabled={filteredDepartments.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredDepartments.map((department) => (
+                        <SelectItem key={department.id} value={department.id}>
+                          {department.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="user" className="text-right">
+                  Assign To
+                </Label>
+                <div className="col-span-3">
+                  <Select value={form.watch('toUser')} onValueChange={form.setValue('toUser')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="notes" className="text-right">
+                  Notes
+                </Label>
+                <Textarea
+                  id="notes"
+                  className="col-span-3"
+                  placeholder="Add transfer notes..."
+                  value={form.watch('notes')}
+                  onChange={(e) => form.setValue('notes', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!form.watch('toClient') && !form.watch('toDepartment') && !form.watch('toUser')}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select client" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="department" className="text-right">
-              Department
-            </Label>
-            <div className="col-span-3">
-              <Select
-                value={selectedDepartmentId}
-                onValueChange={setSelectedDepartmentId}
-                disabled={filteredDepartments.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredDepartments.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="user" className="text-right">
-              Assign To
-            </Label>
-            <div className="col-span-3">
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="notes" className="text-right">
-              Notes
-            </Label>
-            <Textarea
-              id="notes"
-              className="col-span-3"
-              placeholder="Add transfer notes..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleTransfer}
-            disabled={!selectedClientId && !selectedDepartmentId && !selectedUserId}
-          >
-            Transfer
-          </Button>
-        </DialogFooter>
+                Transfer
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

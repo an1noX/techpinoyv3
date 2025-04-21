@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { SectionTitle } from './SectionTitle';
@@ -12,27 +13,26 @@ export function ShopByBrandSection() {
     fetchBrands();
   }, []);
 
-const fetchBrands = async () => {
-  setIsLoading(true);
-  try {
-    // Fixed: Changed 'printer_wiki' to 'wiki_printers' which is the correct table name
-    const { data, error } = await supabase
-      .from('wiki_printers')
-      .select('make')
-      .order('make');
-    
-    if (error) throw error;
-    
-    // Extract unique makes
-    const uniqueMakes = Array.from(new Set(data.map(item => item.make)));
-    setBrands(uniqueMakes.map(make => ({ name: make })));
-  } catch (error) {
-    console.error('Error fetching brands:', error);
-    // You might want to handle this error in the UI
-  } finally {
-    setIsLoading(false);
-  }
-};
+  const fetchBrands = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('wiki_printers')
+        .select('make')
+        .order('make');
+      
+      if (error) throw error;
+      
+      // Extract unique makes
+      const uniqueMakes = Array.from(new Set(data.map(item => item.make)));
+      setBrands(uniqueMakes.map(make => ({ name: make })));
+    } catch (error) {
+      console.error('Error fetching brands:', error);
+      // You might want to handle this error in the UI
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white py-12">

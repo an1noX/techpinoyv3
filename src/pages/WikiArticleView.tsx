@@ -1,173 +1,236 @@
-import React from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { WikiArticleType } from "@/types/types";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { WikiArticle, ArticleStatus } from '@/types/types';
+import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, Edit, Trash2, Clock, Check, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
-// Utility to extract the YouTube video ID from various link formats
-function getYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const match =
-    url.match(/(?:youtube\.com.*(?:\/|v=)|youtu\.be\/)([^&\n?#]+)/i) ||
-    url.match(/embed\/([^\?&"\'>]+)/i);
-  return match ? match[1] : null;
+interface StatusBadgeProps {
+  status: ArticleStatus;
 }
 
-// Facebook Comments section
-const FacebookComments = ({ url }: { url: string }) => {
-  React.useEffect(() => {
-    // Load FB SDK script only once per page
-    const id = "fb-root";
-    if (!document.getElementById(id)) {
-      const div = document.createElement("div");
-      div.id = id;
-      document.body.appendChild(div);
-    }
-    if (!document.getElementById("facebook-jssdk")) {
-      const script = document.createElement("script");
-      script.id = "facebook-jssdk";
-      script.src = "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v16.0";
-      document.body.appendChild(script);
-    } else if ((window as any).FB) {
-      (window as any).FB.XFBML.parse();
-    }
-  }, []);
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+  let color = "neutral";
+  let label = status;
+
+  switch (status) {
+    case "published":
+      color = "green";
+      break;
+    case "pending":
+      color = "amber";
+      break;
+    case "rejected":
+      color = "red";
+      break;
+    default:
+      color = "neutral";
+      break;
+  }
+
   return (
-    <div className="mt-4">
-      <div
-        className="fb-comments"
-        data-href={url}
-        data-width="100%"
-        data-numposts="5"
-      ></div>
-    </div>
+    <Badge className={`bg-${color}-100 text-${color}-800 dark:bg-${color}-700 dark:text-${color}-100`}>
+      {label}
+    </Badge>
   );
 };
 
 export default function WikiArticleView() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
-  const [article, setArticle] = React.useState<WikiArticleType | null>(
-    location.state?.article || null
-  );
-  const [loading, setLoading] = React.useState(!location.state?.article);
-
-  // If no article passed in location state, fetch it
-  React.useEffect(() => {
-    if (!article && id) {
-      fetchArticle(id);
-    }
-  }, [id, article]);
-
-  const fetchArticle = async (articleId: string) => {
+  const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
+  const [article, setArticle] = useState<WikiArticle | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    fetchArticle();
+  }, [id]);
+  
+  const fetchArticle = async () => {
+    if (!id) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('wiki_articles')
         .select('*')
-        .eq('id', articleId)
+        .eq('id', id)
         .single();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        // Map database fields to our WikiArticleType
-        const mappedArticle: WikiArticleType = {
-          id: data.id,
-          title: data.title,
-          content: data.content,
-          category: data.category,
-          tags: data.tags || [],
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          associated_with: data.associated_with || '',
-          status: 'published' as ArticleStatus,
-          submitted_by: data.submitted_by || '',
-          videoUrl: data.video_url || '', // Map video_url to videoUrl
-        };
-        setArticle(mappedArticle);
-      }
+      
+      if (error) throw error;
+      setArticle(data as WikiArticle);
     } catch (error: any) {
-      console.error('Error fetching article:', error);
       toast({
-        title: 'Error fetching article',
+        title: "Error fetching article",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
+  
+  const updateArticleStatus = async (status: ArticleStatus) => {
+    if (!article) return;
+    
+    try {
+      const { error } = await supabase
+        .from('wiki_articles')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', article.id);
+      
+      if (error) throw error;
+      
+      // Update local state to reflect the change
+      setArticle(prev => prev ? { ...prev, status } : null);
+      
+      toast({
+        title: "Status updated",
+        description: `Article has been ${status}.`
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error updating status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const canEdit = hasRole('admin') || hasRole('editor');
+  const canDelete = hasRole('admin');
+  
+  const handleDelete = async () => {
+    if (!article) return;
+    
+    try {
+      if (!window.confirm("Are you sure you want to delete this article?")) {
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('wiki_articles')
+        .delete()
+        .eq('id', article.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Article deleted",
+        description: "Article has been successfully deleted."
+      });
+      
+      navigate('/wiki');
+    } catch (error: any) {
+      toast({
+        title: "Error deleting article",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+  
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <div className="text-center py-8">Loading article...</div>;
   }
-
+  
   if (!article) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <Card>
-          <CardHeader>
-            <CardTitle>Article not found</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/wiki")}>Back to Wiki</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <div className="text-center py-8">Article not found.</div>;
   }
-
-  const ytId = getYouTubeId(article.videoUrl || "");
-
+  
   return (
-    <div className="container max-w-xl mx-auto py-4 pb-20">
+    <div className="container mx-auto py-8">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{article.title}</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-2xl font-bold">
+            {article.title}
+          </CardTitle>
+          <div className="space-x-2">
+            <StatusBadge status={article.status} />
+            <Button variant="ghost" size="sm" onClick={() => navigate('/wiki')}>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Back to Wiki
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="mb-2 text-muted-foreground text-sm">
-            {article.tags?.map((t: string) => (
-              <span key={t} className="inline-block bg-gray-200 px-2 rounded mr-1">{t}</span>
-            ))}
+        
+        <CardContent className="py-4">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Content</h3>
+            <p>{article.content}</p>
           </div>
-          <div className="mb-2 text-muted-foreground text-xs">
-            Category: {article.category}
+          
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Category</h3>
+            <p>{article.category}</p>
           </div>
-          {ytId && (
-            <div className="my-4">
-              <iframe
-                width="100%"
-                height="315"
-                src={`https://www.youtube.com/embed/${ytId}`}
-                title="YouTube video"
-                frameBorder={0}
-                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          
+          {article.tags && article.tags.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {article.tags.map((tag, index) => (
+                  <Badge key={index}>{tag}</Badge>
+                ))}
+              </div>
             </div>
           )}
-          <div className="prose">{article.content}</div>
-          <div className="mt-6">
-            Associated Printer: <span className="font-semibold">{article.associated_with || "None"}</span>
+          
+          {article.associated_with && (
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">Associated With</h3>
+              <p>{article.associated_with}</p>
+            </div>
+          )}
+          
+          {article.videoUrl && (
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">Video URL</h3>
+              <a href={article.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                {article.videoUrl}
+              </a>
+            </div>
+          )}
+          
+          <div className="text-sm text-muted-foreground">
+            Created At: {new Date(article.created_at).toLocaleDateString()}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Updated At: {new Date(article.updated_at).toLocaleDateString()}
           </div>
         </CardContent>
+        
+        {canEdit && (
+          <div className="flex justify-end space-x-2 p-4">
+            {article.status === 'pending' && (
+              <Button variant="ghost" size="sm" onClick={() => updateArticleStatus('published')}>
+                <Check className="h-4 w-4 mr-2" />
+                Publish
+              </Button>
+            )}
+            {article.status === 'pending' && (
+              <Button variant="ghost" size="sm" onClick={() => updateArticleStatus('rejected')}>
+                <X className="h-4 w-4 mr-2" />
+                Reject
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => navigate(`/wiki/edit/${article.id}`)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+            {canDelete && (
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </Card>
-      <FacebookComments url={window.location.href} />
-      <div className="mt-4 flex justify-end">
-        <Button onClick={() => navigate("/wiki")}>Back to Wiki</Button>
-      </div>
     </div>
   );
 }

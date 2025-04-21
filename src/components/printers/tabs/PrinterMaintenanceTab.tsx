@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MaintenanceLogType } from '@/types/types';
@@ -15,6 +16,11 @@ export function PrinterMaintenanceTab({
   maintenanceLogs, 
   onOpenMaintenanceDialog 
 }: PrinterMaintenanceTabProps) {
+  // Filter logs for this printer using either printerId or printer_id
+  const filteredLogs = maintenanceLogs.filter(log => 
+    log.printer_id === printerId || log.printerId === printerId
+  );
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -25,18 +31,18 @@ export function PrinterMaintenanceTab({
         </Button>
       </div>
       
-      {maintenanceLogs.length === 0 ? (
+      {filteredLogs.length === 0 ? (
         <p className="text-sm text-muted-foreground">No maintenance logs found.</p>
       ) : (
         <div className="space-y-4">
-          {maintenanceLogs.map((log) => (
+          {filteredLogs.map((log) => (
             <div key={log.id} className="flex border-b py-3">
               <div className="flex-1">
                 <h4 className="font-medium">{format(new Date(log.date), 'PP')}</h4>
                 <p className="text-sm text-muted-foreground">{log.notes}</p>
               </div>
               <div className="text-right text-sm">
-                <p className="text-muted-foreground">By: {log.performed_by}</p>
+                <p className="text-muted-foreground">By: {log.performed_by || log.performedBy}</p>
                 {log.scheduled && log.scheduled_date && (
                   <p className="text-xs mt-1">
                     Scheduled: {format(new Date(log.scheduled_date), 'PP')}

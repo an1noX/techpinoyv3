@@ -51,7 +51,7 @@ export function TonerSection({
                 checked={selectedToners.includes(toner.id)}
                 onCheckedChange={() => onTonerChange(toner.id)}
               />
-              <Label htmlFor={`toner-${toner.id}`}>{toner.name}</Label>
+              <Label htmlFor={`toner-${toner.id}`}>{toner.name || `${toner.brand} ${toner.model}`}</Label>
             </div>
           ))}
         </div>

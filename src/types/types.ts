@@ -1,10 +1,16 @@
+
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
-export type PrinterOwnershipType = 'system_asset' | 'client_owned';
+export type PrinterOwnershipType = 'system' | 'client';
 export type PrinterStatusType = 'available' | 'rented' | 'maintenance' | 'deployed' | 'for_repair' | 'unknown' | 'retired';
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
 export type UserRole = 'admin' | 'user' | 'technician' | 'client';
 export type ArticleStatus = 'published' | 'pending' | 'rejected';
+
+export interface Brand {
+  name: string;
+  logo?: string;
+}
 
 export interface Client {
   id: string;
@@ -49,12 +55,8 @@ export interface PrinterType extends Printer {
   oemToner?: string;
   // Fields for UI display
   client?: string;
-  department?: string;
-  assignedAdmin?: string;
   departmentId?: string;
   assignedUserId?: string;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface Department {
@@ -118,6 +120,9 @@ export interface WikiToner {
   category?: string[];
   name?: string; // Added for compatibility with TonerType usage
 }
+
+// Add Toner interface for WikiAddTonerDialog.tsx
+export interface Toner extends WikiToner {}
 
 export interface CommercialTonerProduct {
   id: string;
@@ -203,6 +208,8 @@ export interface UserWithRole {
   first_name: string;
   last_name: string;
   role: UserRole;
+  firstName?: string; // Added for frontend compatibility
+  lastName?: string;  // Added for frontend compatibility
 }
 
 export interface TransferLogType {
@@ -220,6 +227,7 @@ export interface TransferLogType {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // Frontend compatibility properties
   printerId?: string;
   fromClient?: string;
   toClient?: string;
@@ -246,6 +254,7 @@ export interface MaintenanceLogType {
   updated_at: string;
   scheduled?: boolean;
   scheduled_date?: string;
+  // Frontend compatibility properties
   printerId?: string;
   performedBy?: string;
 }

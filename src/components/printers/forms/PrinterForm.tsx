@@ -1,6 +1,4 @@
-
-import { useState } from "react";
-import { PrinterType, TonerType } from "@/types/types";
+import { PrinterType, TonerType, OwnershipType, PrinterStatus } from "@/types/types";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { FormContainer } from "./components/FormContainer";
@@ -73,13 +71,14 @@ export function PrinterForm({
       isRentalAvailable: data.isRentalAvailable,
       isFeatured: data.isFeatured,
       toners: selectedToners,
-      ownership: data.ownership as OwnershipType,
+      ownership: data.ownership,
       clientId: data.clientId,
       oemToner: data.oemToner,
       // Required fields for PrinterType
-      owned_by: data.ownership as OwnershipType,
+      owned_by: data.ownership,
       created_at: printer?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      notes: data.notes
     };
 
     onSubmit(printerData);

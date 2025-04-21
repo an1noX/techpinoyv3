@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserWithRole, UserRole } from '@/types/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,12 +27,15 @@ export function UserRoleManager() {
         throw error;
       }
       
-      const usersList = data?.map(profile => ({
+      const usersList: UserWithRole[] = data?.map(profile => ({
         id: profile.id,
         email: '', // This won't be available without accessing auth.users
-        firstName: profile.first_name,
-        lastName: profile.last_name,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
         role: profile.role || 'user',
+        // Add frontend compatibility fields
+        firstName: profile.first_name,
+        lastName: profile.last_name
       })) || [];
       
       setUsers(usersList);
