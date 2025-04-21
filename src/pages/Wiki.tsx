@@ -136,7 +136,11 @@ export default function Wiki() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredArticles.map((article) => (
-            <Link to={`/wiki/article/${article.id}`} key={article.id}>
+            <Link 
+              to={`/wiki/article/${article.id}`} 
+              state={{ article }} 
+              key={article.id}
+            >
               <Card className="h-full hover:shadow-md transition-shadow">
                 <CardHeader>
                   <CardTitle className="line-clamp-2">{article.title}</CardTitle>

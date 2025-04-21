@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { PrinterStatusType, PrinterOwnershipType } from "@/types/types";
+import { PrinterStatus, OwnershipType } from "@/types/types";
 
 // Define the schema for the printer form
 export const printerFormSchema = z.object({

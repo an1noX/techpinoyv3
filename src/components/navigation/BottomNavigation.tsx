@@ -51,11 +51,21 @@ export function BottomNavigation() {
     },
   ];
 
+  // Function to determine if a nav item is active
+  const isActive = (path: string) => {
+    // Exact match for settings and wiki
+    if (path === '/wiki' || path === '/settings') {
+      return currentPath === path;
+    }
+    // For other pages, check if currentPath starts with path
+    return currentPath.startsWith(path);
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-sm h-16">
       <nav className="flex h-full">
         {navItems.map((item) => {
-          const isActive = currentPath.startsWith(item.path);
+          const active = isActive(item.path);
           return (
             <Link
               key={item.name}
@@ -63,14 +73,14 @@ export function BottomNavigation() {
               className={cn(
                 "flex-1 flex flex-col items-center justify-center",
                 "transition-colors duration-200",
-                isActive 
+                active 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <item.icon size={24} className={cn(
                 "mb-1",
-                isActive ? "stroke-[2.5px]" : "stroke-[1.5px]"
+                active ? "stroke-[2.5px]" : "stroke-[1.5px]"
               )} />
               <span className="text-xs font-medium">{item.name}</span>
             </Link>
