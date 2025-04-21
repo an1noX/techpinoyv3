@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PrinterType, TonerType, PrinterStatusType, PrinterOwnershipType } from "@/types/types";
+import { PrinterType, TonerType, PrinterStatusType, PrinterOwnershipType } from "@/components/printers/types";
 import { toast } from "sonner";
 import { printerFormSchema, type PrinterFormValues } from "../printer-form-schema";
 

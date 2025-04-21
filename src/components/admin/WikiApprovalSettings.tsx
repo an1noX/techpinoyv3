@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { WikiArticleType } from '@/types/types';
 import { 
   Card, 
   CardContent, 
@@ -13,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { WikiArticleType } from '@/types/types';
 import { FileText, Check, X, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +68,15 @@ export function WikiApprovalSettings() {
 
       if (error) throw error;
 
-      setPendingArticles(data);
+      // Convert the data to match the WikiArticleType
+      const typedArticles = (data || []).map(article => ({
+        ...article,
+        // Ensure status is the right type
+        status: article.status as 'published' | 'pending' | 'rejected',
+        videoUrl: article.video_url // Map video_url to videoUrl
+      })) as WikiArticleType[];
+
+      setPendingArticles(typedArticles);
     } catch (error: any) {
       console.error('Error fetching pending articles:', error);
       toast({

@@ -58,26 +58,21 @@ export function TonerList() {
 
       if (error) throw error;
 
-      // Process data to ensure all fields are correctly typed
       const processedData = (data || []).map(toner => {
-        // Ensure aliases is always an array of strings
         const aliases = Array.isArray(toner.aliases) 
           ? toner.aliases.map((alias: any) => String(alias))
           : [];
           
-        // Ensure compatible_printers is always an array of strings or null
         const compatible_printers = toner.compatible_printers 
           ? (Array.isArray(toner.compatible_printers) 
               ? toner.compatible_printers.map((printer: any) => String(printer))
               : null)
           : null;
           
-        // Ensure variant_details is a proper record or null
         const variant_details = typeof toner.variant_details === 'object' 
           ? toner.variant_details 
           : null;
         
-        // Add name property derived from brand and model
         const name = `${toner.brand} ${toner.model}${toner.variant_name ? ` ${toner.variant_name}` : ''}`;
         
         return {
@@ -179,7 +174,6 @@ export function TonerList() {
   };
 
   const handleEditClick = (toner: EditableToner) => {
-    // Copy all fields for editing, including variant-related fields
     setEditingToner({
       ...toner,
       is_base_model: toner.is_base_model || false,
