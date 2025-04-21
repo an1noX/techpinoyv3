@@ -27,7 +27,7 @@ interface ModelSelectorProps {
 export function ModelSelector({ 
   value, 
   onChange, 
-  models = [], // Provide default empty array to avoid undefined models
+  models = [], 
   className,
   placeholder = "Select a model..."
 }: ModelSelectorProps) {
@@ -35,6 +35,11 @@ export function ModelSelector({
 
   // Ensure models is always an array
   const safeModels = Array.isArray(models) ? models : [];
+
+  // If we receive an empty array, add a fallback message
+  const displayModels = safeModels.length > 0 
+    ? safeModels 
+    : ['No models available'];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -54,14 +59,18 @@ export function ModelSelector({
           <CommandInput placeholder="Search models..." />
           <CommandEmpty>No models found.</CommandEmpty>
           <CommandGroup className="max-h-60 overflow-y-auto">
-            {safeModels.map((model) => (
+            {displayModels.map((model) => (
               <CommandItem
                 key={model}
                 value={model}
                 onSelect={() => {
-                  onChange(model);
-                  setOpen(false);
+                  // Only call onChange for actual models, not our fallback message
+                  if (model !== 'No models available') {
+                    onChange(model);
+                    setOpen(false);
+                  }
                 }}
+                disabled={model === 'No models available'}
               >
                 <Check
                   className={cn(
