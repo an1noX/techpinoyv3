@@ -5,32 +5,16 @@ import { CompanyDetailsTab } from "@/components/settings/CompanyDetailsTab";
 import { VideoAds1Tab } from "@/components/settings/VideoAds1Tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { MobileLayout } from "@/components/layout/MobileLayout";
-import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 
 export default function Settings() {
-  const navigate = useNavigate();
-
   return (
-    <MobileLayout>
+    <SettingsProvider>
       <div className="container mx-auto py-6 px-4 md:px-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold">Settings</h1>
-        </div>
+        <h1 className="text-2xl font-bold mb-6">Settings</h1>
         
         <Card className="p-6">
           <Tabs defaultValue="company" className="w-full">
-            <TabsList className="mb-4 grid grid-cols-2 md:grid-cols-4">
+            <TabsList className="mb-4">
               <TabsTrigger value="company">Company Details</TabsTrigger>
               <TabsTrigger value="videoAds1">Video Ads</TabsTrigger>
               <TabsTrigger value="appearance">Appearance</TabsTrigger>
@@ -55,6 +39,6 @@ export default function Settings() {
           </Tabs>
         </Card>
       </div>
-    </MobileLayout>
+    </SettingsProvider>
   );
 }

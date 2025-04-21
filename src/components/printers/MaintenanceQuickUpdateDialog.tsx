@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { BaseDetailDialog } from "@/components/common/BaseDetailDialog";
+import { BaseDialog } from "@/components/common/BaseDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Printer, MaintenanceStatus } from "@/types/printers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CancelButton, SubmitButton } from "@/components/common/ActionButtons";
 import { Wrench } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type ErrorKey = "drumkit_error" | "paper_jam" | "no_toner" | "custom";
 
@@ -37,7 +36,7 @@ interface MaintenanceQuickUpdateDialogProps {
   onOpenChange: (open: boolean) => void;
   printer: Printer;
   onSuccess?: () => void;
-  isStatusOnly?: boolean;
+  isStatusOnly?: boolean; // Add the isStatusOnly prop
 }
 
 export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialogProps> = ({
@@ -45,7 +44,7 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
   onOpenChange,
   printer,
   onSuccess,
-  isStatusOnly = false,
+  isStatusOnly = false, // Default to false for backward compatibility
 }) => {
   const [selectedError, setSelectedError] = useState<ErrorKey | null>(null);
   const [customError, setCustomError] = useState("");
@@ -143,32 +142,35 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
     }
   };
 
-  const actionButtons = (
-    <>
-      <CancelButton 
-        disabled={submitting} 
-        onClick={() => onOpenChange(false)} 
-      />
-      <SubmitButton 
-        disabled={submitting} 
-        form="quick-maintenance-form"
-        className="flex items-center gap-2"
-      >
-        <Wrench className="h-4 w-4" />
-        {isStatusOnly ? "Update Status" : "Submit Update"}
-      </SubmitButton>
-    </>
-  );
-
   return (
-    <BaseDetailDialog
+    <BaseDialog
       open={open}
       onOpenChange={onOpenChange}
       title={isStatusOnly 
         ? `Update Status - ${printer.make} ${printer.model}` 
         : `Quick Update - ${printer.make} ${printer.model}`}
       size="sm"
-      actionButtons={actionButtons}
+      footer={
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            type="button"
+            disabled={submitting}
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={submitting} 
+            form="quick-maintenance-form"
+            className="flex items-center gap-2"
+          >
+            <Wrench className="h-4 w-4" />
+            {isStatusOnly ? "Update Status" : "Submit Update"}
+          </Button>
+        </div>
+      }
     >
       <form id="quick-maintenance-form" onSubmit={handleSubmit}>
         {isStatusOnly ? (
@@ -258,6 +260,6 @@ export const MaintenanceQuickUpdateDialog: React.FC<MaintenanceQuickUpdateDialog
           </>
         )}
       </form>
-    </BaseDetailDialog>
+    </BaseDialog>
   );
 };

@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
 import { Plus, Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TonerProductDialog } from '@/components/TonerProductDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CommercialTonerProduct } from '@/types';
-import { EditButton, DeleteButton } from '@/components/common/ActionButtons';
-import { Button } from '@/components/ui/button';
 
 export default function TonerProducts() {
   const { toast } = useToast();
@@ -180,8 +179,20 @@ export default function TonerProducts() {
                     OEM: {(product.toner as any)?.brand} {(product.toner as any)?.model}
                   </p>
                   <div className="flex justify-between">
-                    <EditButton onClick={() => handleEditProduct(product)} />
-                    <DeleteButton onClick={() => handleDeleteProduct(product)} />
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEditProduct(product)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteProduct(product)}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

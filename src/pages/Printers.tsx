@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Import, Search, Filter } from 'lucide-react';
+import { Import, Search, ArrowUpDown, Printer, FileText, Wrench, Check, Info, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,12 +20,6 @@ import { PrinterStatusBadge } from '@/components/printers/PrinterStatus';
 import { UpdatePrinterStatusDialog } from '@/components/printers/UpdatePrinterStatusDialog';
 import { AssignPrinterDialog } from '@/components/printers/AssignPrinterDialog';
 import { TransferPrinterDialog } from '@/components/printers/TransferPrinterDialog';
-import { 
-  ViewButton, 
-  StatusButton, 
-  TransferButton, 
-  HistoryButton 
-} from '@/components/common/ActionButtons';
 
 type WikiPrinter = {
   id: string;
@@ -43,7 +37,6 @@ type Toner = {
   brand: string;
   color: string;
   oem_code?: string;
-  base_model_reference?: string;
 };
 
 const toOwnershipType = (val: any): OwnershipType =>
@@ -160,33 +153,15 @@ export default function Printers() {
   };
 
   const fetchWikiPrinters = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('printer_wiki')
-        .select('id, make, model, type, description, series');
-        
-      if (error) throw error;
-      if (data) setWikiPrinters(data as WikiPrinter[]);
-      else setWikiPrinters([]);
-    } catch (error) {
-      console.error("Error fetching wiki printers:", error);
-      setWikiPrinters([]);
-    }
+    const { data, error } = await supabase.from('printer_wiki').select('id, make, model, oem_toner, type, description, series');
+    if (!error && data) setWikiPrinters(data);
+    else setWikiPrinters([]);
   };
 
   const fetchToners = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('toners')
-        .select('id, model, brand, color, oem_code, base_model_reference');
-        
-      if (error) throw error;
-      if (data) setToners(data as Toner[]);
-      else setToners([]);
-    } catch (error) {
-      console.error("Error fetching toners:", error);
-      setToners([]);
-    }
+    const { data, error } = await supabase.from('toners').select('id, model, brand, color, oem_code, base_model_reference');
+    if (!error && data) setToners(data);
+    else setToners([]);
   };
 
   const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
@@ -242,37 +217,7 @@ export default function Printers() {
   const getClientDisplay = (printer: PrinterType) =>
     printer.owned_by === "client" && printer.assigned_to ? `(${printer.assigned_to})` : "";
 
-  const getTonerName = (printer: PrinterType) => {
-    const wikiPrinter = wikiPrinters.find(w => 
-      w.make === printer.make && w.model === printer.model
-    );
-    
-    if (!wikiPrinter || !wikiPrinter.oem_toner) return "No OEM Toner";
-    
-    const oemToner = toners.find(t => t.id === wikiPrinter.oem_toner);
-    if (!oemToner) return "OEM Toner not found";
-    
-    return `${oemToner.brand} ${oemToner.model}`;
-  };
-  
-  const handleOpenImportDialog = () => {
-    setImportDialogOpen(true);
-  };
-  
-  const openDetailsDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setDetailsDialogOpen(true);
-  };
-  
-  const openPrinterStatusDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setPrinterStatusDialogOpen(true);
-  };
-  
-  const openHistoryDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setHistoryDialogOpen(true);
-  };
+  const getTonerName = (printer: PrinterType) => "TONER NAME";
 
   return (
     <MobileLayout
@@ -307,7 +252,11 @@ export default function Printers() {
             />
           </div>
           <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-            <Filter className="h-4 w-4" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 7h18" />
+              <path d="M6 12h12" />
+              <path d="M9 17h6" />
+            </svg>
           </Button>
         </div>
 
@@ -414,30 +363,60 @@ export default function Printers() {
                   <CardContent className="pb-4 pt-2">
                     <div className="flex flex-col sm:flex-row flex-wrap sm:justify-between gap-2 mt-2">
                       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <ViewButton onClick={() => openDetailsDialog(printer)} />
-                        <StatusButton onClick={() => openPrinterStatusDialog(printer)}>
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openDetailsDialog(printer)}
+                        >
+                          <Info className="h-4 w-4" />
+                          Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openPrinterStatusDialog(printer)}
+                        >
+                          <Wrench className="h-4 w-4" />
                           Update Status
-                        </StatusButton>
+                        </Button>
                         {!printer.client_id ? (
-                          <TransferButton
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
                             onClick={() => {
                               setSelectedPrinter(printer);
                               setAssignDialogOpen(true);
                             }}
                           >
+                            <ArrowUpDown className="h-4 w-4" />
                             Assign
-                          </TransferButton>
+                          </Button>
                         ) : (
-                          <TransferButton
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
                             onClick={() => {
                               setSelectedPrinter(printer);
                               setTransferDialogOpen(true);
                             }}
                           >
+                            <ArrowUpDown className="h-4 w-4" />
                             Transfer
-                          </TransferButton>
+                          </Button>
                         )}
-                        <HistoryButton onClick={() => openHistoryDialog(printer)} />
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openHistoryDialog(printer)}
+                        >
+                          <History className="h-4 w-4" />
+                          History
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
