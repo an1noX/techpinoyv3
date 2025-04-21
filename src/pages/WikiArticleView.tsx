@@ -1,11 +1,8 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { WikiArticleType } from "@/types/types";
-import { useToast } from "@/hooks/use-toast";
 
 // Utility to extract the YouTube video ID from various link formats
 function getYouTubeId(url: string): string | null {
@@ -51,71 +48,19 @@ export default function WikiArticleView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
-  const [article, setArticle] = React.useState<WikiArticleType | null>(
-    location.state?.article || null
-  );
-  
-  useEffect(() => {
-    // If no article passed in location state, fetch it using the ID
-    if (!article && id) {
-      fetchArticle(id);
-    }
-  }, [id, article]);
-  
-  const fetchArticle = async (articleId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('wiki_articles')
-        .select('*')
-        .eq('id', articleId)
-        .single();
-        
-      if (error) {
-        toast({
-          title: "Error fetching article",
-          description: error.message,
-          variant: "destructive",
-        });
-        navigate("/wiki");
-        return;
-      }
-      
-      if (data) {
-        // Transform the database response to match the WikiArticleType
-        setArticle({
-          id: data.id,
-          title: data.title,
-          content: data.content,
-          category: data.category,
-          tags: data.tags,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
-          associated_with: data.associated_with || "",
-          status: data.status as "published" | "pending" | "rejected",
-          submitted_by: data.submitted_by || "",
-          videoUrl: data.video_url || "",
-        });
-      } else {
-        navigate("/wiki");
-      }
-    } catch (error: any) {
-      console.error("Error fetching article:", error);
-      toast({
-        title: "Error fetching article",
-        description: error.message,
-        variant: "destructive",
-      });
-      navigate("/wiki");
-    }
-  };
+  const article = location.state?.article;
+
+  // If no article passed, redirect back to wiki
+  React.useEffect(() => {
+    if (!article) navigate("/wiki");
+  }, [article, navigate]);
 
   if (!article) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Card>
           <CardHeader>
-            <CardTitle>Loading article...</CardTitle>
+            <CardTitle>Article not found</CardTitle>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate("/wiki")}>Back to Wiki</Button>
@@ -157,7 +102,7 @@ export default function WikiArticleView() {
           )}
           <div className="prose">{article.content}</div>
           <div className="mt-6">
-            Associated Printer: <span className="font-semibold">{article.associated_with || "None"}</span>
+            Associated Printer: <span className="font-semibold">{article.associatedWith || "None"}</span>
           </div>
         </CardContent>
       </Card>

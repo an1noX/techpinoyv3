@@ -5,10 +5,11 @@ import { ProductCard } from '@/components/products/ProductCard';
 import { ProductDetailsDialog } from '@/components/products/ProductDetailsDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Product } from '@/types/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { EnhancedTonerType } from '@/pages/Store';
 
 const ProductsContent = () => {
   const [searchParams] = useSearchParams();
@@ -32,10 +33,10 @@ const ProductsContent = () => {
     setLoading(true);
     try {
       let query = supabase
-        .from('product_toners')
+        .from('commercial_toner_products')
         .select(`
           *,
-          toner:wiki_toners (
+          toner:toners (
             id,
             brand,
             model,
@@ -62,7 +63,7 @@ const ProductsContent = () => {
         } else {
           // If no direct compatibility info, try to get printer info and match by brand/model
           const { data: printerData, error: printerError } = await supabase
-            .from('wiki_printers')
+            .from('printer_wiki')
             .select('*')
             .eq('id', printerParam)
             .single();
