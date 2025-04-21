@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -45,35 +44,23 @@ const ProductsContent = () => {
         `);
 
       if (printerParam) {
-        const { data: compatData, error: compatError } = await supabase
-          .from('printer_toner_compatibility')
-          .select('toner_id')
-          .eq('printer_wiki_id', printerParam);
+        const { data: printerData, error: printerError } = await supabase
+          .from('wiki_printers')
+          .select('*')
+          .eq('id', printerParam)
+          .maybeSingle();
 
-        if (compatError) throw compatError;
-        
-        if (compatData && compatData.length > 0) {
-          const tonerIds = compatData.map(item => item.toner_id);
-          query = query.filter('toner_id', 'in', `(${tonerIds.join(',')})`);
-        } else {
-          const { data: printerData, error: printerError } = await supabase
-            .from('wiki_printers')
-            .select('*')
-            .eq('id', printerParam)
-            .maybeSingle();
-            
-          if (printerError) throw printerError;
-          
-          if (printerData) {
-            const { data: tonerData } = await supabase
-              .from('wiki_toners')
-              .select('id')
-              .filter('compatible_printers', 'cs', `{"make": "${printerData.make}"}`);
-              
-            if (tonerData && tonerData.length > 0) {
-              const matchedTonerIds = tonerData.map(t => t.id);
-              query = query.filter('toner_id', 'in', `(${matchedTonerIds.join(',')})`);
-            }
+        if (printerError) throw printerError;
+
+        if (printerData) {
+          const { data: tonerData } = await supabase
+            .from('wiki_toners')
+            .select('id')
+            .filter('compatible_printers', 'cs', `{"make": "${printerData.make}"}`);
+
+          if (tonerData && tonerData.length > 0) {
+            const matchedTonerIds = tonerData.map(t => t.id);
+            query = query.filter('toner_id', 'in', `(${matchedTonerIds.join(',')})`);
           }
         }
       }

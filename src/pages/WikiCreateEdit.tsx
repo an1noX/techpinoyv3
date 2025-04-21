@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -74,7 +73,7 @@ export default function WikiCreateEdit() {
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('printer_wiki')
+        .from('wiki_printers') // Changed from printer_wiki
         .select('*')
         .eq('id', printerId)
         .single();
@@ -152,15 +151,13 @@ export default function WikiCreateEdit() {
       let result;
       
       if (isEditing) {
-        // Update existing printer
         result = await supabase
-          .from('printer_wiki')
+          .from('wiki_printers') // Changed from printer_wiki
           .update(printerData)
           .eq('id', id);
       } else {
-        // Insert new printer
         result = await supabase
-          .from('printer_wiki')
+          .from('wiki_printers') // Changed from printer_wiki
           .insert(printerData);
       }
       

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { ProductDetailsDialog } from "@/components/products/ProductDetailsDialog";
 import { HomeHeader } from "@/components/layout/HomeHeader";
@@ -67,9 +66,9 @@ const StoreContent = () => {
         // Seed products if needed (for development)
         await seedTonerProducts();
         
-        // Fetch from commercial_toner_products table
+        // Updated to use product_toners table
         const { data, error } = await supabase
-          .from("commercial_toner_products")
+          .from("product_toners")
           .select(`
             *,
             toner:toner_id (
@@ -77,6 +76,7 @@ const StoreContent = () => {
             )
           `)
           .order("created_at", { ascending: false });
+
         if (error) throw error;
 
         // Map for the UI
