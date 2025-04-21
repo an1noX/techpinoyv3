@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, StoreInfo } from '@/types/settings';
+import { Settings, StoreInfo, Json } from '@/types/settings';
 
 const defaultSettings: Settings = {
   id: '',
