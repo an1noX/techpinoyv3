@@ -7,6 +7,8 @@ import { PrinterTransferTab } from "../tabs/PrinterTransferTab";
 import { PrinterHistoryTab } from "../tabs/PrinterHistoryTab";
 import { PrinterMaintenanceTab } from "../tabs/PrinterMaintenanceTab";
 import { PrinterTonerTab } from "../tabs/PrinterTonerTab";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface LoggedInViewProps {
   printer: PrinterType;
@@ -31,14 +33,44 @@ export function LoggedInView({
   setIsMaintenanceDialogOpen,
   toners
 }: LoggedInViewProps) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
+  const [isAssignedTechnician, setIsAssignedTechnician] = useState(false);
   
-  // Fix: Update permission checks to use single string format 
-  const canEdit = hasPermission("update:printers");
+  useEffect(() => {
+    if (user) {
+      checkAssignment();
+    }
+  }, [user, printer.id]);
+  
+  const checkAssignment = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_printer_assignments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('printer_id', printer.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error checking printer assignment:', error);
+        return;
+      }
+      
+      setIsAssignedTechnician(!!data);
+    } catch (error) {
+      console.error('Error in checkAssignment:', error);
+    }
+  };
+  
+  // Permission checks
+  const canEdit = hasPermission("update:printers") && (hasPermission("admin") || isAssignedTechnician);
   const canTransfer = hasPermission("transfer:printers");
   const canViewHistory = hasPermission("read:printers");
-  const canManageMaintenance = hasPermission("update:maintenance") || hasPermission("create:maintenance");
-  const canManageToners = hasPermission("update:printers");
+  const canManageMaintenance = (hasPermission("update:maintenance") || hasPermission("create:maintenance")) && 
+                              (hasPermission("admin") || isAssignedTechnician);
+  const canManageToners = hasPermission("update:printers") && (hasPermission("admin") || isAssignedTechnician);
 
   return (
     <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>

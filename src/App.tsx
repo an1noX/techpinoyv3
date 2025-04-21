@@ -26,9 +26,30 @@ import Store from "./pages/Store";
 import Products from "./pages/Products";
 import Maintenance from "./pages/Maintenance";
 import Settings from "./pages/Settings";
+import AdminSettings from "./pages/AdminSettings";
 import React from "react";
 
 const queryClient = new QueryClient();
+
+// Role-based protection wrapper
+const RoleProtectedRoute = ({ 
+  children, 
+  allowedRoles 
+}: { 
+  children: React.ReactNode; 
+  allowedRoles: string[] 
+}) => (
+  <AuthProvider>
+    <PrivateRoute>
+      {({ hasRole }: { hasRole: (role: string) => boolean }) => {
+        if (allowedRoles.some(role => hasRole(role))) {
+          return children;
+        }
+        return <Navigate to="/" />;
+      }}
+    </PrivateRoute>
+  </AuthProvider>
+);
 
 const ProtectedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthProvider>
@@ -70,6 +91,11 @@ const App = () => (
               <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
               <Route path="/maintenance" element={<ProtectedLayout><Maintenance /></ProtectedLayout>} />
               <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
+              <Route path="/admin/settings" element={
+                <ProtectedLayout>
+                  <AdminSettings />
+                </ProtectedLayout>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </SettingsProvider>

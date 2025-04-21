@@ -3,18 +3,19 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { UserProfile } from "@/components/auth/UserProfile";
 import { Button } from "@/components/ui/button";
-import { LogIn, LogOut, ShoppingCart, User, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut, ShoppingCart, User, LayoutDashboard, Settings } from 'lucide-react';
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function UserNavbar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   const isLoginPage = location.pathname === "/login";
   const isHomePage = location.pathname === "/";
   const isAuthenticated = !!user;
-  const isAdmin = true; // For testing purposes we'll assume admin role
+  const isAdmin = hasRole('admin');
+  const isTechnician = hasRole('technician');
   
   const handleLoginClick = () => {
     navigate("/auth");
@@ -44,11 +45,23 @@ export default function UserNavbar() {
             <Button 
               variant="ghost" 
               size="sm" 
+              onClick={() => navigate('/admin/settings')}
+              className="text-foreground"
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              Admin
+            </Button>
+          )}
+          
+          {(isAdmin || isTechnician) && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
               onClick={() => navigate('/dashboard')}
               className="text-foreground"
             >
               <LayoutDashboard className="h-4 w-4 mr-1" />
-              Admin
+              Dashboard
             </Button>
           )}
           

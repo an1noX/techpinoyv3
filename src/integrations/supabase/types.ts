@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -967,6 +994,41 @@ export type Database = {
           },
         ]
       }
+      user_printer_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string | null
+          id: string
+          printer_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          printer_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string | null
+          id?: string
+          printer_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_printer_assignments_printer_id_fkey"
+            columns: ["printer_id"]
+            isOneToOne: false
+            referencedRelation: "printers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wiki_articles: {
         Row: {
           associated_with: string | null
@@ -974,6 +1036,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          status: string
+          submitted_by: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -984,6 +1048,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          status?: string
+          submitted_by?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -994,6 +1060,8 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          status?: string
+          submitted_by?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -1024,6 +1092,7 @@ export type Database = {
         | "for_repair"
         | "unknown"
         | "retired"
+      user_role: "admin" | "technician" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1157,6 +1226,7 @@ export const Constants = {
         "unknown",
         "retired",
       ],
+      user_role: ["admin", "technician", "client"],
     },
   },
 } as const
