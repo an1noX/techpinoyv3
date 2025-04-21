@@ -1,3 +1,4 @@
+
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
@@ -124,6 +125,19 @@ export interface TonerType {
   page_yield: number;
   oem_code?: string;
   aliases?: string[];
+}
+
+export interface OEMToner {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  oem_code?: string | null;
+  page_yield: number;
+  aliases?: any[];
+  compatible_printers?: any;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EditableToner extends WikiToner {

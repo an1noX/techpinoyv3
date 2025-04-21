@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -13,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Json } from '@/integrations/supabase/types';
+import { WikiToner } from '@/types/types';
 
 interface Toner {
   id: string;
@@ -30,7 +30,7 @@ interface Toner {
 export default function Toners() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [toners, setToners] = useState<Toner[]>([]);
+  const [toners, setToners] = useState<WikiToner[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [openAddTonerDialog, setOpenAddTonerDialog] = useState(false);
@@ -52,14 +52,14 @@ export default function Toners() {
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .select('*');
       
       if (error) {
         throw error;
       }
       
-      setToners(data as Toner[] || []);
+      setToners(data as WikiToner[] || []);
     } catch (error: any) {
       toast({
         title: "Error fetching toners",
@@ -68,7 +68,7 @@ export default function Toners() {
       });
       
       // Mock data for development
-      const mockToners: Toner[] = [
+      const mockToners: WikiToner[] = [
         {
           id: '1',
           brand: 'HP',
@@ -79,6 +79,7 @@ export default function Toners() {
           threshold: 2,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_active: true
         },
         {
           id: '2',
@@ -90,6 +91,7 @@ export default function Toners() {
           threshold: 2,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_active: true
         },
         {
           id: '3',
@@ -101,6 +103,7 @@ export default function Toners() {
           threshold: 2,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          is_active: true
         },
       ];
       
@@ -108,35 +111,6 @@ export default function Toners() {
     } finally {
       setLoading(false);
     }
-  };
-  
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-  
-  const filteredToners = toners.filter(toner => 
-    toner.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    toner.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    toner.color.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const handleAddToner = () => {
-    setOpenAddTonerDialog(true);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [id]: id === 'page_yield' || id === 'stock' || id === 'threshold' ? parseInt(value) : value
-    }));
-  };
-
-  const handleColorChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      color: value
-    }));
   };
 
   const handleSaveToner = async () => {
@@ -151,7 +125,7 @@ export default function Toners() {
       }
 
       const { data, error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .insert([formData])
         .select();
 
@@ -183,6 +157,35 @@ export default function Toners() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+  
+  const filteredToners = toners.filter(toner => 
+    toner.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    toner.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    toner.color.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const handleAddToner = () => {
+    setOpenAddTonerDialog(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: id === 'page_yield' || id === 'stock' || id === 'threshold' ? parseInt(value) : value
+    }));
+  };
+
+  const handleColorChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      color: value
+    }));
   };
 
   const getStockStatus = (stock: number, threshold: number) => {

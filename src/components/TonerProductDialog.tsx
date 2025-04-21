@@ -79,30 +79,22 @@ export function TonerProductDialog({
   const fetchOEMToners = async () => {
     try {
       const { data, error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .select('*')
         .order('brand', { ascending: true });
 
       if (error) throw error;
       
       const processedData = (data || []).map(toner => {
-        const aliases = Array.isArray(toner.aliases) 
-          ? toner.aliases 
-          : (toner.aliases ? [] : []);
-          
-        const compatible_printers = Array.isArray(toner.compatible_printers) 
-          ? toner.compatible_printers 
-          : (toner.compatible_printers ? [] : []);
-        
         return {
           id: toner.id,
           brand: toner.brand,
           model: toner.model,
           color: toner.color,
-          oem_code: toner.oem_code,
+          oem_code: toner.oem_code || null,
           page_yield: toner.page_yield || 0,
-          aliases: aliases as string[],
-          compatible_printers: compatible_printers as string[],
+          aliases: Array.isArray(toner.aliases) ? toner.aliases : [],
+          compatible_printers: toner.compatible_printers || [],
           created_at: toner.created_at,
           updated_at: toner.updated_at
         } as OEMToner;
