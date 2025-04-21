@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,14 +85,11 @@ export function TonerProductDialog({
 
       if (error) throw error;
       
-      // Process data to ensure all fields are correctly typed
       const processedData = (data || []).map(toner => {
-        // Handle potentially problematic fields
         const aliases = Array.isArray(toner.aliases) 
           ? toner.aliases 
           : (toner.aliases ? [] : []);
           
-        // Convert compatible_printers from Json to string[]
         const compatible_printers = Array.isArray(toner.compatible_printers) 
           ? toner.compatible_printers 
           : (toner.compatible_printers ? [] : []);
@@ -142,14 +138,14 @@ export function TonerProductDialog({
       
       if (isEditing && product) {
         result = await supabase
-          .from('commercial_toner_products')
+          .from('product_toners')
           .update(productData)
           .eq('id', product.id)
           .select('*')
           .single();
       } else {
         result = await supabase
-          .from('commercial_toner_products')
+          .from('product_toners')
           .insert(productData)
           .select('*')
           .single();

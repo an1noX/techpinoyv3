@@ -6,7 +6,7 @@ import { ProductDetailsDialog } from '@/components/products/ProductDetailsDialog
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
-import { Product, CommercialTonerProduct } from '@/types/types';
+import { Product } from '@/types/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -32,7 +32,7 @@ const ProductsContent = () => {
     setLoading(true);
     try {
       let query = supabase
-        .from('commercial_toner_products')
+        .from('product_toners')
         .select(`
           *,
           toner:toner_id (
@@ -65,7 +65,7 @@ const ProductsContent = () => {
             .from('wiki_printers')
             .select('*')
             .eq('id', printerParam)
-            .single();
+            .maybeSingle();
             
           if (printerError) throw printerError;
           
@@ -108,8 +108,8 @@ const ProductsContent = () => {
     }
   };
 
-  // Map DB product to Product type
-  const mapDbToProduct = (item: CommercialTonerProduct): Product => ({
+  // Map DB product_toners record to Product type
+  const mapDbToProduct = (item: any): Product => ({
     id: item.id,
     name: item.name,
     description: item.description || '',

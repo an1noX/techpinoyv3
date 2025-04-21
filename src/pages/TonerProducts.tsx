@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
@@ -26,10 +27,10 @@ export default function TonerProducts() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('commercial_toner_products')
+        .from('product_toners')
         .select(`
           *,
-          toner:toners (
+          toner:toner_id (
             id,
             brand,
             model,
@@ -76,7 +77,7 @@ export default function TonerProducts() {
   const handleDeleteProduct = async (product: CommercialTonerProduct) => {
     try {
       const { error } = await supabase
-        .from('commercial_toner_products')
+        .from('product_toners')
         .delete()
         .eq('id', product.id);
 
