@@ -1,3 +1,4 @@
+
 import { Json } from "@/integrations/supabase/types";
 
 export type { Json };
@@ -186,4 +187,44 @@ export interface TransferLogType {
 // Enhanced Toner Type for the Store page
 export interface EnhancedTonerType extends TonerType {
   quantityInStock: number;
+}
+
+// Add new WikiPrinter interface
+export interface WikiPrinter {
+  id: string;
+  make: string;
+  series: string;
+  model: string;
+  specs?: Record<string, string>;
+  description?: string;
+  maintenance_tips?: string;
+  type?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Add new Toner interface for the Wiki
+export interface Toner {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  page_yield: number;
+  stock: number;
+  threshold: number;
+  description?: string;
+  oem_code?: string | null;
+  compatible_printers?: string[] | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Add new WikiArticle interface
+export interface WikiArticle {
+  id: string;
+  title: string;
+  tags: string[];
+  content: string;
+  associatedWith: string;
+  category: string;
 }

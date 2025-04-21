@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -8,27 +9,21 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { WikiPrinter } from '@/types';
+import { WikiPrinter, Toner, WikiArticle } from '@/types/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TonerCompatibilityManager } from '@/components/TonerCompatibilityManager';
 
-// Article type for sample usage
-type Article = {
-  id: string;
-  title: string;
-  tags: string[];
-  content: string;
-  associatedWith: string;
-};
+// Article type for sample usage removed as we now have a proper type
 
-const SAMPLE_ARTICLES: Article[] = [
+const SAMPLE_ARTICLES: WikiArticle[] = [
   {
     id: "1",
     title: "How to Load Paper in HP M402dn",
     tags: ['HP M402dn', 'PrinterKB'],
     content: "Follow these steps to load paper correctly into the HP LaserJet Pro M402dn tray...",
-    associatedWith: "HP LaserJet Pro M402dn"
+    associatedWith: "HP LaserJet Pro M402dn",
+    category: "Paper Jam"
   }
 ];
 
@@ -261,7 +256,7 @@ export default function Wiki() {
         // Insert
         const { error } = await supabase
           .from('toners')
-          .insert([{ ...tonerForm }]);
+          .insert([tonerForm]);
         if (error) throw error;
         toast({ title: "Toner Added" });
       }
