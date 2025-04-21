@@ -67,7 +67,20 @@ export default function Wiki() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      setArticles((data || []) as WikiArticle[]);
+      
+      // Transform the data to match our interface
+      const transformedArticles = (data || []).map(article => ({
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        tags: article.tags || [],
+        associatedWith: article.associated_with || "",
+        category: article.category,
+        created_at: article.created_at,
+        updated_at: article.updated_at
+      }));
+      
+      setArticles(transformedArticles as WikiArticle[]);
     } catch (error: any) {
       toast({
         title: "Error fetching articles",
@@ -334,7 +347,7 @@ export default function Wiki() {
             title: articleForm.title,
             tags: articleForm.tags,
             content: articleForm.content,
-            associated_with: articleForm.associatedWith,
+            associated_with: articleForm.associatedWith, // Map camelCase to snake_case
             category: articleForm.category,
             updated_at: new Date().toISOString(),
           })
@@ -349,7 +362,7 @@ export default function Wiki() {
             title: articleForm.title,
             tags: articleForm.tags,
             content: articleForm.content,
-            associated_with: articleForm.associatedWith,
+            associated_with: articleForm.associatedWith, // Map camelCase to snake_case
             category: articleForm.category,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -765,7 +778,7 @@ export default function Wiki() {
                         </div>
                         <p>{article.content}</p>
                         <div className="mt-2 text-xs text-muted-foreground">
-                          Associated with: {article.associatedWith || article.associated_with || "—"}
+                          Associated with: {article.associatedWith || "—"}
                         </div>
                       </CardContent>
                     </Card>
