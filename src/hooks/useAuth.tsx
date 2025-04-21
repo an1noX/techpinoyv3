@@ -156,21 +156,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return permissions[userRole]?.includes(permission) || false;
   };
 
+  const contextValue: AuthContextProps = {
+    user,
+    session,
+    isLoading,
+    isAuthenticated: !!user,
+    signIn,
+    signUp,
+    signOut,
+    hasRole,
+    hasPermission,
+    userRole
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        isAuthenticated: !!user,
-        signIn,
-        signUp,
-        signOut,
-        hasRole,
-        hasPermission,
-        userRole
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
