@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -33,6 +32,16 @@ const SAMPLE_ARTICLES: Article[] = [
   }
 ];
 
+// Add for Articles CRUD – static issue categories
+const ARTICLE_CATEGORIES = [
+  "Paper Jam",
+  "Print Quality",
+  "Network",
+  "Installation",
+  "Supplies",
+  "Other",
+];
+
 export default function Wiki() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -51,6 +60,19 @@ export default function Wiki() {
   // For editing details/specs inline
   const [editableDetails, setEditableDetails] = useState<{ make: string; series: string; model: string }>({ make: '', series: '', model: '' });
   const [editableSpecs, setEditableSpecs] = useState<Record<string, string>>({});
+
+  // TonerKB
+  const [toners, setToners] = useState<Toner[]>([]);
+  const [tonersLoading, setTonersLoading] = useState(true);
+  const [tonerDialogOpen, setTonerDialogOpen] = useState(false);
+  const [tonerToEdit, setTonerToEdit] = useState<Toner | null>(null);
+  const [deleteTonerId, setDeleteTonerId] = useState<string | null>(null);
+
+  // Article
+  const [articles, setArticles] = useState<WikiArticle[]>(SAMPLE_ARTICLES);
+  const [articleDialogOpen, setArticleDialogOpen] = useState(false);
+  const [articleToEdit, setArticleToEdit] = useState<WikiArticle | null>(null);
+  const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
 
   useEffect(() => { fetchPrinters(); }, []);
 
@@ -170,9 +192,153 @@ export default function Wiki() {
     toast({ title: "Updated", description: "Specs updated." });
   };
 
-  // ---------------------------
-  // RENDER LOGIC
-  // ---------------------------
+  // ------ TonerKB CRUD ------
+  useEffect(() => { fetchToners(); }, []);
+
+  const fetchToners = async () => {
+    try {
+      setTonersLoading(true);
+      const { data, error } = await supabase.from('toners').select('*');
+      if (error) throw error;
+      setToners(data as Toner[]);
+    } catch (error: any) {
+      toast({ title: "Error fetching toners", description: error.message, variant: "destructive" });
+      // Fallback mock
+      setToners([
+        {
+          id: '1',
+          brand: 'HP',
+          model: 'CF400X',
+          color: 'black',
+          page_yield: 2800,
+          stock: 5,
+          threshold: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setTonersLoading(false);
+    }
+  };
+
+  // Toner Form state
+  const [tonerForm, setTonerForm] = useState<Omit<Toner, 'id'|'created_at'|'updated_at'>>({
+    brand: '',
+    model: '',
+    color: 'black',
+    page_yield: 0,
+    stock: 0,
+    threshold: 2,
+  });
+
+  // Open add/edit toner dialog
+  const openAddToner = () => {
+    setTonerToEdit(null);
+    setTonerForm({ brand: '', model: '', color: 'black', page_yield: 0, stock: 0, threshold: 2 });
+    setTonerDialogOpen(true);
+  };
+  const openEditToner = (toner: Toner) => {
+    setTonerToEdit(toner);
+    setTonerForm({ ...toner });
+    setTonerDialogOpen(true);
+  };
+
+  // Save (add/edit) toner
+  const handleSaveToner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      let result;
+      if (tonerToEdit) {
+        // Update
+        const { error } = await supabase
+          .from('toners')
+          .update({ ...tonerForm })
+          .eq('id', tonerToEdit.id);
+        if (error) throw error;
+        toast({ title: "Toner Updated" });
+      } else {
+        // Insert
+        const { error } = await supabase
+          .from('toners')
+          .insert([{ ...tonerForm }]);
+        if (error) throw error;
+        toast({ title: "Toner Added" });
+      }
+      setTonerDialogOpen(false);
+      fetchToners();
+    } catch (error: any) {
+      toast({ title: "Error saving toner", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // Delete toner
+  const handleDeleteToner = async () => {
+    if (!deleteTonerId) return;
+    try {
+      await supabase.from('toners').delete().eq('id', deleteTonerId);
+      toast({ title: "Toner deleted" });
+      setDeleteTonerId(null);
+      fetchToners();
+    } catch (error: any) {
+      toast({ title: "Error deleting toner", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // ------ Article CRUD ------
+  // Article Form state
+  const [articleForm, setArticleForm] = useState<Omit<WikiArticle, 'id'>>({
+    title: '',
+    tags: [],
+    content: '',
+    associatedWith: '',
+    category: '',
+  });
+
+  // Open add/edit dialog
+  const openAddArticle = () => {
+    setArticleToEdit(null);
+    setArticleForm({ title: '', tags: [], content: '', associatedWith: '', category: '' });
+    setArticleDialogOpen(true);
+  };
+  const openEditArticle = (article: WikiArticle) => {
+    setArticleToEdit(article);
+    setArticleForm({ ...article });
+    setArticleDialogOpen(true);
+  };
+
+  // Save (add/edit) article
+  const handleSaveArticle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (articleToEdit) {
+        // Update (use upsert for demo)
+        const updated = [...articles].map(a =>
+          a.id === articleToEdit.id ? { ...articleToEdit, ...articleForm } : a
+        );
+        setArticles(updated);
+      } else {
+        // Add new
+        const newArticle: WikiArticle = {
+          ...articleForm,
+          id: `${Math.random()}`,
+        };
+        setArticles([newArticle, ...articles]);
+      }
+      setArticleDialogOpen(false);
+      toast({ title: "Article saved" });
+    } catch (error: any) {
+      toast({ title: "Error saving article", description: error.message, variant: "destructive" });
+    }
+  };
+
+  // Delete article
+  const handleDeleteArticle = () => {
+    setArticles(articles.filter(a => a.id !== deleteArticleId));
+    setDeleteArticleId(null);
+    toast({ title: "Article deleted" });
+  };
+
   return (
     <MobileLayout
       fab={
@@ -461,29 +627,264 @@ export default function Wiki() {
 
           {/* TONERKB TAB */}
           <TabsContent value="tonerkb">
-            <div className="text-center text-muted-foreground py-10">
-              <p>Coming soon: Toner Knowledge Base</p>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">TonerKB</h2>
+              <Button variant="default" size="sm" onClick={openAddToner}>Add Toner</Button>
             </div>
+            {tonersLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : toners.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No toners found</p>
+                <Button className="mt-4" onClick={openAddToner}>Add Toner</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {toners.map(toner => (
+                  <Card key={toner.id}>
+                    <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{toner.brand} {toner.model}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Color: <span className="capitalize">{toner.color}</span> • Page Yield: {toner.page_yield}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditToner(toner)}>
+                          Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => setDeleteTonerId(toner.id)}>
+                          Delete
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="flex items-center gap-8">
+                        <span className="text-sm">Stock: {toner.stock}</span>
+                        <span className="text-sm">Alert at: {toner.threshold}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            {/* Toner Form Dialog */}
+            <Dialog open={tonerDialogOpen} onOpenChange={setTonerDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {tonerToEdit ? "Edit Toner" : "Add Toner"}
+                  </DialogTitle>
+                </DialogHeader>
+                <form className="space-y-2 py-2" onSubmit={handleSaveToner}>
+                  <div>
+                    <label className="text-sm">Brand*</label>
+                    <Input
+                      value={tonerForm.brand}
+                      onChange={e => setTonerForm(f => ({ ...f, brand: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Model*</label>
+                    <Input
+                      value={tonerForm.model}
+                      onChange={e => setTonerForm(f => ({ ...f, model: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Color*</label>
+                    <Input
+                      value={tonerForm.color}
+                      onChange={e => setTonerForm(f => ({ ...f, color: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Page Yield*</label>
+                    <Input
+                      type="number"
+                      value={tonerForm.page_yield}
+                      onChange={e => setTonerForm(f => ({ ...f, page_yield: Number(e.target.value) }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Stock*</label>
+                    <Input
+                      type="number"
+                      value={tonerForm.stock}
+                      onChange={e => setTonerForm(f => ({ ...f, stock: Number(e.target.value) }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Alert Threshold*</label>
+                    <Input
+                      type="number"
+                      value={tonerForm.threshold}
+                      onChange={e => setTonerForm(f => ({ ...f, threshold: Number(e.target.value) }))}
+                      required
+                    />
+                  </div>
+                  <DialogFooter className="gap-2 pt-4">
+                    <Button type="submit" variant="default">Save</Button>
+                    <Button variant="ghost" type="button" onClick={() => setTonerDialogOpen(false)}>Cancel</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            {/* Confirm Delete Dialog */}
+            <Dialog open={!!deleteTonerId} onOpenChange={v => !v && setDeleteTonerId(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirm Delete</DialogTitle>
+                </DialogHeader>
+                <p>Are you sure you want to delete this toner?</p>
+                <DialogFooter>
+                  <Button variant="ghost" onClick={() => setDeleteTonerId(null)}>Cancel</Button>
+                  <Button variant="destructive" onClick={handleDeleteToner}>Delete</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* ARTICLE TAB */}
           <TabsContent value="article">
             <div className="max-w-xl mx-auto space-y-6">
-              <h2 className="text-xl font-bold mb-4">Articles</h2>
-              {SAMPLE_ARTICLES.map(article => (
-                <Card key={article.id}>
-                  <CardHeader>
-                    <CardTitle>{article.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="mb-1 text-muted-foreground text-xs">Tags: {article.tags.join(', ')}</p>
-                    <p>{article.content}</p>
-                    <div className="mt-2 text-xs text-muted-foreground">Associated with: {article.associatedWith}</div>
-                  </CardContent>
-                </Card>
-              ))}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Articles</h2>
+                <Button size="sm" variant="default" onClick={openAddArticle}>Add Article</Button>
+              </div>
+              {articles.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No articles found</p>
+                  <Button className="mt-4" onClick={openAddArticle}>
+                    Add Article
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {articles.map(article => (
+                    <Card key={article.id}>
+                      <CardHeader>
+                        <div className="flex justify-between">
+                          <CardTitle>{article.title}</CardTitle>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditArticle(article)}
+                            >Edit</Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => setDeleteArticleId(article.id)}
+                            >Delete</Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-1 text-muted-foreground text-xs">
+                          Tags: {article.tags.join(', ')}
+                        </div>
+                        <div className="mb-1 text-muted-foreground text-xs">
+                          Category: {article.category}
+                        </div>
+                        <p>{article.content}</p>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Associated with: {article.associatedWith}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              {/* Article Form Dialog */}
+              <Dialog open={articleDialogOpen} onOpenChange={setArticleDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      {articleToEdit ? "Edit Article" : "Add Article"}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <form
+                    className="space-y-2 py-2"
+                    onSubmit={handleSaveArticle}
+                  >
+                    <div>
+                      <label className="text-sm">Title*</label>
+                      <Input
+                        value={articleForm.title}
+                        onChange={e => setArticleForm(f => ({ ...f, title: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm">Tags (comma separated)</label>
+                      <Input
+                        value={articleForm.tags.join(',')}
+                        onChange={e => setArticleForm(f => ({ ...f, tags: e.target.value.split(',').map(t => t.trim()).filter(t => !!t) }))}
+                        placeholder="e.g. HP M402dn, PrinterKB"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm">Associated With</label>
+                      <Input
+                        value={articleForm.associatedWith}
+                        onChange={e => setArticleForm(f => ({ ...f, associatedWith: e.target.value }))}
+                        placeholder="(optional) Printer model"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm">Category*</label>
+                      <select
+                        className="w-full border rounded p-2"
+                        value={articleForm.category}
+                        onChange={e => setArticleForm(f => ({ ...f, category: e.target.value }))}
+                        required
+                      >
+                        <option value="">Select...</option>
+                        {ARTICLE_CATEGORIES.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm">Content*</label>
+                      <textarea
+                        className="w-full rounded border p-2 min-h-[90px]"
+                        value={articleForm.content}
+                        onChange={e => setArticleForm(f => ({ ...f, content: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <DialogFooter className="gap-2 pt-4">
+                      <Button type="submit" variant="default">Save</Button>
+                      <Button variant="ghost" type="button" onClick={() => setArticleDialogOpen(false)}>Cancel</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              {/* Confirm Delete Dialog */}
+              <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Confirm Delete</DialogTitle>
+                  </DialogHeader>
+                  <p>Are you sure you want to delete this article?</p>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
+                    <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </TabsContent>
+
         </Tabs>
       </div>
     </MobileLayout>
