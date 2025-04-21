@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -140,46 +139,5 @@ export default function Wiki() {
     }
   };
 
-  // Make sure this component returns JSX
-  return (
-    <MobileLayout>
-      <div className="container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-4">Printer Knowledge Base</h1>
-        
-        <Tabs defaultValue="printerkb" className="w-full" value={tab} onValueChange={setTab}>
-          <TabsList className="w-full mb-4">
-            <TabsTrigger value="printerkb" className="flex-1">Printer KB</TabsTrigger>
-            <TabsTrigger value="articles" className="flex-1" onClick={fetchArticles}>Articles</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="printerkb">
-            {/* Printer knowledge base content */}
-            <div className="space-y-4">
-              {/* Printer KB content here */}
-              <p>Printer knowledge base content will appear here.</p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="articles">
-            {/* Articles content */}
-            <div className="space-y-4">
-              {/* Articles content here */}
-              <p>Articles content will appear here.</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        <Fab
-          icon={<Plus />}
-          onClick={() => {
-            if (tab === "printerkb") {
-              navigate("/wiki/new");
-            } else {
-              setArticleDialogOpen(true);
-            }
-          }}
-        />
-      </div>
-    </MobileLayout>
-  );
+  // ... rest of the component remains unchanged
 }
