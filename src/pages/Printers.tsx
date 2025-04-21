@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Import, Search, ArrowUpDown, Printer, FileText, Wrench, Check, Info, History } from 'lucide-react';
+import { Import, Search, ArrowUpDown, Printer, FileText, Wrench, Check, Info, History, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { PrinterStatusBadge } from '@/components/printers/PrinterStatus';
 import { UpdatePrinterStatusDialog } from '@/components/printers/UpdatePrinterStatusDialog';
 import { AssignPrinterDialog } from '@/components/printers/AssignPrinterDialog';
 import { TransferPrinterDialog } from '@/components/printers/TransferPrinterDialog';
+import { RentalOptionsDialog } from '@/components/rentals/RentalOptionsDialog';
 
 const toOwnershipType = (val: any): OwnershipType =>
   val === 'system' ? 'system' : 'client';
@@ -47,6 +48,7 @@ export default function Printers() {
   const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [rentalOptionsDialogOpen, setRentalOptionsDialogOpen] = useState(false);
 
   const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
     try {
@@ -195,6 +197,11 @@ export default function Printers() {
   const openHistoryDialog = (printer: PrinterType) => {
     setSelectedPrinter(printer);
     setHistoryDialogOpen(true);
+  };
+
+  const openRentalOptionsDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setRentalOptionsDialogOpen(true);
   };
 
   const getAssignTransferLabel = (printer: PrinterType) => {
@@ -389,6 +396,15 @@ export default function Printers() {
                         <History className="h-4 w-4" />
                         History
                       </Button>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-1"
+                        onClick={() => openRentalOptionsDialog(printer)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Rent Options
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -453,6 +469,12 @@ export default function Printers() {
               if (!open) setSelectedPrinter(null);
               if (!open) fetchPrinters();
             }}
+            printer={selectedPrinter}
+            onSuccess={fetchPrinters}
+          />
+          <RentalOptionsDialog
+            open={rentalOptionsDialogOpen}
+            onOpenChange={setRentalOptionsDialogOpen}
             printer={selectedPrinter}
             onSuccess={fetchPrinters}
           />

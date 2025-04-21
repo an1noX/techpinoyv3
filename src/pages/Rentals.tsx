@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -35,7 +34,6 @@ const RATE_RANGES = [
   { label: '$100 - $200', min: 100, max: 200 },
   { label: 'Over $200', min: 200, max: 10000 }
 ];
-
 
 export default function Rentals() {
   const navigate = useNavigate();
@@ -75,8 +73,7 @@ export default function Rentals() {
         query = query.eq('status', activeTab);
       }
       else if (activeTab === 'available') {
-        // For 'available' listings, show something different? We load rental options too.
-        // Rentals table doesn't have 'available' status - skip or set empty.
+        // For 'available' listings, we don't need to fetch rentals
         setRentals([]);
         setLoadingRentals(false);
         return;
@@ -104,15 +101,32 @@ export default function Rentals() {
   const fetchRentalOptions = async () => {
     try {
       setLoadingOptions(true);
+      
+      // Join rental_options with printers to get printer details
       const { data, error } = await supabase
         .from('rental_options')
-        .select('*');
+        .select(`
+          *,
+          printers:printer_id (
+            id,
+            make,
+            model,
+            status,
+            is_for_rent
+          )
+        `);
 
       if(error) {
         throw error;
       }
 
-      setRentalOptions(data || []);
+      // Filter for available printers (is_for_rent=true and status is not 'rented')
+      const availableOptions = data?.filter(option => 
+        option.printers?.is_for_rent && 
+        option.printers?.status !== 'rented'
+      ) || [];
+
+      setRentalOptions(availableOptions);
     } catch(error) {
       toast({
         title: 'Error fetching rental options',
@@ -139,7 +153,7 @@ export default function Rentals() {
 
       const matchesStatus = !filterStatus || rental.status === filterStatus;
 
-      const matchesLocation = !filterLocation || (rental.next_available_date ? true : true); // No location on rental, so skip
+      const matchesLocation = !filterLocation || true; // No location filter applied yet
 
       return matchesSearch && matchesStatus && matchesLocation;
     });
@@ -148,11 +162,13 @@ export default function Rentals() {
   // Filter rental options for available printers
   const getFilteredRentalOptions = () => {
     return rentalOptions.filter(opt => {
-      const printerName = opt.printer_id; // we don't have printer name here; we might extend later, for now just show all
+      const printerName = `${opt.printers?.make || ''} ${opt.printers?.model || ''}`;
 
-      const matchesSearch = true; // Can't filter by printer name directly; could enhance with join
+      const matchesSearch = searchTerm ? 
+        printerName.toLowerCase().includes(searchTerm.toLowerCase()) : 
+        true;
 
-      const matchesLocation = !filterLocation || true; // Need location data linked? Simplify by allowing all
+      const matchesLocation = !filterLocation || true; // Location filter not implemented yet
 
       const matchesRate = !filterRateRange || (
         opt.rental_rate >= filterRateRange.min && opt.rental_rate <= filterRateRange.max
@@ -375,10 +391,77 @@ export default function Rentals() {
               </Button>
             </div>
 
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No upcoming rentals found</p>
-              <Button className="mt-4" onClick={() => navigate('/rentals/new')}>Create Rental</Button>
-            </div>
+            {loadingRentals ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : filteredRentals.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No upcoming rentals found</p>
+                <Button className="mt-4" onClick={() => navigate('/rentals/new')}>Create Rental</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredRentals.map((rental) => (
+                  <Card key={rental.id} className="overflow-hidden">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex justify-between">
+                        <CardTitle className="text-lg">{rental.client}</CardTitle>
+                        <Badge className={`bg-status-rented text-black`}>
+                          {rental.status.charAt(0).toUpperCase() + rental.status.slice(1)}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-sm flex items-center">
+                        <span>{rental.printer}</span>
+                        {rental.inquiry_count > 0 && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {rental.inquiry_count} {rental.inquiry_count === 1 ? 'inquiry' : 'inquiries'}
+                          </Badge>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="text-sm mb-3">
+                        <div className="flex justify-between mb-1">
+                          <span className="text-muted-foreground">Start:</span>
+                          <span className="font-medium">{new Date(rental.start_date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">End:</span>
+                          <span className="font-medium">{new Date(rental.end_date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className="text-muted-foreground">Next Available:</span>
+                          <span className="font-medium">{rental.next_available_date ? new Date(rental.next_available_date).toLocaleDateString() : 'TBD'}</span>
+                        </div>
+                      </div>
+                      {rental.agreement_url && (
+                        <div className="mb-2">
+                          <a 
+                            href={rental.agreement_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline text-sm"
+                          >
+                            View Rental Contract
+                          </a>
+                        </div>
+                      )}
+                      <div className="flex justify-between mt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1 mr-2"
+                          onClick={() => navigate(`/rentals/${rental.id}`)}
+                        >
+                          Details
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
           
           {/* Past rentals tab */}
@@ -548,7 +631,7 @@ export default function Rentals() {
                     <CardHeader className="p-4 pb-2">
                       <div className="flex justify-between">
                         <CardTitle className="text-lg">
-                          Printer ID: {opt.printer_id}
+                          {opt.printers?.make} {opt.printers?.model}
                         </CardTitle>
                         <Badge className="bg-status-available text-white">Available</Badge>
                       </div>
@@ -558,6 +641,20 @@ export default function Rentals() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-4 pt-0">
+                      <div className="text-sm my-2">
+                        {opt.minimum_duration > 0 && (
+                          <div className="flex justify-between mb-1">
+                            <span className="text-muted-foreground">Minimum Duration:</span>
+                            <span className="font-medium">{opt.minimum_duration} {opt.duration_unit}(s)</span>
+                          </div>
+                        )}
+                        {opt.security_deposit > 0 && (
+                          <div className="flex justify-between mb-1">
+                            <span className="text-muted-foreground">Security Deposit:</span>
+                            <span className="font-medium">${opt.security_deposit}</span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center justify-between mt-3">
                         <Button
                           variant="default"
@@ -631,4 +728,3 @@ export default function Rentals() {
     </MobileLayout>
   );
 }
-
