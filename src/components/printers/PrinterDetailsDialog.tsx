@@ -1,9 +1,28 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { Button } from "@/components/ui/button";
 import { Printer } from "@/types/printers";
 import { Info, Edit } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface WikiPrinter {
+  id: string;
+  make: string;
+  series: string;
+  model: string;
+  type?: string;
+  description?: string;
+  toners?: string[]; // for possible direct reference
+}
+
+interface Toner {
+  id: string;
+  name: string;
+  oem_code?: string;
+  model?: string;
+  color?: string;
+}
 
 interface PrinterDetailsDialogProps {
   open: boolean;
@@ -16,12 +35,78 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
   onOpenChange,
   printer,
 }) => {
-  // EDIT MODE state & update logic for serial, ownership, client, department
+  // State for local edits
   const [editMode, setEditMode] = useState(false);
   const [serial, setSerial] = useState(printer.serialNumber || "");
   const [ownership, setOwnership] = useState(printer.owned_by);
   const [assignedTo, setAssignedTo] = useState(printer.assigned_to || "");
   const [department, setDepartment] = useState(printer.department || "");
+
+  // Wiki info state
+  const [wikiPrinter, setWikiPrinter] = useState<WikiPrinter | null>(null);
+  const [wikiToners, setWikiToners] = useState<Toner[]>([]);
+  const [wikiLoading, setWikiLoading] = useState(false);
+
+  // When dialog is opened, fetch related Wiki data
+  useEffect(() => {
+    if (!open) return;
+    setWikiPrinter(null);
+    setWikiToners([]);
+    setWikiLoading(true);
+
+    // Try to fetch wiki entry by make, model (assuming exact match for simplicity)
+    async function fetchWikiData() {
+      // 1. Find printer_wiki by make and model
+      const { data: wiki, error } = await supabase
+        .from("printer_wiki")
+        .select("*")
+        .eq("make", printer.make)
+        .eq("model", printer.model)
+        .maybeSingle();
+
+      if (!wiki || error) {
+        setWikiPrinter(null);
+        setWikiToners([]);
+        setWikiLoading(false);
+        return;
+      }
+
+      setWikiPrinter(wiki as WikiPrinter);
+
+      // 2. Find toners compatible with this wiki printer
+      // Get the list of toner uuids from the compatibility table
+      const { data: compatibility, error: compatErr } = await supabase
+        .from("printer_toner_compatibility")
+        .select("toner_id")
+        .eq("printer_wiki_id", wiki.id);
+
+      if (!compatibility || compatErr || compatibility.length === 0) {
+        setWikiToners([]);
+        setWikiLoading(false);
+        return;
+      }
+
+      const tonerIds = compatibility.map((c) => c.toner_id);
+
+      // 3. Get toner details for these toner ids
+      const { data: toners, error: tonersErr } = await supabase
+        .from("toners")
+        .select("id, name, oem_code, model, color")
+        .in("id", tonerIds);
+
+      if (!toners || tonersErr) {
+        setWikiToners([]);
+        setWikiLoading(false);
+        return;
+      }
+
+      setWikiToners(toners as Toner[]);
+      setWikiLoading(false);
+    }
+
+    fetchWikiData();
+    // eslint-disable-next-line
+  }, [open, printer.make, printer.model]);
 
   // When changing ownership, refresh assignment fields
   const handleOwnershipChange = (val: "client" | "system") => {
@@ -33,17 +118,11 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
     }
   };
 
-  // On Save (simulate API call, will use props update in real API)
   const handleSave = () => {
-    // Simulate save action
     setEditMode(false);
     // would call parent's onUpdate or a mutation here
   };
 
-  // Toner name (placeholder until mapped from real data)
-  const tonerName = "TONER NAME";
-
-  // Ownership label for display
   const getOwnershipLabel = (val: "client" | "system") =>
     val === "client" ? "Client Owned" : "System Unit";
 
@@ -69,6 +148,60 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
       }
     >
       <div className="space-y-5">
+        {/* General info (from Wiki, readonly) */}
+        <div className="border rounded-md p-4 bg-gray-50">
+          <h3 className="text-base font-semibold mb-2">General Information (from Wiki)</h3>
+          {wikiLoading ? (
+            <div className="text-gray-500 text-sm">Loading Wiki info…</div>
+          ) : wikiPrinter ? (
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="font-medium">Make: </span>
+                <span>{wikiPrinter.make}</span>
+              </div>
+              <div>
+                <span className="font-medium">Model: </span>
+                <span>{wikiPrinter.model}</span>
+              </div>
+              <div>
+                <span className="font-medium">Series: </span>
+                <span>{wikiPrinter.series}</span>
+              </div>
+              <div>
+                <span className="font-medium">Type: </span>
+                <span>{wikiPrinter.type || "N/A"}</span>
+              </div>
+              <div className="col-span-2 mt-2">
+                <span className="font-medium">Description: </span>
+                <span>{wikiPrinter.description || "—"}</span>
+              </div>
+              <div className="col-span-2 mt-2">
+                <span className="font-medium">Compatible Toners: </span>
+                {wikiToners.length === 0 ? (
+                  <span>No compatible toners registered.</span>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {wikiToners.map((t) => (
+                      <span
+                        key={t.id}
+                        className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-900 rounded"
+                        title={`OEM: ${t.oem_code || ""}${t.model ? ` (${t.model})` : ""}`}
+                      >
+                        {t.name}{t.color ? ` (${t.color})` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="text-red-500 text-sm">
+              Wiki entry not found for <b>{printer.make} {printer.model}</b>.
+              <br />Please check the Wiki for this model.
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-between items-center">
           <h2 className="text-base font-semibold">
             {printer.make} {printer.model}
@@ -101,10 +234,6 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
             ) : (
               <p>{serial || "N/A"}</p>
             )}
-          </div>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground">Toner Name</p>
-            <p>{tonerName}</p>
           </div>
           <div>
             <p className="text-xs font-medium text-muted-foreground">Ownership</p>
@@ -159,7 +288,7 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
         <div className="flex items-center justify-center">
           <div className="bg-blue-50 p-3 rounded-md text-blue-800 text-sm border border-blue-200 flex items-start gap-2 max-w-md">
             <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-            <p>This view shows the current information for this printer. Use the History view to see past maintenance records, transfers, and other activities.</p>
+            <p>This view shows the current <b>printer general information from the Wiki</b>. Only assignments and inventory fields are editable here. General specs and compatible toners are centrally managed in the Wiki.</p>
           </div>
         </div>
       </div>
