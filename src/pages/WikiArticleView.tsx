@@ -86,7 +86,9 @@ export default function WikiArticleView() {
             created_at: printerData.created_at,
             updated_at: printerData.updated_at,
             status: 'published',
-            associated_with: printerData.model
+            associated_with: printerData.model,
+            submitted_by: null,
+            video_url: null
           };
         } else {
           // Check if it's a toner
@@ -106,7 +108,10 @@ export default function WikiArticleView() {
               tags: tonerData.category || ['toner'],
               created_at: tonerData.created_at,
               updated_at: tonerData.updated_at,
-              status: 'published'
+              status: 'published',
+              associated_with: null,
+              submitted_by: null,
+              video_url: null
             };
           } else {
             throw new Error("Article not found");
