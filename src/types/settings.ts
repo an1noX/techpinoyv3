@@ -31,8 +31,8 @@ export interface StoreInfo {
   socialMedia: SocialMedia;
 }
 
-// Add the missing StoreSettings type
-export interface StoreSettings {
+// Rename StoreSettings to Settings everywhere
+export interface Settings {
   id: string;
   store_name: string;
   tagline: string;
@@ -46,11 +46,11 @@ export interface StoreSettings {
   storeInfo?: StoreInfo;
 }
 
-// Add the missing SettingsContextType
+// Update SettingsContextType to use Settings
 export interface SettingsContextType {
-  settings: StoreSettings | null;
+  settings: Settings | null;
   isLoading: boolean;
-  saveSettings: (settings: StoreSettings) => Promise<void>;
+  saveSettings: (settings: Settings) => Promise<void>;
   error: string | null;
   updateStoreInfo?: (storeInfo: StoreInfo) => Promise<void>;
 }

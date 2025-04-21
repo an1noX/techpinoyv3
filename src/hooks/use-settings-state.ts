@@ -1,10 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { StoreSettings, StoreInfo } from '@/types/settings';
-import { Json } from '@/types/settings';
+import { Settings, StoreInfo } from '@/types/settings';
 
-const defaultSettings: StoreSettings = {
+const defaultSettings: Settings = {
   id: '',
   store_name: 'TonerPal Store',
   tagline: 'Quality Toner Products for Every Printer',
@@ -27,7 +25,7 @@ const defaultSettings: StoreSettings = {
 };
 
 export const useSettingsState = () => {
-  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +55,7 @@ export const useSettingsState = () => {
     }
   };
 
-  const formatSettingsData = (data: any): StoreSettings => {
+  const formatSettingsData = (data: any): Settings => {
     let liveChatData = data.live_chat;
     let socialMediaData = data.social_media;
     
@@ -77,7 +75,7 @@ export const useSettingsState = () => {
       }
     }
 
-    const formattedSettings: StoreSettings = {
+    const formattedSettings: Settings = {
       id: data.id || '',
       store_name: data.store_name || defaultSettings.store_name,
       tagline: data.tagline || defaultSettings.tagline,
@@ -150,7 +148,7 @@ export const useSettingsState = () => {
     }
   };
 
-  const saveSettings = async (updatedSettings: StoreSettings) => {
+  const saveSettings = async (updatedSettings: Settings) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -193,7 +191,7 @@ export const useSettingsState = () => {
       setIsLoading(true);
       setError(null);
       
-      const updatedSettings: StoreSettings = {
+      const updatedSettings: Settings = {
         ...settings,
         store_name: storeInfo.storeName,
         tagline: storeInfo.tagline,

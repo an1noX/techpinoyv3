@@ -43,6 +43,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   );
 };
 
+// Update StaticSettingsProvider to use Settings type, no functional change
 export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { settings, isLoading, fetchSettings } = useSettingsState();
 
