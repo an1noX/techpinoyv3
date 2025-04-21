@@ -15,20 +15,6 @@ import { Fab } from '@/components/ui/fab';
 import { WikiAddArticleDialog } from "@/components/wiki/WikiAddArticleDialog";
 import { WikiAddTonerDialog } from "@/components/wiki/WikiAddTonerDialog";
 
-// Article type for sample usage removed as we now have a proper type
-
-const SAMPLE_ARTICLES: WikiArticle[] = [
-  {
-    id: "1",
-    title: "How to Load Paper in HP M402dn",
-    tags: ['HP M402dn', 'PrinterKB'],
-    content: "Follow these steps to load paper correctly into the HP LaserJet Pro M402dn tray...",
-    associatedWith: "HP LaserJet Pro M402dn",
-    category: "Paper Jam"
-  }
-];
-
-// Add for Articles CRUD – static issue categories
 const ARTICLE_CATEGORIES = [
   "Paper Jam",
   "Print Quality",
@@ -64,11 +50,33 @@ export default function Wiki() {
   const [tonerToEdit, setTonerToEdit] = useState<Toner | null>(null);
   const [deleteTonerId, setDeleteTonerId] = useState<string | null>(null);
 
-  // Article
-  const [articles, setArticles] = useState<WikiArticle[]>(SAMPLE_ARTICLES);
+  // -- ARTICLE state: now purely dynamic/live from Supabase
+  const [articles, setArticles] = useState<WikiArticle[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
   const [articleDialogOpen, setArticleDialogOpen] = useState(false);
   const [articleToEdit, setArticleToEdit] = useState<WikiArticle | null>(null);
   const [deleteArticleId, setDeleteArticleId] = useState<string | null>(null);
+
+  // New: Fetch articles from Supabase
+  const fetchArticles = async () => {
+    setArticlesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("wiki_articles")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setArticles((data || []) as WikiArticle[]);
+    } catch (error: any) {
+      toast({
+        title: "Error fetching articles",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setArticlesLoading(false);
+    }
+  };
 
   useEffect(() => { fetchPrinters(); }, []);
 
@@ -281,58 +289,95 @@ export default function Wiki() {
     }
   };
 
-  // ------ Article CRUD ------
+  useEffect(() => {
+    fetchPrinters();
+    fetchArticles();
+  }, []);
+
   // Article Form state
-  const [articleForm, setArticleForm] = useState<Omit<WikiArticle, 'id'>>({
-    title: '',
+  const [articleForm, setArticleForm] = useState<Omit<WikiArticle, "id">>({
+    title: "",
     tags: [],
-    content: '',
-    associatedWith: '',
-    category: '',
+    content: "",
+    associatedWith: "",
+    category: "",
   });
 
   // Open add/edit dialog
   const openAddArticle = () => {
     setArticleToEdit(null);
-    setArticleForm({ title: '', tags: [], content: '', associatedWith: '', category: '' });
+    setArticleForm({ title: "", tags: [], content: "", associatedWith: "", category: "" });
     setArticleDialogOpen(true);
   };
   const openEditArticle = (article: WikiArticle) => {
     setArticleToEdit(article);
-    setArticleForm({ ...article });
+    setArticleForm({
+      title: article.title,
+      tags: article.tags,
+      content: article.content,
+      associatedWith: article.associatedWith,
+      category: article.category,
+    });
     setArticleDialogOpen(true);
   };
 
-  // Save (add/edit) article
+  // Save (add/edit) article directly to Supabase
   const handleSaveArticle = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (articleToEdit) {
-        // Update (use upsert for demo)
-        const updated = [...articles].map(a =>
-          a.id === articleToEdit.id ? { ...articleToEdit, ...articleForm } : a
-        );
-        setArticles(updated);
+        // Update
+        const { error } = await supabase
+          .from("wiki_articles")
+          .update({
+            title: articleForm.title,
+            tags: articleForm.tags,
+            content: articleForm.content,
+            associated_with: articleForm.associatedWith,
+            category: articleForm.category,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", articleToEdit.id);
+        if (error) throw error;
+        toast({ title: "Article updated" });
       } else {
-        // Add new
-        const newArticle: WikiArticle = {
-          ...articleForm,
-          id: `${Math.random()}`,
-        };
-        setArticles([newArticle, ...articles]);
+        // Insert
+        const { error } = await supabase
+          .from("wiki_articles")
+          .insert([{
+            title: articleForm.title,
+            tags: articleForm.tags,
+            content: articleForm.content,
+            associated_with: articleForm.associatedWith,
+            category: articleForm.category,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }]);
+        if (error) throw error;
+        toast({ title: "Article added" });
       }
       setArticleDialogOpen(false);
-      toast({ title: "Article saved" });
+      fetchArticles();
     } catch (error: any) {
       toast({ title: "Error saving article", description: error.message, variant: "destructive" });
     }
   };
 
-  // Delete article
-  const handleDeleteArticle = () => {
-    setArticles(articles.filter(a => a.id !== deleteArticleId));
-    setDeleteArticleId(null);
-    toast({ title: "Article deleted" });
+  // Delete article in Supabase
+  const handleDeleteArticle = async () => {
+    if (!deleteArticleId) return;
+    try {
+      const { error } = await supabase
+        .from("wiki_articles")
+        .delete()
+        .eq("id", deleteArticleId);
+      if (error) throw error;
+      toast({ title: "Article deleted" });
+      setDeleteArticleId(null);
+      fetchArticles();
+    } catch (error: any) {
+      toast({ title: "Error deleting article", description: error.message, variant: "destructive" });
+    }
   };
 
   // Add state for floating dialogs
@@ -347,7 +392,7 @@ export default function Wiki() {
         ) : tab === "tonerkb" ? (
           <Fab icon={<Plus size={24} />} aria-label="Add Toner Reference" onClick={() => setShowAddToner(true)} />
         ) : tab === "article" ? (
-          <Fab icon={<Plus size={24} />} aria-label="Add Article" onClick={() => setShowAddArticle(true)} />
+          <Fab icon={<Plus size={24} />} aria-label="Add Article" onClick={openAddArticle} />
         ) : null
       }
     >
@@ -591,33 +636,11 @@ export default function Wiki() {
               </DialogHeader>
               {selectedPrinter ? (
                 <div>
-                  {SAMPLE_ARTICLES
-                    .filter(article =>
-                      article.tags
-                        .map(tag => tag.toLowerCase()).includes(
-                          `${selectedPrinter.make} ${selectedPrinter.model}`.toLowerCase().trim()
-                        )
-                    )
-                    .map(article => (
-                      <div key={article.id} className="mb-4">
-                        <h3 className="font-semibold">{article.title}</h3>
-                        <p className="text-muted-foreground mb-2 text-xs">
-                          Tags: {article.tags.join(', ')}
-                        </p>
-                        <p>{article.content}</p>
-                      </div>
-                    ))
+                  {
+                    <p className="text-muted-foreground text-center py-4">
+                      No instructions/guides found for this printer.
+                    </p>
                   }
-                  {!SAMPLE_ARTICLES.some(article =>
-                    article.tags
-                      .map(tag => tag.toLowerCase()).includes(
-                        `${selectedPrinter.make} ${selectedPrinter.model}`.toLowerCase().trim()
-                      )
-                  ) && (
-                      <p className="text-muted-foreground text-center py-4">
-                        No instructions/guides found for this printer.
-                      </p>
-                    )}
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-4">Select a printer to see help articles.</p>
@@ -701,8 +724,13 @@ export default function Wiki() {
           <div className="max-w-xl mx-auto space-y-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Articles</h2>
+              <Button onClick={openAddArticle}><Plus size={16} className="mr-1" />Add</Button>
             </div>
-            {articles.length === 0 ? (
+            {articlesLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : articles.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No articles found</p>
               </div>
@@ -729,48 +757,83 @@ export default function Wiki() {
                     </CardHeader>
                     <CardContent>
                       <div className="mb-1 text-muted-foreground text-xs">
-                        Tags: {article.tags.join(', ')}
+                        Tags: {article.tags && article.tags.length ? article.tags.join(', ') : "None"}
                       </div>
                       <div className="mb-1 text-muted-foreground text-xs">
                         Category: {article.category}
                       </div>
                       <p>{article.content}</p>
                       <div className="mt-2 text-xs text-muted-foreground">
-                        Associated with: {article.associatedWith}
+                        Associated with: {article.associatedWith || article.associated_with || "—"}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
-            {/* Article Dialogs */}
-            <WikiAddArticleDialog
-              open={showAddArticle}
-              onOpenChange={setShowAddArticle}
-              onSave={article => {
-                setShowAddArticle(false);
-                setArticles([article, ...articles]);
-              }}
-              printers={printers}
-              categories={ARTICLE_CATEGORIES}
-            />
-            {/* Confirm Delete Dialog */}
-            <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
+
+            {/* Article Dialog: now saves to Supabase directly */}
+            <Dialog open={articleDialogOpen} onOpenChange={setArticleDialogOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Confirm Delete</DialogTitle>
+                  <DialogTitle>{articleToEdit ? "Edit Article" : "Add Article"}</DialogTitle>
                 </DialogHeader>
-                <p>Are you sure you want to delete this article?</p>
-                <DialogFooter>
-                  <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
-                </DialogFooter>
+                <form className="space-y-2 py-2" onSubmit={handleSaveArticle}>
+                  <div>
+                    <label className="text-sm">Title*</label>
+                    <Input value={articleForm.title} onChange={e => setArticleForm(f => ({ ...f, title: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <label className="text-sm">Tags (comma separated)</label>
+                    <Input
+                      value={articleForm.tags.join(",")}
+                      onChange={e => setArticleForm(f => ({ ...f, tags: e.target.value.split(",").map(t => t.trim()).filter(Boolean) }))}
+                      placeholder="e.g. HP M402dn, PrinterKB"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm">Associated With (optional)</label>
+                    <select
+                      className="w-full border rounded p-2"
+                      value={articleForm.associatedWith}
+                      onChange={e => setArticleForm(f => ({ ...f, associatedWith: e.target.value }))}
+                    >
+                      <option value="">Select a printer...</option>
+                      {printers.map(pr => (
+                        <option key={pr.id} value={pr.model}>{`${pr.make} ${pr.model}`}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm">Category*</label>
+                    <select
+                      className="w-full border rounded p-2"
+                      value={articleForm.category}
+                      onChange={e => setArticleForm(f => ({ ...f, category: e.target.value }))}
+                      required
+                    >
+                      <option value="">Select...</option>
+                      {ARTICLE_CATEGORIES.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm">Content*</label>
+                    <textarea
+                      className="w-full rounded border p-2 min-h-[90px]"
+                      value={articleForm.content}
+                      onChange={e => setArticleForm(f => ({ ...f, content: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <DialogFooter className="gap-2 pt-4">
+                    <Button type="submit" variant="default">{articleToEdit ? "Save" : "Add"}</Button>
+                    <Button variant="ghost" type="button" onClick={() => setArticleDialogOpen(false)}>Cancel</Button>
+                  </DialogFooter>
+                </form>
               </DialogContent>
             </Dialog>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  </MobileLayout>
-);
-}
+
+            {/* Confirm Delete Dialog */}
+            <Dialog open={!!deleteArticleId} onOpen

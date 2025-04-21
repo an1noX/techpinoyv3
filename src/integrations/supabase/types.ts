@@ -967,6 +967,39 @@ export type Database = {
           },
         ]
       }
+      wiki_articles: {
+        Row: {
+          associated_with: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          associated_with?: string | null
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          associated_with?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
