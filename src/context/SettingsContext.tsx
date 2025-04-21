@@ -7,7 +7,8 @@ const SettingsContext = createContext<SettingsContextType>({
   settings: null,
   isLoading: true,
   saveSettings: async () => {},
-  error: null
+  error: null,
+  fetchSettings: async () => {}
 });
 
 export const useSettings = () => useContext(SettingsContext);
@@ -36,7 +37,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       isLoading, 
       saveSettings, 
       error,
-      updateStoreInfo
+      updateStoreInfo,
+      fetchSettings
     }}>
       {children}
     </SettingsContext.Provider>
@@ -56,7 +58,8 @@ export const StaticSettingsProvider: React.FC<{ children: ReactNode }> = ({ chil
       settings, 
       isLoading, 
       saveSettings: async () => {}, 
-      error: null 
+      error: null,
+      fetchSettings
     }}>
       {children}
     </SettingsContext.Provider>

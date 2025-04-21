@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { 
   Form, 
@@ -49,7 +49,7 @@ const videoAds1Schema = z.object({
 type VideoAds1FormValues = z.infer<typeof videoAds1Schema>;
 
 export function VideoAds1Tab() {
-  const { settings, isLoading, saveSettings } = useSettings();
+  const { settings, isLoading, saveSettings, fetchSettings } = useSettings();
   const [newFeature, setNewFeature] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -74,13 +74,23 @@ export function VideoAds1Tab() {
     defaultValues: settings?.video_ads1 || defaultVideo,
   });
   
-  const { control, handleSubmit, watch, setValue, formState } = form;
+  const { control, handleSubmit, watch, setValue, formState, reset } = form;
   const watchVideoType = watch("videoType");
   const watchFeatures = watch("features");
+
+  // Reset form if settings change
+  useEffect(() => {
+    if (settings?.video_ads1) {
+      console.log("VideoAds1Tab: Resetting form with settings", settings.video_ads1);
+      reset(settings.video_ads1);
+    }
+  }, [settings, reset]);
 
   // Handle form submission
   const onSubmit = async (data: VideoAds1FormValues) => {
     setIsSubmitting(true);
+    console.log("VideoAds1Tab: Submitting form data", data);
+    
     try {
       if (!settings) {
         toast.error("Settings not found");
@@ -93,7 +103,12 @@ export function VideoAds1Tab() {
         video_ads1: data as VideoAds1
       };
 
+      console.log("VideoAds1Tab: Saving updated settings", updatedSettings);
       await saveSettings(updatedSettings);
+      
+      // Refresh settings to get the latest data
+      await fetchSettings();
+      
       toast.success("Video ad settings saved successfully");
     } catch (error) {
       console.error("Error saving video settings:", error);

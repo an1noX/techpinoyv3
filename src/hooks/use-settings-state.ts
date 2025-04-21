@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, StoreInfo, Json } from '@/types/settings';
+import { Settings, StoreInfo, Json, VideoAds1 } from '@/types/settings';
 
 const defaultSettings: Settings = {
   id: '',
@@ -22,7 +22,21 @@ const defaultSettings: Settings = {
     youtube: '',
     twitter: ''
   },
-  updated_at: new Date().toISOString()
+  updated_at: new Date().toISOString(),
+  video_ads1: {
+    videoType: 'placeholder',
+    videoUrl: '',
+    title: 'TechPinoy - Your Best Toner Cartridge Supplier',
+    description: 'We provide high-quality toner cartridges for all major printer brands at competitive prices. Our products are rigorously tested to ensure optimal performance and longevity.',
+    features: [
+      'Premium quality compatible cartridges',
+      'Free shipping on orders over ₱2,500',
+      '30-day money-back guarantee',
+      'Dedicated customer support'
+    ],
+    buttonText: 'Learn More',
+    buttonLink: '#'
+  }
 };
 
 export const useSettingsState = () => {
@@ -40,7 +54,8 @@ export const useSettingsState = () => {
         office_hours: defaultSettings.office_hours,
         address: defaultSettings.address,
         live_chat: defaultSettings.live_chat as unknown as Json,
-        social_media: defaultSettings.social_media as unknown as Json
+        social_media: defaultSettings.social_media as unknown as Json,
+        video_ads1: defaultSettings.video_ads1 as unknown as Json
       };
 
       const { error: insertError } = await supabase
@@ -59,6 +74,7 @@ export const useSettingsState = () => {
   const formatSettingsData = (data: any): Settings => {
     let liveChatData = data.live_chat;
     let socialMediaData = data.social_media;
+    let videoAdsData = data.video_ads1;
     
     if (typeof liveChatData === 'string') {
       try {
@@ -75,6 +91,14 @@ export const useSettingsState = () => {
         socialMediaData = defaultSettings.social_media;
       }
     }
+    
+    if (typeof videoAdsData === 'string') {
+      try {
+        videoAdsData = JSON.parse(videoAdsData);
+      } catch (e) {
+        videoAdsData = defaultSettings.video_ads1;
+      }
+    }
 
     const formattedSettings: Settings = {
       id: data.id || '',
@@ -86,6 +110,7 @@ export const useSettingsState = () => {
       address: data.address || defaultSettings.address,
       live_chat: liveChatData || defaultSettings.live_chat,
       social_media: socialMediaData || defaultSettings.social_media,
+      video_ads1: videoAdsData || defaultSettings.video_ads1,
       updated_at: data.updated_at || new Date().toISOString()
     };
 
@@ -164,6 +189,7 @@ export const useSettingsState = () => {
         address: updatedSettings.address,
         live_chat: updatedSettings.live_chat as unknown as Json,
         social_media: updatedSettings.social_media as unknown as Json,
+        video_ads1: updatedSettings.video_ads1 as unknown as Json,
         updated_at: new Date().toISOString()
       };
       

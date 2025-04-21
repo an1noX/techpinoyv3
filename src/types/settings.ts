@@ -64,4 +64,5 @@ export interface SettingsContextType {
   saveSettings: (settings: Settings) => Promise<void>;
   error: string | null;
   updateStoreInfo?: (storeInfo: StoreInfo) => Promise<void>;
+  fetchSettings: () => Promise<void>;
 }

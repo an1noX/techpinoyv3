@@ -26,14 +26,21 @@ export const VideoAds1 = () => {
     buttonLink: "#"
   };
 
+  useEffect(() => {
+    console.log("VideoAds1: Received settings", settings);
+    console.log("VideoAds1: video_ads1 value", settings?.video_ads1);
+  }, [settings]);
+
   // Render appropriate video player based on type
   const renderVideoPlayer = () => {
+    console.log("Rendering video player with type:", videoAds.videoType, "and URL:", videoAds.videoUrl);
+    
     switch (videoAds.videoType) {
       case "youtube":
         if (!videoAds.videoUrl) return renderPlaceholder();
         
         // Extract YouTube ID from URL if it's a full URL
-        const getYoutubeId = (url) => {
+        const getYoutubeId = (url: string) => {
           const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
           const match = url.match(regExp);
           return (match && match[2].length === 11) ? match[2] : url;
@@ -124,7 +131,7 @@ export const VideoAds1 = () => {
             </p>
             <div className="bg-white p-6 rounded-xl shadow-sm mb-6">
               <ul className="space-y-3">
-                {videoAds.features.map((item, index) => (
+                {videoAds.features && videoAds.features.map((item, index) => (
                   <li key={index} className="flex items-center text-gray-700">
                     <div className="mr-3 bg-techblue-100 text-techblue-700 p-1 rounded-full">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
