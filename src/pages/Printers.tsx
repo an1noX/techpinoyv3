@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -37,6 +38,7 @@ type Toner = {
   brand: string;
   color: string;
   oem_code?: string;
+  base_model_reference?: string;
 };
 
 const toOwnershipType = (val: any): OwnershipType =>
@@ -153,15 +155,33 @@ export default function Printers() {
   };
 
   const fetchWikiPrinters = async () => {
-    const { data, error } = await supabase.from('printer_wiki').select('id, make, model, oem_toner, type, description, series');
-    if (!error && data) setWikiPrinters(data);
-    else setWikiPrinters([]);
+    try {
+      const { data, error } = await supabase
+        .from('printer_wiki')
+        .select('id, make, model, type, description, series');
+        
+      if (error) throw error;
+      if (data) setWikiPrinters(data as WikiPrinter[]);
+      else setWikiPrinters([]);
+    } catch (error) {
+      console.error("Error fetching wiki printers:", error);
+      setWikiPrinters([]);
+    }
   };
 
   const fetchToners = async () => {
-    const { data, error } = await supabase.from('toners').select('id, model, brand, color, oem_code, base_model_reference');
-    if (!error && data) setToners(data);
-    else setToners([]);
+    try {
+      const { data, error } = await supabase
+        .from('toners')
+        .select('id, model, brand, color, oem_code, base_model_reference');
+        
+      if (error) throw error;
+      if (data) setToners(data as Toner[]);
+      else setToners([]);
+    } catch (error) {
+      console.error("Error fetching toners:", error);
+      setToners([]);
+    }
   };
 
   const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
@@ -217,7 +237,37 @@ export default function Printers() {
   const getClientDisplay = (printer: PrinterType) =>
     printer.owned_by === "client" && printer.assigned_to ? `(${printer.assigned_to})` : "";
 
-  const getTonerName = (printer: PrinterType) => "TONER NAME";
+  const getTonerName = (printer: PrinterType) => {
+    const wikiPrinter = wikiPrinters.find(w => 
+      w.make === printer.make && w.model === printer.model
+    );
+    
+    if (!wikiPrinter || !wikiPrinter.oem_toner) return "No OEM Toner";
+    
+    const oemToner = toners.find(t => t.id === wikiPrinter.oem_toner);
+    if (!oemToner) return "OEM Toner not found";
+    
+    return `${oemToner.brand} ${oemToner.model}`;
+  };
+  
+  const handleOpenImportDialog = () => {
+    setImportDialogOpen(true);
+  };
+  
+  const openDetailsDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setDetailsDialogOpen(true);
+  };
+  
+  const openPrinterStatusDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setPrinterStatusDialogOpen(true);
+  };
+  
+  const openHistoryDialog = (printer: PrinterType) => {
+    setSelectedPrinter(printer);
+    setHistoryDialogOpen(true);
+  };
 
   return (
     <MobileLayout
