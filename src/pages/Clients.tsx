@@ -1,15 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Fab } from '@/components/ui/fab';
-import { Plus, Search, Filter, Printer, Mail, Phone } from 'lucide-react';
+import { Plus, Search, Filter, Printer, Mail, Phone, Building, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssignPrinterDialog } from '@/components/AssignPrinterDialog';
 import { ClientDetailSheet } from '@/components/ClientDetailSheet';
 import { Client, PrinterSummary } from '@/types';
@@ -24,26 +24,31 @@ export default function Clients() {
   const [openAssignDialog, setOpenAssignDialog] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [openClientDetail, setOpenClientDetail] = useState(false);
-  
+
+  // Modal states for buttons on client card
+  const [clientPrintersModal, setClientPrintersModal] = useState(false);
+  const [clientDepartmentsModal, setClientDepartmentsModal] = useState(false);
+  const [clientUsersModal, setClientUsersModal] = useState(false);
+
   useEffect(() => {
     fetchClients();
   }, []);
-  
+
   const fetchClients = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from('clients')
         .select(`
           *,
           printers:printers(id, make, model, status, location)
         `);
-      
+
       if (error) {
         throw error;
       }
-      
+
       setClients(data || []);
     } catch (error: any) {
       toast({
@@ -55,17 +60,17 @@ export default function Clients() {
       setLoading(false);
     }
   };
-  
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-  
-  const filteredClients = clients.filter(client => 
+
+  const filteredClients = clients.filter(client =>
     client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (client.company && client.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-  
+
   const handleAddClient = () => {
     setOpenAddClientDialog(true);
   };
@@ -80,7 +85,22 @@ export default function Clients() {
     setOpenClientDetail(true);
   };
 
-  const handleSaveClient = async (clientData: { 
+  const handleOpenClientPrinters = (client: Client) => {
+    setSelectedClient(client);
+    setClientPrintersModal(true);
+  };
+
+  const handleOpenClientDepartments = (client: Client) => {
+    setSelectedClient(client);
+    setClientDepartmentsModal(true);
+  };
+
+  const handleOpenClientUsers = (client: Client) => {
+    setSelectedClient(client);
+    setClientUsersModal(true);
+  };
+
+  const handleSaveClient = async (clientData: {
     name: string;
     company?: string | null;
     email?: string | null;
@@ -113,13 +133,13 @@ export default function Clients() {
       });
     }
   };
-  
+
   return (
     <MobileLayout
       fab={
-        <Fab 
-          icon={<Plus size={24} />} 
-          aria-label="Add client" 
+        <Fab
+          icon={<Plus size={24} />}
+          aria-label="Add client"
           onClick={handleAddClient}
         />
       }
@@ -128,7 +148,7 @@ export default function Clients() {
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Clients</h1>
         </div>
-        
+
         <div className="flex items-center space-x-2 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -144,7 +164,7 @@ export default function Clients() {
             <Filter className="h-4 w-4" />
           </Button>
         </div>
-        
+
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -195,15 +215,44 @@ export default function Clients() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="px-4 py-3 bg-gray-50 flex justify-between">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewClientDetails(client)}
-                  >
-                    View Details
-                  </Button>
-                  <Button 
+                <CardFooter className="px-4 py-3 bg-gray-50 flex flex-wrap gap-2 justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewClientDetails(client)}
+                    >
+                      View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenClientPrinters(client)}
+                      className="flex items-center gap-1"
+                    >
+                      <Printer size={16} />
+                      Printers
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenClientDepartments(client)}
+                      className="flex items-center gap-1"
+                    >
+                      <Building size={16} />
+                      Departments
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenClientUsers(client)}
+                      className="flex items-center gap-1"
+                    >
+                      <User size={16} />
+                      Users
+                    </Button>
+                  </div>
+                  <Button
                     size="sm"
                     onClick={() => handleAssignPrinter(client)}
                   >
@@ -222,39 +271,39 @@ export default function Clients() {
           <DialogHeader>
             <DialogTitle>Add New Client</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Name*</label>
               <Input id="name" placeholder="Client name" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Company</label>
               <Input id="company" placeholder="Company name" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
               <Input id="email" type="email" placeholder="email@example.com" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Phone</label>
               <Input id="phone" placeholder="Phone number" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Address</label>
               <Input id="address" placeholder="Address" />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Notes</label>
               <Input id="notes" placeholder="Additional notes" />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAddClientDialog(false)}>Cancel</Button>
             <Button onClick={() => {
@@ -264,7 +313,7 @@ export default function Clients() {
               const phoneInput = document.getElementById('phone') as HTMLInputElement;
               const addressInput = document.getElementById('address') as HTMLInputElement;
               const notesInput = document.getElementById('notes') as HTMLInputElement;
-              
+
               if (!nameInput.value) {
                 toast({
                   title: "Error",
@@ -273,7 +322,7 @@ export default function Clients() {
                 });
                 return;
               }
-              
+
               handleSaveClient({
                 name: nameInput.value,
                 company: companyInput.value || null,
@@ -283,6 +332,80 @@ export default function Clients() {
                 notes: notesInput.value || null
               });
             }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal for Printers */}
+      <Dialog open={clientPrintersModal} onOpenChange={setClientPrintersModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigned Printers</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {selectedClient && selectedClient.printers && selectedClient.printers.length > 0 ? (
+              <div className="space-y-2">
+                {selectedClient.printers.map((printer, idx) => (
+                  <Card key={idx} className="mb-2">
+                    <CardContent className="p-2 flex justify-between items-center">
+                      <span>{printer.make} {printer.model}</span>
+                      <span className="px-2 text-xs rounded bg-muted">{printer.status}</span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No printers assigned to this client.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClientPrintersModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal for Departments */}
+      <Dialog open={clientDepartmentsModal} onOpenChange={setClientDepartmentsModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Departments</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {selectedClient && selectedClient.printers && selectedClient.printers.length > 0 ? (
+              <ul className="space-y-2">
+                {Array.from(
+                  new Set(selectedClient.printers
+                    .map(printer => printer.location)
+                    .filter(loc => !!loc && loc.trim().length > 0))
+                ).map((d, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <Building size={16} />
+                    <span>{d}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">No departments found for this client.</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClientDepartmentsModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal for Users */}
+      <Dialog open={clientUsersModal} onOpenChange={setClientUsersModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Users</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {/* Placeholder: You can fetch and render actual users in the future */}
+            <p className="text-muted-foreground text-sm">No users associated with this client yet.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClientUsersModal(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
