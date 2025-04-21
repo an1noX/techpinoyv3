@@ -59,12 +59,12 @@ export function toFrontendTransferLog(log: TransferLogType): any {
     notes: log.notes,
     createdAt: log.created_at,
     updatedAt: log.updated_at,
-    fromClientId: log.from_client_id,
-    toClientId: log.to_client_id,
-    fromDepartmentId: log.from_department_id,
-    toDepartmentId: log.to_department_id,
-    fromUserId: log.from_user_id,
-    toUserId: log.to_user_id,
+    fromClientId: log.fromClientId,
+    toClientId: log.toClientId,
+    fromDepartmentId: log.fromDepartmentId,
+    toDepartmentId: log.toDepartmentId,
+    fromUserId: log.fromUserId,
+    toUserId: log.toUserId,
   };
 }
 
@@ -87,12 +87,13 @@ export function toBackendTransferLog(log: any): TransferLogType {
     notes: log.notes,
     created_at: log.createdAt,
     updated_at: log.updatedAt,
-    from_client_id: log.fromClientId,
-    to_client_id: log.toClientId,
-    from_department_id: log.fromDepartmentId,
-    to_department_id: log.toDepartmentId,
-    from_user_id: log.fromUserId,
-    to_user_id: log.toUserId,
+    // Use the correct field names for compatibility
+    fromClientId: log.fromClientId,
+    toClientId: log.toClientId,
+    fromDepartmentId: log.fromDepartmentId,
+    toDepartmentId: log.toDepartmentId,
+    fromUserId: log.fromUserId,
+    toUserId: log.toUserId,
     // Add frontend compatibility fields
     printerId: log.printerId,
     fromClient: log.fromClient,
@@ -100,13 +101,7 @@ export function toBackendTransferLog(log: any): TransferLogType {
     fromDepartment: log.fromDepartment,
     toDepartment: log.toDepartment,
     fromUser: log.fromUser,
-    toUser: log.toUser,
-    fromClientId: log.fromClientId,
-    toClientId: log.toClientId,
-    fromDepartmentId: log.fromDepartmentId,
-    toDepartmentId: log.toDepartmentId,
-    fromUserId: log.fromUserId,
-    toUserId: log.toUserId
+    toUser: log.toUser
   };
 }
 

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,14 @@ interface ModelSelectorProps {
 export function ModelSelector({ 
   value, 
   onChange, 
-  models, 
+  models = [], // Provide default empty array to avoid undefined models
   className,
   placeholder = "Select a model..."
 }: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
+
+  // Ensure models is always an array
+  const safeModels = Array.isArray(models) ? models : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -51,7 +54,7 @@ export function ModelSelector({
           <CommandInput placeholder="Search models..." />
           <CommandEmpty>No models found.</CommandEmpty>
           <CommandGroup className="max-h-60 overflow-y-auto">
-            {models.map((model) => (
+            {safeModels.map((model) => (
               <CommandItem
                 key={model}
                 value={model}

@@ -1,4 +1,3 @@
-
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
 export type PrinterOwnershipType = 'system' | 'client';
@@ -59,6 +58,7 @@ export interface PrinterType extends Printer {
   client?: string;
   departmentId?: string;
   assignedUserId?: string;
+  assignedAdmin?: string; // Add this field to fix the error
 }
 
 export interface Department {
@@ -169,8 +169,8 @@ export interface TonerType {
   price?: number;
   stock: number; // Make this required to match WikiToner
   threshold: number; // Make this required to match WikiToner
-  created_at?: string;
-  updated_at?: string;
+  created_at: string; // Change to required to match WikiToner
+  updated_at: string; // Change to required to match WikiToner
   is_active?: boolean;
 }
 

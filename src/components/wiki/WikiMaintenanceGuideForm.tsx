@@ -20,12 +20,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ModelSelector } from "@/components/ui/model-selector";
 
-// Add mock data for testing
-const MOCK_PRINTERS = [
-  { make: "HP", model: "LaserJet Pro M428fdn" },
-  { make: "Brother", model: "MFC-L8900CDW" },
-  { make: "Canon", model: "imageRUNNER 1643i" },
-];
+// Define printer model type
+interface PrinterModel {
+  id: string;
+  make: string;
+  model: string;
+}
 
 const maintenanceFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -43,27 +43,39 @@ interface WikiMaintenanceGuideFormProps {
   onSuccess?: () => void;
 }
 
-// Add printer type
-interface PrinterModel {
-  id: string;
-  make: string;
-  model: string;
-}
-
 export function WikiMaintenanceGuideForm({ open, onOpenChange, onSuccess }: WikiMaintenanceGuideFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [printers, setPrinters] = useState<PrinterModel[]>([]);
+  const [printerModels, setPrinterModels] = useState<string[]>([]);
   
   useEffect(() => {
-    fetchPrinters();
-  }, []);
+    if (open) {
+      fetchPrinters();
+    }
+  }, [open]);
 
   const fetchPrinters = async () => {
-    const { data } = await supabase
-      .from('wiki_printers')
-      .select('id, make, model');
-    setPrinters(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('wiki_printers')
+        .select('id, make, model');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setPrinters(data as PrinterModel[]);
+        
+        // Create formatted printer models array
+        const modelStrings = data.map(p => `${p.make} ${p.model}`);
+        setPrinterModels(modelStrings);
+      }
+    } catch (error) {
+      console.error('Error fetching printers:', error);
+      // Ensure we have an empty array at minimum
+      setPrinters([]);
+      setPrinterModels([]);
+    }
   };
 
   const form = useForm<MaintenanceFormValues>({
@@ -173,7 +185,7 @@ export function WikiMaintenanceGuideForm({ open, onOpenChange, onSuccess }: Wiki
                     <ModelSelector 
                       value={field.value} 
                       onChange={(value) => field.onChange(value)}
-                      models={printers?.map(p => `${p.make} ${p.model}`) || []}
+                      models={printerModels}
                     />
                   </FormControl>
                   <FormMessage />
