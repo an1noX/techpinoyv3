@@ -161,6 +161,7 @@ export const useSettingsState = () => {
         }
       } else if (data) {
         setSettings(formatSettingsData(data));
+        console.log("Settings loaded:", formatSettingsData(data));
       } else {
         await createInitialSettings();
         setSettings(defaultSettings);
@@ -178,6 +179,10 @@ export const useSettingsState = () => {
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Log the data being saved
+      console.log("Saving settings:", updatedSettings);
+      console.log("video_ads1 data:", updatedSettings.video_ads1);
       
       const settingsToSave = {
         id: updatedSettings.id,
@@ -201,6 +206,7 @@ export const useSettingsState = () => {
         throw saveError;
       }
       
+      console.log("Settings saved successfully");
       setSettings(updatedSettings);
     } catch (err: any) {
       console.error('Error saving settings:', err);
@@ -245,12 +251,40 @@ export const useSettingsState = () => {
     }
   };
 
+  // Add a function to update video ads
+  const updateVideoAds = async (videoAds: VideoAds1) => {
+    if (!settings) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log("Updating video ads:", videoAds);
+      
+      const updatedSettings: Settings = {
+        ...settings,
+        video_ads1: videoAds,
+        updated_at: new Date().toISOString()
+      };
+
+      await saveSettings(updatedSettings);
+      console.log("Video ads updated successfully");
+    } catch (err: any) {
+      console.error('Error updating video ads:', err);
+      setError(err.message || 'Failed to update video ads');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     settings,
     isLoading,
     error,
     fetchSettings,
     saveSettings,
-    updateStoreInfo
+    updateStoreInfo,
+    updateVideoAds
   };
 };

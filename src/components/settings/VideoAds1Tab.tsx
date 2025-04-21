@@ -49,7 +49,7 @@ const videoAds1Schema = z.object({
 type VideoAds1FormValues = z.infer<typeof videoAds1Schema>;
 
 export function VideoAds1Tab() {
-  const { settings, isLoading, saveSettings, fetchSettings } = useSettings();
+  const { settings, isLoading, updateVideoAds, fetchSettings } = useSettings();
   const [newFeature, setNewFeature] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,19 +92,13 @@ export function VideoAds1Tab() {
     console.log("VideoAds1Tab: Submitting form data", data);
     
     try {
-      if (!settings) {
-        toast.error("Settings not found");
+      if (!updateVideoAds) {
+        toast.error("Update function not available");
         return;
       }
 
-      // Create updated settings with video_ads1 data
-      const updatedSettings = {
-        ...settings,
-        video_ads1: data as VideoAds1
-      };
-
-      console.log("VideoAds1Tab: Saving updated settings", updatedSettings);
-      await saveSettings(updatedSettings);
+      // Update the video_ads1 data
+      await updateVideoAds(data);
       
       // Refresh settings to get the latest data
       await fetchSettings();

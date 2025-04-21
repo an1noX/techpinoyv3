@@ -15,7 +15,8 @@ import { HomeFooter } from "@/components/home/HomeFooter";
 import { Toaster, toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StaticSettingsProvider, useStaticSettings } from "@/context/StaticSettingsContext";
+import { StaticSettingsProvider } from "@/context/SettingsContext";
+import { useSettings } from "@/context/SettingsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { seedTonerProducts } from "@/utils/seedToners";
 
@@ -58,7 +59,7 @@ const mapDbToToner = (item: any): EnhancedTonerType => ({
 const StoreContent = () => {
   const [selectedProduct, setSelectedProduct] = useState<EnhancedTonerType | null>(null);
   const [isProductDetailsOpen, setIsProductDetailsOpen] = useState(false);
-  const { settings, isLoading: isLoadingSettings } = useStaticSettings();
+  const { settings, isLoading: isLoadingSettings } = useSettings();
   const isMobile = useIsMobile();
 
   // Store products state

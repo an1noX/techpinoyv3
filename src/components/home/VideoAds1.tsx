@@ -27,8 +27,9 @@ export const VideoAds1 = () => {
   };
 
   useEffect(() => {
-    console.log("VideoAds1: Received settings", settings);
-    console.log("VideoAds1: video_ads1 value", settings?.video_ads1);
+    if (settings?.video_ads1) {
+      console.log("VideoAds1: Using settings", settings.video_ads1);
+    }
   }, [settings]);
 
   // Render appropriate video player based on type

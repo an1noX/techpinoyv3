@@ -24,7 +24,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     error, 
     fetchSettings, 
     saveSettings, 
-    updateStoreInfo 
+    updateStoreInfo,
+    updateVideoAds
   } = useSettingsState();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       saveSettings, 
       error,
       updateStoreInfo,
+      updateVideoAds,
       fetchSettings
     }}>
       {children}
