@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Printer, ArrowRight } from "lucide-react";
@@ -63,18 +62,6 @@ export function PrinterFinder() {
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Search failed. Please try again.");
-      
-      // Fallback to mock data for development
-      const foundPrinters = mockPrinters.filter(printer => 
-        printer.model.toLowerCase().includes(query.toLowerCase()) ||
-        (printer.make && printer.make.toLowerCase().includes(query.toLowerCase()))
-      );
-      
-      if (foundPrinters.length > 0) {
-        navigate(`/printers/${foundPrinters[0].id}`);
-      } else {
-        navigate(`/products?search=${encodeURIComponent(query)}`);
-      }
     } finally {
       setIsSearching(false);
     }

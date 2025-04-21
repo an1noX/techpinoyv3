@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Search, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -57,17 +56,13 @@ export function PrinterFinderCompact() {
       } else {
         // No exact matches found - navigate to search results page
         navigate(`/products?search=${encodeURIComponent(query)}`);
-        toast.info(`Searching for "${query}"`);
+        toast(`No exact matches found for "${query}"`);
       }
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Search failed. Please try again.");
-      
-      // Still navigate to search results with the query
-      navigate(`/products?search=${encodeURIComponent(query)}`);
     } finally {
       setIsSearching(false);
-      setQuery(""); // Reset the search input
     }
   };
   

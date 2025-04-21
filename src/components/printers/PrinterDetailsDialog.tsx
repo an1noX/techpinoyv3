@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { Button } from "@/components/ui/button";
@@ -54,11 +53,10 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
     setWikiToners([]);
     setWikiLoading(true);
 
-    // Try to fetch wiki entry by make, model (assuming exact match for simplicity)
     async function fetchWikiData() {
-      // 1. Find printer_wiki by make and model
+      // 1. Find wiki_printers by make and model
       const { data: wiki, error } = await supabase
-        .from("printer_wiki")
+        .from("wiki_printers")
         .select("*")
         .eq("make", printer.make)
         .eq("model", printer.model)
@@ -74,7 +72,6 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
       setWikiPrinter(wiki as WikiPrinter);
 
       // 2. Find toners compatible with this wiki printer
-      // Get the list of toner uuids from the compatibility table
       const { data: compatibility, error: compatErr } = await supabase
         .from("printer_toner_compatibility")
         .select("toner_id")
@@ -89,24 +86,21 @@ export const PrinterDetailsDialog: React.FC<PrinterDetailsDialogProps> = ({
       const tonerIds = compatibility.map((c) => c.toner_id);
 
       // 3. Get toner details for these toner ids
-      // Updated to match the actual database schema
       const { data: toners, error: tonersErr } = await supabase
-        .from("toners")
-        .select("id, model, brand, oem_code, color")
+        .from("wiki_toners")
+        .select("*")
         .in("id", tonerIds);
 
       if (!toners || tonersErr) {
         setWikiToners([]);
-        setWikiLoading(false);
-        return;
+      } else {
+        setWikiToners(toners);
       }
 
-      setWikiToners(toners as Toner[]);
       setWikiLoading(false);
     }
 
     fetchWikiData();
-    // eslint-disable-next-line
   }, [open, printer.make, printer.model]);
 
   // When changing ownership, refresh assignment fields

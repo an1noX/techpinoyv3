@@ -48,48 +48,14 @@ export function TonerList() {
 
   const fetchToners = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('wiki_toners')
         .select('*')
-        .order('brand')
-        .order('model')
-        .order('variant_name');
+        .order('brand');
 
       if (error) throw error;
 
-      // Process data to ensure all fields are correctly typed
-      const processedData = (data || []).map(toner => {
-        // Ensure aliases is always an array of strings
-        const aliases = Array.isArray(toner.aliases) 
-          ? toner.aliases.map((alias: any) => String(alias))
-          : [];
-          
-        // Ensure compatible_printers is always an array of strings or null
-        const compatible_printers = toner.compatible_printers 
-          ? (Array.isArray(toner.compatible_printers) 
-              ? toner.compatible_printers.map((printer: any) => String(printer))
-              : null)
-          : null;
-          
-        // Ensure variant_details is a proper record or null
-        const variant_details = typeof toner.variant_details === 'object' 
-          ? toner.variant_details 
-          : null;
-        
-        // Add name property derived from brand and model
-        const name = `${toner.brand} ${toner.model}${toner.variant_name ? ` ${toner.variant_name}` : ''}`;
-        
-        return {
-          ...toner,
-          name,
-          aliases,
-          compatible_printers,
-          variant_details
-        } as EditableToner;
-      });
-
-      setToners(processedData);
+      setToners(data || []);
     } catch (error: any) {
       toast({
         title: "Error fetching toners",
@@ -217,7 +183,7 @@ export function TonerList() {
 
       toast({
         title: "Success",
-        description: "OEM Toner reference updated successfully"
+        description: "Toner updated successfully"
       });
 
       setEditingToner(null);

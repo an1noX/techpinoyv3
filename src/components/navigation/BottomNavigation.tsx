@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users, Package, Settings, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -8,11 +7,12 @@ export function BottomNavigation() {
   const location = useLocation();
   const currentPath = location.pathname;
 
-  const navItems = [
+  const navItems = useMemo(() => [
     { 
       name: 'Wiki', 
       path: '/wiki', 
-      icon: DatabaseIcon 
+      icon: DatabaseIcon,
+      matchPattern: '/wiki'
     },
     { 
       name: 'Printers', 
@@ -32,7 +32,8 @@ export function BottomNavigation() {
     { 
       name: 'Settings', 
       path: '/settings', 
-      icon: Settings 
+      icon: Settings,
+      matchPattern: '/settings'
     },
     { 
       name: 'Rentals', 
@@ -49,17 +50,15 @@ export function BottomNavigation() {
       path: '/profile', 
       icon: UserIcon 
     },
-  ];
+  ], []);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-sm h-16">
       <nav className="flex h-full">
         {navItems.map((item) => {
-          // Updated logic to handle nested routes properly
-          const isActive = 
-            (item.path === '/wiki' && currentPath.startsWith('/wiki')) ||
-            (item.path === '/settings' && currentPath.startsWith('/settings')) ||
-            (item.path !== '/wiki' && item.path !== '/settings' && currentPath === item.path);
+          const isActive = item.matchPattern
+            ? currentPath.startsWith(item.matchPattern)
+            : currentPath === item.path;
             
           return (
             <Link
@@ -72,6 +71,7 @@ export function BottomNavigation() {
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
+              aria-current={isActive ? 'page' : undefined}
             >
               <item.icon size={24} className={cn(
                 "mb-1",
