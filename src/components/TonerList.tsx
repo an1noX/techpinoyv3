@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Label } from '@/components/ui/label';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { EditableToner, TonerBase } from '@/types/types';
+import { EditableToner, TonerBase, WikiToner } from '@/types/types';
 import { Json } from '@/integrations/supabase/types';
 
 export function TonerList() {
@@ -50,7 +50,7 @@ export function TonerList() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .select('*')
         .order('brand')
         .order('model')
@@ -148,7 +148,7 @@ export function TonerList() {
       };
 
       const { error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .insert([newToner]);
 
       if (error) throw error;
@@ -198,7 +198,7 @@ export function TonerList() {
 
     try {
       const { error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .update({
           brand: editingToner.brand,
           model: editingToner.model,
@@ -291,7 +291,7 @@ export function TonerList() {
 
     try {
       const { error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .delete()
         .eq('id', tonerToDelete.id);
 

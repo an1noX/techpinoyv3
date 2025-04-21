@@ -3,7 +3,7 @@
  * TonerCompatibilityManager
  * 
  * This component manages the relationship between printers and their compatible OEM toner models.
- * It uses the reference data from the 'toners' table and maintains relationships in 'printer_toner_compatibility'.
+ * It uses the reference data from the 'wiki_toners' table and maintains relationships in 'printer_toner_compatibility'.
  * 
  * Note: This is NOT related to product inventory management. This component only handles 
  * the reference data that indicates which toner models are compatible with which printers.
@@ -20,16 +20,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-
-interface TonerType {
-  id: string;
-  brand: string;
-  model: string;
-  color: string;
-  oem_code?: string | null;
-  page_yield: number;
-  aliases?: string[] | null;
-}
+import { WikiToner } from '@/types/types';
 
 interface TonerCompatibilityManagerProps {
   printerId: string;
@@ -37,10 +28,10 @@ interface TonerCompatibilityManagerProps {
 
 export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManagerProps) {
   const { toast } = useToast();
-  const [compatibleToners, setCompatibleToners] = useState<TonerType[]>([]);
+  const [compatibleToners, setCompatibleToners] = useState<WikiToner[]>([]);
   const [loading, setLoading] = useState(true);
   const [addTonerDialogOpen, setAddTonerDialogOpen] = useState(false);
-  const [availableToners, setAvailableToners] = useState<TonerType[]>([]);
+  const [availableToners, setAvailableToners] = useState<WikiToner[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -53,7 +44,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
         .from('printer_toner_compatibility')
         .select(`
           toner_id,
-          toners (
+          wiki_toners (
             id,
             brand,
             model,
@@ -68,9 +59,9 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
       if (error) throw error;
 
       const toners = data
-        .filter(item => item.toners !== null)
+        .filter(item => item.wiki_toners !== null)
         .map(item => {
-          const toner = item.toners as any;
+          const toner = item.wiki_toners as any;
           // Ensure aliases is always an array of strings
           const aliases = Array.isArray(toner.aliases) 
             ? toner.aliases.map((alias: any) => String(alias))
@@ -97,7 +88,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
   const handleAddTonerClick = async () => {
     try {
       const { data, error } = await supabase
-        .from('toners')
+        .from('wiki_toners')
         .select('*');
 
       if (error) throw error;
@@ -130,7 +121,7 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
     }
   };
 
-  const handleAddToner = async (toner: TonerType) => {
+  const handleAddToner = async (toner: WikiToner) => {
     try {
       const { error } = await supabase
         .from('printer_toner_compatibility')

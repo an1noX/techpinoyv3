@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PrinterType, TonerType } from '@/types/types';
+import { PrinterType, WikiToner } from '@/types/types';
 import { PlusCircle, XCircle } from 'lucide-react';
 
 interface PrinterTonerTabProps {
   printer: PrinterType;
-  toners: TonerType[];
+  toners: WikiToner[];
   onUpdate: (printer: PrinterType) => void;
 }
 
@@ -44,7 +44,7 @@ export function PrinterTonerTab({ printer, toners, onUpdate }: PrinterTonerTabPr
           {compatibleToners.map((toner) => (
             <div key={toner.id} className="flex items-center justify-between border rounded-lg p-3">
               <div>
-                <p className="font-medium">{toner.name}</p>
+                <p className="font-medium">{toner.brand} {toner.model}</p>
                 <p className="text-sm text-muted-foreground">
                   {toner.color && <span className="capitalize">{toner.color} • </span>}
                   {toner.page_yield && <span>{toner.page_yield.toLocaleString()} pages</span>}
@@ -76,7 +76,7 @@ export function PrinterTonerTab({ printer, toners, onUpdate }: PrinterTonerTabPr
                 onClick={() => setSelectedToners(prev => [...prev, toner.id])}
               >
                 <PlusCircle className="h-4 w-4 mr-2" />
-                {toner.name}
+                {toner.brand} {toner.model}
               </Button>
             ))}
         </div>

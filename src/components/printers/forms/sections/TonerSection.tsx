@@ -2,16 +2,16 @@
 import { UseFormReturn } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TonerType } from "@/types/types";
+import { WikiToner } from "@/types/types";
 import { PrinterFormValues } from "../printer-form-schema";
 import { TonerSelector } from "@/components/toners/TonerSelector";
 
 interface TonerSectionProps {
   form: UseFormReturn<PrinterFormValues>;
-  toners: TonerType[];
+  toners: WikiToner[];
   selectedToners: string[];
   onTonerChange: (tonerId: string) => void;
-  onAddToner?: (toner: TonerType) => void;
+  onAddToner?: (toner: WikiToner) => void;
 }
 
 export function TonerSection({ 
@@ -51,7 +51,7 @@ export function TonerSection({
                 checked={selectedToners.includes(toner.id)}
                 onCheckedChange={() => onTonerChange(toner.id)}
               />
-              <Label htmlFor={`toner-${toner.id}`}>{toner.name}</Label>
+              <Label htmlFor={`toner-${toner.id}`}>{toner.brand} {toner.model}</Label>
             </div>
           ))}
         </div>
