@@ -321,7 +321,7 @@ export function PrinterDetailsDialog({
       <TransferDialog 
         open={isTransferDialogOpen}
         onOpenChange={setIsTransferDialogOpen}
-        printer={printer.id}
+        printer={printer} 
         printerModel={printer.model}
         currentClient={printer.client}
         currentClientId={printer.clientId}
