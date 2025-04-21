@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -20,7 +19,6 @@ const ProductsContent = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Get search parameters
   const printerParam = searchParams.get('printer');
   const tonerParam = searchParams.get('toner');
   const searchParam = searchParams.get('search');
@@ -46,9 +44,7 @@ const ProductsContent = () => {
           )
         `);
 
-      // Filter by printer ID from Wiki
       if (printerParam) {
-        // First find the printer's compatible toners
         const { data: compatData, error: compatError } = await supabase
           .from('printer_toner_compatibility')
           .select('toner_id')
@@ -57,11 +53,9 @@ const ProductsContent = () => {
         if (compatError) throw compatError;
         
         if (compatData && compatData.length > 0) {
-          // Get toners that are compatible with this printer
           const tonerIds = compatData.map(item => item.toner_id);
           query = query.filter('toner_id', 'in', `(${tonerIds.join(',')})`);
         } else {
-          // If no direct compatibility info, try to get printer info and match by brand/model
           const { data: printerData, error: printerError } = await supabase
             .from('printer_wiki')
             .select('*')
@@ -71,17 +65,12 @@ const ProductsContent = () => {
           if (printerError) throw printerError;
           
           if (printerData) {
-            // Try to match toners that might be compatible based on printer make
             query = query.filter('toner.brand', 'eq', printerData.make);
           }
         }
-      }
-      // Filter by toner search string
-      else if (tonerParam) {
+      } else if (tonerParam) {
         query = query.or(`name.ilike.%${tonerParam}%,sku.ilike.%${tonerParam}%`);
-      }
-      // General search term
-      else if (searchParam) {
+      } else if (searchParam) {
         query = query.or(`name.ilike.%${searchParam}%,sku.ilike.%${searchParam}%`);
       }
 
@@ -89,7 +78,6 @@ const ProductsContent = () => {
 
       if (error) throw error;
 
-      // Map for display
       const mappedProducts = (data || []).map(item => mapDbToProduct(item));
       setProducts(mappedProducts);
     } catch (err: any) {
@@ -101,7 +89,6 @@ const ProductsContent = () => {
     }
   };
 
-  // Map DB product to Product type
   const mapDbToProduct = (item: any): Product => ({
     id: item.id,
     name: item.name,
@@ -125,6 +112,14 @@ const ProductsContent = () => {
 
   return (
     <div className="container px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Products</h1>
+      </div>
+      
+      <p className="text-sm text-muted-foreground mb-6">
+        Browse our available products and compatible toners.
+      </p>
+      
       <form onSubmit={handleSearch} className="mb-8">
         <div className="relative max-w-md mx-auto">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />

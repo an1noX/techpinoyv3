@@ -1,20 +1,12 @@
 
 import React, { useState } from "react";
-import { BaseDialog } from "@/components/common/BaseDialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { BaseDetailDialog } from "@/components/common/BaseDetailDialog";
 import { Printer, PrinterStatus } from "@/types/printers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
-const STATUS_OPTIONS: PrinterStatus[] = [
-  "available",
-  "deployed",
-  "maintenance",
-  "for_repair",
-  "rented"
-];
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { CancelButton, SubmitButton } from "@/components/common/ActionButtons";
 
 interface UpdatePrinterStatusDialogProps {
   open: boolean;
@@ -29,41 +21,40 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
   printer,
   onSuccess,
 }) => {
-  const [selectedStatus, setSelectedStatus] = useState<PrinterStatus>(printer.status);
+  const [status, setStatus] = useState<PrinterStatus>(printer.status);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
-  React.useEffect(() => {
-    setSelectedStatus(printer.status);
-  }, [open, printer]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedStatus === printer.status) {
+    
+    if (status === printer.status) {
       toast({
-        title: "No Status Change",
-        description: "Select a different status before saving.",
+        title: "No changes to save",
+        description: "The status hasn't changed.",
         variant: "default",
       });
       return;
     }
+    
     setSubmitting(true);
+    
     const { error } = await supabase
       .from("printers")
-      .update({ status: selectedStatus, updated_at: new Date().toISOString() })
+      .update({ status, updated_at: new Date().toISOString() })
       .eq("id", printer.id);
+    
     setSubmitting(false);
-
+    
     if (error) {
       toast({
-        title: "Status Update Failed",
+        title: "Failed to update printer status.",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Printer Status Updated",
-        description: `Status updated to "${selectedStatus}".`,
+        title: "Status updated!",
         variant: "default",
       });
       onOpenChange(false);
@@ -71,50 +62,60 @@ export const UpdatePrinterStatusDialog: React.FC<UpdatePrinterStatusDialogProps>
     }
   };
 
+  const actionButtons = (
+    <>
+      <CancelButton 
+        disabled={submitting} 
+        onClick={() => onOpenChange(false)} 
+      />
+      <SubmitButton 
+        disabled={submitting}
+        form="update-status-form" 
+      >
+        Update Status
+      </SubmitButton>
+    </>
+  );
+
   return (
-    <BaseDialog
+    <BaseDetailDialog
       open={open}
       onOpenChange={onOpenChange}
-      title={`Update Status: ${printer.make} ${printer.model}`}
+      title={`Update Status - ${printer.make} ${printer.model}`}
       size="sm"
-      description="Choose a new status for this printer. This will immediately update its state in the inventory."
-      footer={
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            type="button"
-            disabled={submitting}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={submitting}
-            form="update-printer-status-form"
-          >
-            {submitting ? "Updating..." : "Update Status"}
-          </Button>
-        </div>
-      }
+      actionButtons={actionButtons}
     >
-      <form id="update-printer-status-form" onSubmit={handleSubmit}>
-        <Label className="block mb-2">Select Printer Status</Label>
-        <RadioGroup
-          value={selectedStatus}
-          onValueChange={val => setSelectedStatus(val as PrinterStatus)}
-          className="flex flex-col space-y-2"
-        >
-          {STATUS_OPTIONS.map((status) => (
-            <div className="flex items-center space-x-2" key={status}>
-              <RadioGroupItem value={status} id={`status-${status}`} />
-              <Label htmlFor={`status-${status}`} className="cursor-pointer capitalize">
-                {status.replace(/_/g, " ")}
-              </Label>
+      <form id="update-status-form" onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <Label className="block mb-2">Change Printer Status</Label>
+          <RadioGroup 
+            value={status} 
+            onValueChange={setStatus as any}
+            className="flex flex-col space-y-2"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="available" id="status-available" />
+              <Label htmlFor="status-available" className="cursor-pointer">Available</Label>
             </div>
-          ))}
-        </RadioGroup>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="deployed" id="status-deployed" />
+              <Label htmlFor="status-deployed" className="cursor-pointer">Deployed</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="maintenance" id="status-maintenance" />
+              <Label htmlFor="status-maintenance" className="cursor-pointer">Maintenance</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="for_repair" id="status-for_repair" />
+              <Label htmlFor="status-for_repair" className="cursor-pointer">For Repair</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="rented" id="status-rented" />
+              <Label htmlFor="status-rented" className="cursor-pointer">Rented</Label>
+            </div>
+          </RadioGroup>
+        </div>
       </form>
-    </BaseDialog>
+    </BaseDetailDialog>
   );
 };

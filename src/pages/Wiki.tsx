@@ -11,6 +11,7 @@ import { TonerList } from '@/components/TonerList';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WikiPrinter } from '@/types';
+import { ViewButton } from '@/components/common/ActionButtons';
 
 export default function Wiki() {
   const navigate = useNavigate();
@@ -160,13 +161,7 @@ export default function Wiki() {
                       <CardContent className="p-4 pt-0">
                         <p className="text-sm text-muted-foreground">Series: {printer.series}</p>
                         <div className="flex justify-between mt-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigate(`/wiki/${printer.id}`)}
-                          >
-                            Details
-                          </Button>
+                          <ViewButton onClick={() => navigate(`/wiki/${printer.id}`)} />
                         </div>
                       </CardContent>
                     </Card>
