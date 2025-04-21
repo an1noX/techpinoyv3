@@ -57,14 +57,24 @@ export function WikiTonerForm({ open, onOpenChange, onSuccess }: WikiTonerFormPr
 
   const onSubmit = async (data: TonerFormValues) => {
     try {
+      const tonerData = {
+        brand: data.brand,
+        model: data.model,
+        color: data.color,
+        page_yield: data.page_yield,
+        oem_code: data.oem_code || null,
+        stock: data.stock,
+        threshold: data.threshold,
+        description: data.description || null,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        category: ['toner'] // Default category
+      };
+
       const { error } = await supabase
         .from('wiki_toners')
-        .insert([{
-          ...data,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }]);
+        .insert([tonerData]);
 
       if (error) throw error;
 

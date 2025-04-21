@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,7 @@ export default function WikiArticleView() {
           created_at: data.created_at,
           updated_at: data.updated_at,
           associated_with: data.associated_with || '',
-          status: data.status || 'published',
+          status: 'published' as ArticleStatus,
           submitted_by: data.submitted_by || '',
           videoUrl: data.video_url || '', // Map video_url to videoUrl
         };

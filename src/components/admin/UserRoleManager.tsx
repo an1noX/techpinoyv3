@@ -15,27 +15,34 @@ export function UserRoleManager() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email, role');
+        .select(`
+          id,
+          first_name,
+          last_name,
+          role
+        `);
       
-      if (error) throw error;
-      
-      if (data) {
-        const typedUsers = data.map(user => ({
-          ...user,
-          role: user.role as UserRole // Cast to the enum type
-        })) as UserWithRole[];
-        
-        setUsers(typedUsers);
+      if (error) {
+        throw error;
       }
       
+      const usersList = data?.map(profile => ({
+        id: profile.id,
+        email: '', // This won't be available without accessing auth.users
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        role: profile.role || 'user',
+      })) || [];
+      
+      setUsers(usersList);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
   };
   
-  // Rest of the component implementation
   return (
     <div>
       {/* Component implementation */}

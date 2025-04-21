@@ -59,7 +59,7 @@ export function PrinterForm({
       model: data.model,
       series: data.series,
       type: data.type,
-      status: data.status,
+      status: data.status as PrinterStatus,
       make: data.make,
       serialNumber: data.serialNumber,
       department: data.department,
@@ -73,9 +73,13 @@ export function PrinterForm({
       isRentalAvailable: data.isRentalAvailable,
       isFeatured: data.isFeatured,
       toners: selectedToners,
-      ownership: data.ownership,
+      ownership: data.ownership as OwnershipType,
       clientId: data.clientId,
       oemToner: data.oemToner,
+      // Required fields for PrinterType
+      owned_by: data.ownership as OwnershipType,
+      created_at: printer?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     onSubmit(printerData);

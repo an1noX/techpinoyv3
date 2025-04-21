@@ -24,36 +24,44 @@ export function usePrinterMakesAndSeries() {
       const { data: makesData, error: makesError } = await supabase
         .from('wiki_printers')
         .select('make')
-        .order('make')
-        .distinct();
+        .order('make');
 
       if (makesError) throw makesError;
 
+      // Extract unique makes (replace distinct with manual deduplication)
+      const uniqueMakes = Array.from(new Set(makesData.map(item => item.make)));
+      
       // Transform to expected format with IDs
-      const formattedMakes = makesData.map(item => ({
-        id: item.make.toLowerCase().replace(/\s+/g, '-'),
-        name: item.make
+      const formattedMakes = uniqueMakes.map(make => ({
+        id: make.toLowerCase().replace(/\s+/g, '-'),
+        name: make
       }));
 
       setMakes(formattedMakes);
 
-      // Fetch unique series from wiki_printers
+      // Fetch series from wiki_printers
       const { data: seriesData, error: seriesError } = await supabase
         .from('wiki_printers')
         .select('series, make')
-        .order('series')
-        .distinct();
+        .order('series');
 
       if (seriesError) throw seriesError;
 
+      // Extract unique series-make combinations
+      const uniqueSeries = Array.from(
+        new Set(
+          seriesData
+            .filter(item => item.series) // Filter out null/empty series
+            .map(item => JSON.stringify({ series: item.series, make: item.make }))
+        )
+      ).map(str => JSON.parse(str));
+
       // Transform to expected format with makeId
-      const formattedSeries = seriesData
-        .filter(item => item.series) // Filter out null/empty series
-        .map(item => ({
-          id: item.series.toLowerCase().replace(/\s+/g, '-'),
-          name: item.series,
-          makeId: item.make.toLowerCase().replace(/\s+/g, '-')
-        }));
+      const formattedSeries = uniqueSeries.map(item => ({
+        id: item.series.toLowerCase().replace(/\s+/g, '-'),
+        name: item.series,
+        makeId: item.make.toLowerCase().replace(/\s+/g, '-')
+      }));
 
       setSeries(formattedSeries);
     } catch (error) {

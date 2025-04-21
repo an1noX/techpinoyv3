@@ -1,147 +1,230 @@
-
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { MaintenanceLogType } from "@/types/types";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useState } from "react";
+import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { CalendarIcon } from "lucide-react"
+import { useToast } from "@/hooks/use-toast";
+import { UseFormReturn } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DatePickerField } from "./DatePickerField";
-
-const maintenanceSchema = z.object({
-  notes: z.string().min(5, "Notes must be at least 5 characters long"),
-  performedBy: z.string().min(2, "Please enter who performed the maintenance"),
-  date: z.date(),
-  scheduled: z.boolean().default(false),
-  scheduledDate: z.date().optional(),
-});
-
-type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 interface MaintenanceLogFormProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   printerId: string;
   printerModel: string;
-  onSubmit: (log: MaintenanceLogType) => void;
-  onCancel: () => void;
+  onSubmit: (log: any) => void;
+  onClose?: () => void;
 }
 
-export function MaintenanceLogForm({ 
-  printerId, 
-  printerModel, 
-  onSubmit, 
-  onCancel 
-}: MaintenanceLogFormProps) {
-  const [isScheduled, setIsScheduled] = useState(false);
+interface FormValues {
+  performedBy: string;
+  date: Date;
+  notes: string;
+  scheduled: boolean;
+  scheduledDate: Date;
+}
 
-  const form = useForm<MaintenanceFormValues>({
-    resolver: zodResolver(maintenanceSchema),
-    defaultValues: {
-      notes: "",
-      performedBy: "",
-      date: new Date(),
-      scheduled: false,
-    }
+export function MaintenanceLogForm({
+  open,
+  onOpenChange,
+  printerId,
+  printerModel,
+  onSubmit,
+  onClose,
+}: MaintenanceLogFormProps) {
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [values, setValues] = useState<FormValues>({
+    performedBy: "",
+    date: new Date(),
+    notes: "",
+    scheduled: false,
+    scheduledDate: new Date(),
   });
 
-  const handleSubmit = (data: MaintenanceFormValues) => {
-    const newLog: MaintenanceLogType = {
-      id: `log-${Date.now()}`,
-      printerId,
-      printerModel,
-      date: data.date.toISOString(),
-      notes: data.notes,
-      performedBy: data.performedBy,
-      scheduled: data.scheduled,
-      scheduledDate: data.scheduledDate ? data.scheduledDate.toISOString() : undefined,
-    };
+  const reset = () => {
+    setValues({
+      performedBy: "",
+      date: new Date(),
+      notes: "",
+      scheduled: false,
+      scheduledDate: new Date(),
+    });
+  };
 
-    onSubmit(newLog);
+  const handleSubmit = async (values: FormValues) => {
+    try {
+      setIsSubmitting(true);
+      
+      const logData = {
+        printer_id: printerId, // Use snake_case for database field
+        printerId: printerId, // Add camelCase for frontend compatibility 
+        printer_model: printerModel,
+        performed_by: values.performedBy,
+        performedBy: values.performedBy, // Add camelCase for frontend compatibility
+        date: new Date(values.date).toISOString(),
+        notes: values.notes,
+        scheduled: values.scheduled,
+        scheduled_date: values.scheduled ? new Date(values.scheduledDate).toISOString() : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Submit the log to Supabase or pass it to the parent component
+      onSubmit(logData);
+      
+      // Reset the form
+      reset();
+      
+      // Close dialog if provided
+      onClose?.();
+      
+    } catch (error) {
+      console.error("Error submitting maintenance log:", error);
+      setSubmitError("Failed to submit maintenance log.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Form {...form}>
-      <form id="maintenance-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <DatePickerField 
-              field={field} 
-              label="Maintenance Date" 
-              isPastDateAllowed={true} 
-            />
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Maintenance Notes</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Describe the maintenance performed" 
-                  className="min-h-[120px]" 
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="performedBy"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Performed By</FormLabel>
-              <FormControl>
-                <Input placeholder="Technician name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="scheduled"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={(checked) => {
-                    field.onChange(checked);
-                    setIsScheduled(!!checked);
-                  }}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Schedule Next Maintenance</FormLabel>
-              </div>
-            </FormItem>
-          )}
-        />
-        
-        {isScheduled && (
-          <FormField
-            control={form.control}
-            name="scheduledDate"
-            render={({ field }) => (
-              <DatePickerField 
-                field={field} 
-                label="Next Maintenance Date" 
-                isPastDateAllowed={false} 
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Maintenance Log</DialogTitle>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(values);
+          }}
+        >
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="performedBy" className="text-right">
+                Performed By
+              </Label>
+              <Input
+                type="text"
+                id="performedBy"
+                value={values.performedBy}
+                onChange={(e) => setValues({ ...values, performedBy: e.target.value })}
+                className="col-span-3"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="date" className="text-right">
+                Date
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !values.date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {values.date ? format(values.date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={values.date}
+                    onSelect={(date) => setValues({ ...values, date: date || new Date() })}
+                    disabled={(date) =>
+                      date > new Date()
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="notes" className="text-right">
+                Notes
+              </Label>
+              <textarea
+                id="notes"
+                value={values.notes}
+                onChange={(e) => setValues({ ...values, notes: e.target.value })}
+                className="col-span-3 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="scheduled" className="text-right">
+                Scheduled
+              </Label>
+              <Checkbox
+                id="scheduled"
+                checked={values.scheduled}
+                onCheckedChange={(checked) => setValues({ ...values, scheduled: checked || false })}
+              />
+            </div>
+            {values.scheduled && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="scheduledDate" className="text-right">
+                  Scheduled Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !values.scheduledDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {values.scheduledDate ? format(values.scheduledDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={values.scheduledDate}
+                      onSelect={(date) => setValues({ ...values, scheduledDate: date || new Date() })}
+                      disabled={(date) =>
+                        date < new Date()
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             )}
-          />
-        )}
-      </form>
-    </Form>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </Button>
+          </DialogFooter>
+          {submitError && (
+            <p className="text-red-500 text-sm mt-2">{submitError}</p>
+          )}
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

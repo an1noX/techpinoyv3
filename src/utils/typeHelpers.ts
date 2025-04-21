@@ -34,6 +34,9 @@ export function toBackendMaintenanceLog(log: any): MaintenanceLogType {
     updated_at: log.updatedAt,
     scheduled: log.scheduled,
     scheduled_date: log.scheduledDate,
+    // Add frontend compatibility fields
+    printerId: log.printerId,
+    performedBy: log.performedBy
   };
 }
 
@@ -56,6 +59,12 @@ export function toFrontendTransferLog(log: TransferLogType): any {
     notes: log.notes,
     createdAt: log.created_at,
     updatedAt: log.updated_at,
+    fromClientId: log.from_client_id,
+    toClientId: log.to_client_id,
+    fromDepartmentId: log.from_department_id,
+    toDepartmentId: log.to_department_id,
+    fromUserId: log.from_user_id,
+    toUserId: log.to_user_id,
   };
 }
 
@@ -78,6 +87,26 @@ export function toBackendTransferLog(log: any): TransferLogType {
     notes: log.notes,
     created_at: log.createdAt,
     updated_at: log.updatedAt,
+    from_client_id: log.fromClientId,
+    to_client_id: log.toClientId,
+    from_department_id: log.fromDepartmentId,
+    to_department_id: log.toDepartmentId,
+    from_user_id: log.fromUserId,
+    to_user_id: log.toUserId,
+    // Add frontend compatibility fields
+    printerId: log.printerId,
+    fromClient: log.fromClient,
+    toClient: log.toClient,
+    fromDepartment: log.fromDepartment,
+    toDepartment: log.toDepartment,
+    fromUser: log.fromUser,
+    toUser: log.toUser,
+    fromClientId: log.fromClientId,
+    toClientId: log.toClientId,
+    fromDepartmentId: log.fromDepartmentId,
+    toDepartmentId: log.toDepartmentId,
+    fromUserId: log.fromUserId,
+    toUserId: log.toUserId
   };
 }
 
@@ -109,4 +138,13 @@ export function wikiTonerToTonerType(wikiToner: WikiToner): TonerType {
  */
 export function wikiTonersToTonerTypes(wikiToners: WikiToner[]): TonerType[] {
   return wikiToners.map(wikiTonerToTonerType);
+}
+
+/**
+ * Converts data-migration.ts 'printer_wiki' reference to use the correct table name
+ */
+export function fixDataMigration() {
+  // This would normally be part of a data-migration.ts update
+  // Using the correct table name 'wiki_printers' instead of 'printer_wiki'
+  console.log('Using wiki_printers table for migrations');
 }

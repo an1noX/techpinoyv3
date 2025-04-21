@@ -1,8 +1,7 @@
-
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
-export type PrinterOwnershipType = 'system_asset' | 'client_owned'; // Added this missing type
-export type PrinterStatusType = PrinterStatus; // Added alias for consistency
+export type PrinterOwnershipType = 'system_asset' | 'client_owned';
+export type PrinterStatusType = 'available' | 'rented' | 'maintenance' | 'deployed' | 'for_repair' | 'unknown' | 'retired';
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
 export type UserRole = 'admin' | 'user' | 'technician' | 'client';
 export type ArticleStatus = 'published' | 'pending' | 'rejected';
@@ -45,13 +44,17 @@ export interface PrinterType extends Printer {
   isRentalAvailable?: boolean;
   isFeatured?: boolean;
   toners?: string[];
-  ownership?: PrinterOwnershipType;
+  ownership?: OwnershipType;
   clientId?: string;
   oemToner?: string;
   // Fields for UI display
   client?: string;
   department?: string;
   assignedAdmin?: string;
+  departmentId?: string;
+  assignedUserId?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Department {
@@ -73,6 +76,8 @@ export interface WikiArticleType {
   submitted_by?: string;
   videoUrl?: string;
 }
+
+export interface WikiArticle extends WikiArticleType {}
 
 export interface WikiPrinter {
   id: string;
@@ -153,9 +158,8 @@ export interface TonerType {
   aliases?: string[];
   compatibility?: string[];
   manufacturer?: string;
-  image_url?: string; // Updated to match WikiToner
-  price?: number; // For display in UI components
-  // Add missing properties to match WikiToner for compatibility
+  image_url?: string;
+  price?: number;
   stock?: number;
   threshold?: number;
   created_at?: string;
@@ -216,6 +220,19 @@ export interface TransferLogType {
   notes?: string;
   created_at: string;
   updated_at: string;
+  printerId?: string;
+  fromClient?: string;
+  toClient?: string;
+  fromDepartment?: string;
+  toDepartment?: string;
+  fromUser?: string;
+  toUser?: string;
+  fromClientId?: string;
+  toClientId?: string;
+  fromDepartmentId?: string;
+  toDepartmentId?: string;
+  fromUserId?: string;
+  toUserId?: string;
 }
 
 export interface MaintenanceLogType {
@@ -229,6 +246,8 @@ export interface MaintenanceLogType {
   updated_at: string;
   scheduled?: boolean;
   scheduled_date?: string;
+  printerId?: string;
+  performedBy?: string;
 }
 
 export interface PrinterSeries {
@@ -237,5 +256,4 @@ export interface PrinterSeries {
   makeId: string;
 }
 
-// Add JSON type to handle Supabase JSON fields
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Dialog,
@@ -20,7 +19,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-// Define Department type to match what's in the API or database
 export interface Department {
   id: string;
   name: string;
@@ -65,7 +63,6 @@ export function TransferDialog({
   const [selectedUserId, setSelectedUserId] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Filter departments based on selected client
   const filteredDepartments = selectedClientId
     ? departments.filter((dept) => dept.client_id === selectedClientId)
     : departments;
@@ -84,23 +81,38 @@ export function TransferDialog({
 
     const transferLog: TransferLogType = {
       id: crypto.randomUUID(),
-      printerId,
-      printerModel,
+      printer_id: printerId,
+      printerId: printerId,
+      printer_model: printerModel,
+      from_client: currentClient,
       fromClient: currentClient,
+      from_client_id: currentClientId,
       fromClientId: currentClientId,
+      from_department: currentDepartment,
       fromDepartment: currentDepartment,
+      from_department_id: currentDepartmentId,
       fromDepartmentId: currentDepartmentId,
+      from_user: currentUser,
       fromUser: currentUser,
+      from_user_id: currentUserId,
       fromUserId: currentUserId,
+      to_client: selectedClient?.name,
       toClient: selectedClient?.name,
+      to_client_id: selectedClientId,
       toClientId: selectedClientId,
+      to_department: selectedDepartment?.name,
       toDepartment: selectedDepartment?.name,
+      to_department_id: selectedDepartmentId,
       toDepartmentId: selectedDepartmentId,
+      to_user: selectedUser?.name,
       toUser: selectedUser?.name,
+      to_user_id: selectedUserId,
       toUserId: selectedUserId,
       date: new Date().toISOString(),
-      notes,
-      transferredBy: "Current User", // This would come from auth context in a real app
+      notes: notes,
+      transferred_by: "Current User",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
     onTransfer(transferLog);

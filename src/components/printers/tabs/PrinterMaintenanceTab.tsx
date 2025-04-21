@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MaintenanceLogType } from '@/types/types';
 import { PlusCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface PrinterMaintenanceTabProps {
   printerId: string;
@@ -30,19 +30,19 @@ export function PrinterMaintenanceTab({
       ) : (
         <div className="space-y-4">
           {maintenanceLogs.map((log) => (
-            <div key={log.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">{new Date(log.date).toLocaleDateString()}</p>
-                  <p className="text-sm text-muted-foreground">Performed by: {log.performedBy}</p>
-                </div>
-                {log.scheduled && (
-                  <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                    Scheduled
-                  </div>
+            <div key={log.id} className="flex border-b py-3">
+              <div className="flex-1">
+                <h4 className="font-medium">{format(new Date(log.date), 'PP')}</h4>
+                <p className="text-sm text-muted-foreground">{log.notes}</p>
+              </div>
+              <div className="text-right text-sm">
+                <p className="text-muted-foreground">By: {log.performed_by}</p>
+                {log.scheduled && log.scheduled_date && (
+                  <p className="text-xs mt-1">
+                    Scheduled: {format(new Date(log.scheduled_date), 'PP')}
+                  </p>
                 )}
               </div>
-              <p className="mt-2 text-sm">{log.notes}</p>
             </div>
           ))}
         </div>

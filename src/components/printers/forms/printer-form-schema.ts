@@ -7,7 +7,7 @@ export const printerFormSchema = z.object({
   series: z.string().min(1, { message: "Series is required" }),
   model: z.string().min(1, { message: "Model is required" }),
   type: z.string().min(1, { message: "Type is required" }),
-  status: z.enum(["available", "rented", "deployed", "maintenance", "for_repair"] as const),
+  status: z.enum(["available", "rented", "deployed", "maintenance", "for_repair", "unknown", "retired"] as const),
   description: z.string().optional(),
   category: z.string().optional(),
   price: z.coerce.number().min(0, { message: "Price must be a positive number" }),
