@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Printer } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { Fab } from "@/components/ui/fab";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   "pending": { label: "Pending", color: "bg-amber-100 text-amber-800" },
@@ -69,6 +71,32 @@ export default function Maintenance() {
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
+  };
+
+  // Define the handler functions that were missing or misnamed
+  const setQuickUpdateDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setQuickUpdateDialogOpen(true);
+  };
+
+  const setServiceReportDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setServiceReportDialogOpen(true);
+  };
+
+  const setMarkRepairedDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setMarkRepairedDialogOpen(true);
+  };
+
+  const setDetailsDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setDetailsDialogOpen(true);
+  };
+
+  const setHistoryDialog = (printer: Printer) => {
+    setSelectedPrinter(printer);
+    setHistoryDialogOpen(true);
   };
 
   const maintenancePrinters = printers.filter(
@@ -135,7 +163,7 @@ export default function Maintenance() {
                     size="sm" 
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openQuickUpdateDialog(printer)}
+                    onClick={() => setQuickUpdateDialog(printer)}
                   >
                     <Wrench className="h-4 w-4" />
                     <span>Quick Update</span>
@@ -144,7 +172,7 @@ export default function Maintenance() {
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openServiceReportDialog(printer)}
+                    onClick={() => setServiceReportDialog(printer)}
                   >
                     <FileText className="h-4 w-4" />
                     <span>Generate Report</span>
@@ -153,7 +181,7 @@ export default function Maintenance() {
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openMarkRepairedDialog(printer)}
+                    onClick={() => setMarkRepairedDialog(printer)}
                   >
                     <Check className="h-4 w-4" />
                     <span>Repaired</span>
@@ -162,7 +190,7 @@ export default function Maintenance() {
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openDetailsDialog(printer)}
+                    onClick={() => setDetailsDialog(printer)}
                   >
                     <Info className="h-4 w-4" />
                     <span>Details</span>
@@ -171,7 +199,7 @@ export default function Maintenance() {
                     size="sm"
                     variant="outline"
                     className="flex items-center gap-1"
-                    onClick={() => openHistoryDialog(printer)}
+                    onClick={() => setHistoryDialog(printer)}
                   >
                     <History className="h-4 w-4" />
                     <span>History</span>
