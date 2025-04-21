@@ -72,62 +72,6 @@ export type Database = {
         }
         Relationships: []
       }
-      commercial_toner_products: {
-        Row: {
-          category: string[] | null
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          name: string
-          price: number
-          reorder_point: number
-          sku: string
-          stock_level: number
-          toner_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          category?: string[] | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name: string
-          price: number
-          reorder_point?: number
-          sku: string
-          stock_level?: number
-          toner_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category?: string[] | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          name?: string
-          price?: number
-          reorder_point?: number
-          sku?: string
-          stock_level?: number
-          toner_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "commercial_toner_products_toner_id_fkey"
-            columns: ["toner_id"]
-            isOneToOne: false
-            referencedRelation: "toners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       departments: {
         Row: {
           created_at: string | null
@@ -469,56 +413,17 @@ export type Database = {
             foreignKeyName: "printer_toner_compatibility_printer_wiki_id_fkey"
             columns: ["printer_wiki_id"]
             isOneToOne: false
-            referencedRelation: "printer_wiki"
+            referencedRelation: "wiki_printers"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "printer_toner_compatibility_toner_id_fkey"
             columns: ["toner_id"]
             isOneToOne: false
-            referencedRelation: "toners"
+            referencedRelation: "wiki_toners"
             referencedColumns: ["id"]
           },
         ]
-      }
-      printer_wiki: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          maintenance_tips: string | null
-          make: string
-          model: string
-          series: string
-          specs: Json | null
-          type: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          maintenance_tips?: string | null
-          make: string
-          model: string
-          series: string
-          specs?: Json | null
-          type?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          maintenance_tips?: string | null
-          make?: string
-          model?: string
-          series?: string
-          specs?: Json | null
-          type?: string | null
-          updated_at?: string
-        }
-        Relationships: []
       }
       printers: {
         Row: {
@@ -627,6 +532,62 @@ export type Database = {
             columns: ["department_id"]
             isOneToOne: false
             referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_toners: {
+        Row: {
+          category: string[] | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          price: number
+          reorder_point: number
+          sku: string
+          stock_level: number
+          toner_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          price: number
+          reorder_point?: number
+          sku: string
+          stock_level?: number
+          toner_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string[] | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          reorder_point?: number
+          sku?: string
+          stock_level?: number
+          toner_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_toner_products_toner_id_fkey"
+            columns: ["toner_id"]
+            isOneToOne: false
+            referencedRelation: "wiki_toners"
             referencedColumns: ["id"]
           },
         ]
@@ -824,99 +785,6 @@ export type Database = {
         }
         Relationships: []
       }
-      toners: {
-        Row: {
-          aliases: Json | null
-          base_model_reference: string | null
-          brand: string
-          category: string[] | null
-          color: string
-          compatible_printers: Json | null
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean | null
-          is_base_model: boolean | null
-          is_commercial_product: boolean | null
-          model: string
-          oem_code: string | null
-          page_yield: number
-          sku: string | null
-          stock: number
-          threshold: number
-          updated_at: string
-          variant_details: Json | null
-          variant_group_id: string | null
-          variant_name: string | null
-        }
-        Insert: {
-          aliases?: Json | null
-          base_model_reference?: string | null
-          brand: string
-          category?: string[] | null
-          color: string
-          compatible_printers?: Json | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_base_model?: boolean | null
-          is_commercial_product?: boolean | null
-          model: string
-          oem_code?: string | null
-          page_yield: number
-          sku?: string | null
-          stock?: number
-          threshold?: number
-          updated_at?: string
-          variant_details?: Json | null
-          variant_group_id?: string | null
-          variant_name?: string | null
-        }
-        Update: {
-          aliases?: Json | null
-          base_model_reference?: string | null
-          brand?: string
-          category?: string[] | null
-          color?: string
-          compatible_printers?: Json | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean | null
-          is_base_model?: boolean | null
-          is_commercial_product?: boolean | null
-          model?: string
-          oem_code?: string | null
-          page_yield?: number
-          sku?: string | null
-          stock?: number
-          threshold?: number
-          updated_at?: string
-          variant_details?: Json | null
-          variant_group_id?: string | null
-          variant_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_base_model"
-            columns: ["base_model_reference"]
-            isOneToOne: false
-            referencedRelation: "toners"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_variant_group"
-            columns: ["variant_group_id"]
-            isOneToOne: false
-            referencedRelation: "toners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       transfer_logs: {
         Row: {
           created_at: string | null
@@ -1067,6 +935,138 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      wiki_printers: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          maintenance_tips: string | null
+          make: string
+          model: string
+          series: string
+          specs: Json | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          maintenance_tips?: string | null
+          make: string
+          model: string
+          series: string
+          specs?: Json | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          maintenance_tips?: string | null
+          make?: string
+          model?: string
+          series?: string
+          specs?: Json | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wiki_toners: {
+        Row: {
+          aliases: Json | null
+          base_model_reference: string | null
+          brand: string
+          category: string[] | null
+          color: string
+          compatible_printers: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          is_base_model: boolean | null
+          is_commercial_product: boolean | null
+          model: string
+          oem_code: string | null
+          page_yield: number
+          sku: string | null
+          stock: number
+          threshold: number
+          updated_at: string
+          variant_details: Json | null
+          variant_group_id: string | null
+          variant_name: string | null
+        }
+        Insert: {
+          aliases?: Json | null
+          base_model_reference?: string | null
+          brand: string
+          category?: string[] | null
+          color: string
+          compatible_printers?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_base_model?: boolean | null
+          is_commercial_product?: boolean | null
+          model: string
+          oem_code?: string | null
+          page_yield: number
+          sku?: string | null
+          stock?: number
+          threshold?: number
+          updated_at?: string
+          variant_details?: Json | null
+          variant_group_id?: string | null
+          variant_name?: string | null
+        }
+        Update: {
+          aliases?: Json | null
+          base_model_reference?: string | null
+          brand?: string
+          category?: string[] | null
+          color?: string
+          compatible_printers?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          is_base_model?: boolean | null
+          is_commercial_product?: boolean | null
+          model?: string
+          oem_code?: string | null
+          page_yield?: number
+          sku?: string | null
+          stock?: number
+          threshold?: number
+          updated_at?: string
+          variant_details?: Json | null
+          variant_group_id?: string | null
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_base_model"
+            columns: ["base_model_reference"]
+            isOneToOne: false
+            referencedRelation: "wiki_toners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_variant_group"
+            columns: ["variant_group_id"]
+            isOneToOne: false
+            referencedRelation: "wiki_toners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -1,3 +1,4 @@
+
 export type PrinterStatus = 'available' | 'rented' | 'maintenance' | 'for_repair' | 'deployed';
 export type OwnershipType = 'system' | 'client';
 export type MaintenanceStatus = 'pending' | 'in_progress' | 'completed' | 'unrepairable' | 'decommissioned';
@@ -45,5 +46,72 @@ export interface WikiArticleType {
   associated_with?: string;
   status?: 'published' | 'pending' | 'rejected';
   submitted_by?: string;
-  videoUrl?: string; // Added to fix TypeScript error
+  videoUrl?: string;
+}
+
+export interface WikiPrinter {
+  id: string;
+  make: string;
+  series: string;
+  model: string;
+  description?: string;
+  type?: string;
+  created_at: string;
+  updated_at: string;
+  specs?: Record<string, any>;
+  maintenance_tips?: string;
+}
+
+export interface WikiToner {
+  id: string;
+  brand: string;
+  model: string;
+  color: string;
+  page_yield: number;
+  compatible_printers?: Record<string, any>;
+  stock: number;
+  threshold: number;
+  created_at: string;
+  updated_at: string;
+  image_url?: string;
+  is_active: boolean;
+  is_commercial_product?: boolean;
+  variant_details?: Record<string, any>;
+  is_base_model?: boolean;
+  base_model_reference?: string;
+  variant_group_id?: string;
+  aliases?: any[];
+  variant_name?: string;
+  description?: string;
+  sku?: string;
+  oem_code?: string;
+  category?: string[];
+}
+
+export interface CommercialTonerProduct {
+  id: string;
+  name: string;
+  sku: string;
+  price: number;
+  stock_level: number;
+  reorder_point: number;
+  is_active: boolean;
+  toner_id?: string;
+  created_at: string;
+  updated_at: string;
+  image_url?: string;
+  category: string[];
+  description?: string;
+  toner?: WikiToner;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  brand: string;
+  quantityInStock: number;
+  imageUrl: string;
 }

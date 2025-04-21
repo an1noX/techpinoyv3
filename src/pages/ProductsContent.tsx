@@ -6,10 +6,9 @@ import { ProductDetailsDialog } from '@/components/products/ProductDetailsDialog
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
-import { Product } from '@/types/types';
+import { Product, CommercialTonerProduct } from '@/types/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { EnhancedTonerType } from '@/pages/Store';
 
 const ProductsContent = () => {
   const [searchParams] = useSearchParams();
@@ -36,7 +35,7 @@ const ProductsContent = () => {
         .from('commercial_toner_products')
         .select(`
           *,
-          toner:toners (
+          toner:toner_id (
             id,
             brand,
             model,
@@ -63,7 +62,7 @@ const ProductsContent = () => {
         } else {
           // If no direct compatibility info, try to get printer info and match by brand/model
           const { data: printerData, error: printerError } = await supabase
-            .from('printer_wiki')
+            .from('wiki_printers')
             .select('*')
             .eq('id', printerParam)
             .single();
@@ -72,7 +71,15 @@ const ProductsContent = () => {
           
           if (printerData) {
             // Try to match toners that might be compatible based on printer make
-            query = query.filter('toner.brand', 'eq', printerData.make);
+            const { data: tonerData } = await supabase
+              .from('wiki_toners')
+              .select('id')
+              .filter('compatible_printers', 'cs', `{"make": "${printerData.make}"}`);
+              
+            if (tonerData && tonerData.length > 0) {
+              const matchedTonerIds = tonerData.map(t => t.id);
+              query = query.filter('toner_id', 'in', `(${matchedTonerIds.join(',')})`);
+            }
           }
         }
       }
@@ -102,7 +109,7 @@ const ProductsContent = () => {
   };
 
   // Map DB product to Product type
-  const mapDbToProduct = (item: any): Product => ({
+  const mapDbToProduct = (item: CommercialTonerProduct): Product => ({
     id: item.id,
     name: item.name,
     description: item.description || '',

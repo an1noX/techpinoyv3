@@ -3,6 +3,9 @@ import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { WikiArticleType } from "@/types/types";
+import { useToast } from "@/hooks/use-toast";
 
 // Utility to extract the YouTube video ID from various link formats
 function getYouTubeId(url: string): string | null {
@@ -48,12 +51,68 @@ export default function WikiArticleView() {
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const article = location.state?.article;
+  const { toast } = useToast();
+  const [article, setArticle] = React.useState<WikiArticleType | null>(
+    location.state?.article || null
+  );
+  const [loading, setLoading] = React.useState(!location.state?.article);
 
-  // If no article passed, redirect back to wiki
+  // If no article passed in location state, fetch it
   React.useEffect(() => {
-    if (!article) navigate("/wiki");
-  }, [article, navigate]);
+    if (!article && id) {
+      fetchArticle(id);
+    }
+  }, [id, article]);
+
+  const fetchArticle = async (articleId: string) => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('wiki_articles')
+        .select('*')
+        .eq('id', articleId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        // Map database fields to our WikiArticleType
+        const mappedArticle: WikiArticleType = {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          category: data.category,
+          tags: data.tags || [],
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          associated_with: data.associated_with || '',
+          status: data.status || 'published',
+          submitted_by: data.submitted_by || '',
+          videoUrl: data.video_url || '', // Map video_url to videoUrl
+        };
+        setArticle(mappedArticle);
+      }
+    } catch (error: any) {
+      console.error('Error fetching article:', error);
+      toast({
+        title: 'Error fetching article',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -102,7 +161,7 @@ export default function WikiArticleView() {
           )}
           <div className="prose">{article.content}</div>
           <div className="mt-6">
-            Associated Printer: <span className="font-semibold">{article.associatedWith || "None"}</span>
+            Associated Printer: <span className="font-semibold">{article.associated_with || "None"}</span>
           </div>
         </CardContent>
       </Card>

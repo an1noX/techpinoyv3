@@ -55,7 +55,12 @@ export function BottomNavigation() {
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-sm h-16">
       <nav className="flex h-full">
         {navItems.map((item) => {
-          const isActive = currentPath.startsWith(item.path);
+          // Updated logic to handle nested routes properly
+          const isActive = 
+            (item.path === '/wiki' && currentPath.startsWith('/wiki')) ||
+            (item.path === '/settings' && currentPath.startsWith('/settings')) ||
+            (item.path !== '/wiki' && item.path !== '/settings' && currentPath === item.path);
+            
           return (
             <Link
               key={item.name}

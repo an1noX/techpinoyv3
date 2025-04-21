@@ -19,20 +19,13 @@ import { StaticSettingsProvider } from "@/context/SettingsContext";
 import { useSettings } from "@/context/SettingsContext";
 import { supabase } from "@/integrations/supabase/client";
 import { seedTonerProducts } from "@/utils/seedToners";
+import { Product } from "@/types/types";
 
 // Enhanced static product interface, now matching the DB
-export interface EnhancedTonerType {
-  id: string;
-  name: string;
-  price: number;
+export interface EnhancedTonerType extends Product {
   manufacturer?: string;
   type?: "toner" | "ink" | "other";
   stock: number;
-  imageUrl: string;
-  category: string;
-  brand: string;
-  quantityInStock: number;
-  description?: string;
   sold_count?: number;
   created_at?: string;
   sku?: string;
@@ -79,7 +72,7 @@ const StoreContent = () => {
           .from("commercial_toner_products")
           .select(`
             *,
-            toner:toners (
+            toner:toner_id (
               brand
             )
           `)
