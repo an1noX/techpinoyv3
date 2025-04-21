@@ -18,7 +18,11 @@ export function useWikiArticles() {
         .order("updated_at", { ascending: false });
       if (error) throw error;
       console.log("Fetched wiki articles:", data);
-      return data || [];
+      // Cast the status field to ArticleStatus type
+      return (data || []).map(article => ({
+        ...article,
+        status: article.status as ArticleStatus
+      }));
     } catch (err: any) {
       toast({ description: `Error fetching articles: ${err.message}`, variant: "destructive" });
       return [];
@@ -38,7 +42,12 @@ export function useWikiArticles() {
         .maybeSingle();
       if (error) throw error;
       console.log("Fetched single wiki article:", data);
-      return data || null;
+      if (!data) return null;
+      // Cast the status field to ArticleStatus type
+      return {
+        ...data,
+        status: data.status as ArticleStatus
+      };
     } catch (err: any) {
       toast({ description: `Error fetching article: ${err.message}`, variant: "destructive" });
       return null;
