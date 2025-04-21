@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -15,7 +16,7 @@ import { WikiTonerForm } from '@/components/wiki/WikiTonerForm';
 import { WikiPrinterForm } from '@/components/wiki/WikiPrinterForm';
 import { WikiMaintenanceGuideForm } from '@/components/wiki/WikiMaintenanceGuideForm';
 import { WikiArticleForm } from '@/components/wiki/WikiArticleForm';
-import { MOCK_PRINTERS, MOCK_TONERS, mapPrinterToArticle, mapTonerToArticle } from "@/utils/mock-data";
+import { MOCK_PRINTERS, mapPrinterToArticle, mapTonerToArticle } from "@/utils/mock-data";
 import { WikiArticleType, ArticleStatus } from "@/types/types";
 
 export default function Wiki() {
@@ -283,7 +284,8 @@ export default function Wiki() {
   };
 
   const handleRefresh = () => {
-    // Refresh data after adding new entries
+    // Update the refresh function to actually fetch articles
+    fetchArticles();
   };
 
   return (
