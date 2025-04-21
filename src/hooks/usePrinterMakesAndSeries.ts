@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { mockPrinterMakes, mockPrinterSeries } from '@/data/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { PrinterSeries } from '@/types/types';
 
 interface Make {
@@ -9,37 +9,110 @@ interface Make {
 }
 
 export function usePrinterMakesAndSeries() {
-  const [makes, setMakes] = useState<Make[]>(mockPrinterMakes);
-  const [series, setSeries] = useState<PrinterSeries[]>(
-    mockPrinterSeries.map(s => ({
-      ...s,
-      makeId: s.makeId || '' // Ensure makeId is always set
-    }))
-  );
-  const [loading, setLoading] = useState(false);
+  const [makes, setMakes] = useState<Make[]>([]);
+  const [series, setSeries] = useState<PrinterSeries[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, you would fetch this data from your API/database
-    // For now, we're using mock data initialized in state
+    fetchMakesAndSeries();
   }, []);
 
-  const addNewMake = (name: string) => {
-    const newMake = {
-      id: crypto.randomUUID(),
-      name
-    };
-    setMakes(prev => [...prev, newMake]);
-    return newMake.id;
+  const fetchMakesAndSeries = async () => {
+    setLoading(true);
+    try {
+      // Fetch unique makes from wiki_printers
+      const { data: makesData, error: makesError } = await supabase
+        .from('wiki_printers')
+        .select('make')
+        .order('make')
+        .distinct();
+
+      if (makesError) throw makesError;
+
+      // Transform to expected format with IDs
+      const formattedMakes = makesData.map(item => ({
+        id: item.make.toLowerCase().replace(/\s+/g, '-'),
+        name: item.make
+      }));
+
+      setMakes(formattedMakes);
+
+      // Fetch unique series from wiki_printers
+      const { data: seriesData, error: seriesError } = await supabase
+        .from('wiki_printers')
+        .select('series, make')
+        .order('series')
+        .distinct();
+
+      if (seriesError) throw seriesError;
+
+      // Transform to expected format with makeId
+      const formattedSeries = seriesData
+        .filter(item => item.series) // Filter out null/empty series
+        .map(item => ({
+          id: item.series.toLowerCase().replace(/\s+/g, '-'),
+          name: item.series,
+          makeId: item.make.toLowerCase().replace(/\s+/g, '-')
+        }));
+
+      setSeries(formattedSeries);
+    } catch (error) {
+      console.error('Error fetching printer makes and series:', error);
+      // Fallback to empty arrays in case of error
+      setMakes([]);
+      setSeries([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addNewSeries = (name: string, makeId: string) => {
-    const newSeries = {
-      id: crypto.randomUUID(),
-      name,
-      makeId
-    };
-    setSeries(prev => [...prev, newSeries]);
-    return newSeries.id;
+  const addNewMake = async (name: string) => {
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    
+    // Check if make already exists
+    const { data, error } = await supabase
+      .from('wiki_printers')
+      .select('make')
+      .eq('make', name)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error checking make existence:', error);
+    }
+    
+    // Only add if doesn't exist
+    if (!data) {
+      // We don't directly insert a new make as it needs to be associated with a printer
+      // Instead, we'll add it to our local state for now
+      setMakes(prev => [...prev, { id, name }]);
+    }
+    
+    return id;
+  };
+
+  const addNewSeries = async (name: string, makeId: string) => {
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    const makeName = makes.find(make => make.id === makeId)?.name || '';
+    
+    // Check if series already exists for this make
+    const { data, error } = await supabase
+      .from('wiki_printers')
+      .select('series')
+      .eq('make', makeName)
+      .eq('series', name)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error checking series existence:', error);
+    }
+    
+    // Only add if doesn't exist
+    if (!data) {
+      // Similar to makes, we'll add it to local state since series must be associated with a printer
+      setSeries(prev => [...prev, { id, name, makeId }]);
+    }
+    
+    return id;
   };
 
   return {

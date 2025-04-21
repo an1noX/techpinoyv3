@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { Printer, Client } from '@/types/printers';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { PrinterStatus, OwnershipType } from '@/types/types';
 
 export const usePrinterDetail = (printerId: string) => {
   const [printer, setPrinter] = useState<Printer | null>(null);
@@ -20,7 +22,15 @@ export const usePrinterDetail = (printerId: string) => {
         .single();
       
       if (error) throw error;
-      setPrinter(data as Printer);
+      
+      // Ensure data conforms to our type expectations
+      const validatedPrinter: Printer = {
+        ...data,
+        status: validatePrinterStatus(data.status),
+        owned_by: validateOwnershipType(data.owned_by),
+      };
+      
+      setPrinter(validatedPrinter);
       
     } catch (error: any) {
       toast({
@@ -98,6 +108,18 @@ export const usePrinterDetail = (printerId: string) => {
       });
       return false;
     }
+  };
+
+  // Helper functions to validate data from Supabase
+  const validatePrinterStatus = (status: any): PrinterStatus => {
+    const validStatuses: PrinterStatus[] = ['available', 'rented', 'maintenance', 'for_repair', 'deployed'];
+    return validStatuses.includes(status as PrinterStatus) 
+      ? (status as PrinterStatus) 
+      : 'available';
+  };
+
+  const validateOwnershipType = (ownership: any): OwnershipType => {
+    return ownership === 'client' ? 'client' : 'system';
   };
 
   useEffect(() => {

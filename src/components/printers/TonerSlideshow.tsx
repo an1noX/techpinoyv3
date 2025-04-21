@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Printer } from 'lucide-react';
 
 interface TonerSlideshowProps {
   toners: TonerType[];
-  printerModel?: string; // Made optional to avoid breaking existing usage
+  printerModel?: string;
 }
 
 export function TonerSlideshow({ toners, printerModel }: TonerSlideshowProps) {
@@ -48,9 +48,9 @@ export function TonerSlideshow({ toners, printerModel }: TonerSlideshowProps) {
           
           <div className="flex items-center justify-center py-6">
             <div className="w-24 h-24 bg-gray-100 rounded-md flex items-center justify-center">
-              {currentToner.imageUrl ? (
+              {currentToner.image_url ? (
                 <img 
-                  src={currentToner.imageUrl} 
+                  src={currentToner.image_url} 
                   alt={currentToner.model || 'Toner'}
                   className="max-h-20 max-w-20 object-contain"
                 />

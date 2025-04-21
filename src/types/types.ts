@@ -30,6 +30,27 @@ export interface Printer {
   notes?: string;
 }
 
+export interface PrinterType extends Printer {
+  // Additional fields used in frontend components
+  type?: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  rentalPrice?: number;
+  quantityInStock?: number;
+  imageUrl?: string;
+  isRentalAvailable?: boolean;
+  isFeatured?: boolean;
+  toners?: string[];
+  ownership?: string;
+  clientId?: string;
+  oemToner?: string;
+  // Fields for UI display
+  client?: string;
+  department?: string;
+  assignedAdmin?: string;
+}
+
 export interface Department {
   id: string;
   name: string;
@@ -45,7 +66,7 @@ export interface WikiArticleType {
   created_at: string;
   updated_at: string;
   associated_with?: string;
-  status?: 'published' | 'pending' | 'rejected';
+  status: 'published' | 'pending' | 'rejected';
   submitted_by?: string;
   videoUrl?: string;
 }
@@ -87,6 +108,7 @@ export interface WikiToner {
   sku?: string;
   oem_code?: string;
   category?: string[];
+  name?: string; // Added for compatibility with TonerType usage
 }
 
 export interface CommercialTonerProduct {
@@ -119,13 +141,17 @@ export interface Product {
 
 export interface TonerType {
   id: string;
-  name: string;
+  name?: string;
   brand: string;
   model: string;
   color: string;
   page_yield: number;
   oem_code?: string;
   aliases?: string[];
+  compatibility?: string[];
+  manufacturer?: string;
+  image_url?: string; // Updated to match WikiToner
+  price?: number; // For display in UI components
 }
 
 export interface OEMToner {
@@ -164,4 +190,40 @@ export interface UserWithRole {
   first_name: string;
   last_name: string;
   role: UserRole;
+}
+
+export interface TransferLogType {
+  id: string;
+  printer_id: string;
+  printer_model: string;
+  from_client?: string;
+  to_client?: string;
+  from_department?: string;
+  to_department?: string;
+  from_user?: string;
+  to_user?: string;
+  transferred_by: string;
+  date: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MaintenanceLogType {
+  id: string;
+  printer_id: string;
+  printer_model: string;
+  performed_by: string;
+  date: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  scheduled?: boolean;
+  scheduled_date?: string;
+}
+
+export interface PrinterSeries {
+  id: string;
+  name: string;
+  makeId: string;
 }
