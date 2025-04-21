@@ -1,233 +1,284 @@
-import React, { useState } from 'react';
-import { TransferLogType } from '@/types/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { toBackendTransferLog } from '@/utils/typeHelpers';
 
-const transferFormSchema = z.object({
-  toClient: z.string().optional(),
-  toDepartment: z.string().optional(),
-  toUser: z.string().optional(),
-  notes: z.string().optional()
-});
-
-type TransferFormValues = z.infer<typeof transferFormSchema>;
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Printer } from "@/types/types";
+import { toBackendTransferLog } from "@/utils/typeHelpers";
 
 interface TransferDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  printerId: string;
-  printerModel: string;
-  currentClient?: string;
-  currentClientId?: string;
-  currentDepartment?: string;
-  currentDepartmentId?: string;
-  currentUser?: string;
-  currentUserId?: string;
-  clients: Array<{ id: string; name: string }>;
-  departments: Array<{ id: string; name: string, client_id?: string }>;
-  users: Array<{ id: string; name: string }>;
-  onTransfer: (log: TransferLogType) => void;
+  printer: Printer;
+  onSuccess?: () => void;
 }
 
-export function TransferDialog({
-  open,
-  onOpenChange,
-  printerId,
-  printerModel,
-  currentClient,
-  currentClientId,
-  currentDepartment,
-  currentDepartmentId,
-  currentUser,
-  currentUserId,
-  clients,
-  departments,
-  users,
-  onTransfer
+export function TransferDialog({ 
+  open, 
+  onOpenChange, 
+  printer, 
+  onSuccess 
 }: TransferDialogProps) {
-  const [filteredDepartments, setFilteredDepartments] = useState(departments);
-
-  const form = useForm<TransferFormValues>({
-    resolver: zodResolver(transferFormSchema),
-    defaultValues: {
-      toClient: '',
-      toDepartment: '',
-      toUser: '',
-      notes: ''
+  const { toast } = useToast();
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
+  const [transferTo, setTransferTo] = useState<"client" | "department" | "user">("client");
+  const [selectedClient, setSelectedClient] = useState<string>("");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [selectedUser, setSelectedUser] = useState<string>("");
+  const [users, setUsers] = useState<{ id: string; name: string }[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  
+  useEffect(() => {
+    if (open) {
+      fetchClients();
+      fetchDepartments();
+      fetchUsers();
     }
-  });
-
-  const onSubmit = (data: TransferFormValues) => {
-    const transferLog: TransferLogType = {
-      id: crypto.randomUUID(),
-      printer_id: printerId,
-      printer_model: printerModel,
-      from_client: currentClient,
-      from_client_id: currentClientId,
-      from_department: currentDepartment,
-      from_department_id: currentDepartmentId,
-      from_user: currentUser,
-      from_user_id: currentUserId,
-      to_client: clients.find(c => c.id === data.toClient)?.name,
-      to_client_id: data.toClient,
-      to_department: departments.find(d => d.id === data.toDepartment)?.name,
-      to_department_id: data.toDepartment,
-      to_user: users.find(u => u.id === data.toUser)?.name,
-      to_user_id: data.toUser,
-      transferred_by: 'Admin User', // This should come from auth context in a real app
-      date: new Date().toISOString(),
-      notes: data.notes,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      
-      // Add frontend compatibility fields
-      printerId,
-      fromClient: currentClient,
-      fromClientId: currentClientId,
-      fromDepartment: currentDepartment,
-      fromDepartmentId: currentDepartmentId,
-      fromUser: currentUser,
-      fromUserId: currentUserId,
-      toClient: clients.find(c => c.id === data.toClient)?.name,
-      toClientId: data.toClient,
-      toDepartment: departments.find(d => d.id === data.toDepartment)?.name,
-      toDepartmentId: data.toDepartment,
-      toUser: users.find(u => u.id === data.toUser)?.name,
-      toUserId: data.toUser
-    };
-
-    onTransfer(transferLog);
-    onOpenChange(false);
-    form.reset();
-  };
-
-  // Filter departments when client selection changes
-  const handleClientChange = (value: string) => {
-    form.setValue('toClient', value);
-    form.setValue('toDepartment', ''); // Reset department when client changes
+  }, [open]);
+  
+  const fetchClients = async () => {
+    const { data, error } = await supabase
+      .from("clients")
+      .select("id, name")
+      .order("name");
     
-    if (value) {
-      const filtered = departments.filter(dept => dept.client_id === value);
-      setFilteredDepartments(filtered);
-    } else {
-      setFilteredDepartments(departments);
+    if (!error && data) {
+      setClients(data);
     }
   };
-
+  
+  const fetchDepartments = async () => {
+    const { data, error } = await supabase
+      .from("departments")
+      .select("id, name");
+    
+    if (!error && data) {
+      setDepartments(data);
+    }
+  };
+  
+  const fetchUsers = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name");
+    
+    if (!error && data) {
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: `${user.first_name} ${user.last_name}`.trim() || user.id
+      }));
+      setUsers(formattedUsers);
+    }
+  };
+  
+  const handleTransfer = async () => {
+    setSubmitting(true);
+    
+    try {
+      // 1. Create transfer log
+      const transferLog = {
+        id: crypto.randomUUID(),
+        printerId: printer.id,
+        printer_id: printer.id,
+        printer_model: `${printer.make} ${printer.model}`,
+        from_client: printer.assigned_to || null,
+        fromClient: printer.assigned_to || null,
+        fromClientId: printer.client_id || null,
+        to_client: transferTo === "client" ? clients.find(c => c.id === selectedClient)?.name || null : null,
+        toClient: transferTo === "client" ? clients.find(c => c.id === selectedClient)?.name || null : null,
+        toClientId: transferTo === "client" ? selectedClient : null,
+        from_department: printer.department || null,
+        fromDepartment: printer.department || null,
+        fromDepartmentId: printer.department_id || null,
+        to_department: transferTo === "department" ? departments.find(d => d.id === selectedDepartment)?.name || null : null,
+        toDepartment: transferTo === "department" ? departments.find(d => d.id === selectedDepartment)?.name || null : null,
+        toDepartmentId: transferTo === "department" ? selectedDepartment : null,
+        from_user: null,
+        fromUser: null,
+        fromUserId: null,
+        to_user: transferTo === "user" ? users.find(u => u.id === selectedUser)?.name || null : null,
+        toUser: transferTo === "user" ? users.find(u => u.id === selectedUser)?.name || null : null,
+        toUserId: transferTo === "user" ? selectedUser : null,
+        transferred_by: "System", // Should be current user in a real implementation
+        date: new Date().toISOString(),
+        notes: `Transfer from ${printer.assigned_to || "Unassigned"} to ${
+          transferTo === "client" ? clients.find(c => c.id === selectedClient)?.name : 
+          transferTo === "department" ? departments.find(d => d.id === selectedDepartment)?.name : 
+          users.find(u => u.id === selectedUser)?.name || "Unknown"
+        }`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Convert to backend format
+      const backendTransferLog = toBackendTransferLog(transferLog);
+      
+      const { error: transferError } = await supabase
+        .from("transfer_logs")
+        .insert(backendTransferLog);
+      
+      if (transferError) throw transferError;
+      
+      // 2. Update printer assignment
+      const update: Record<string, any> = {
+        updated_at: new Date().toISOString()
+      };
+      
+      if (transferTo === "client") {
+        update.client_id = selectedClient;
+        update.assigned_to = clients.find(c => c.id === selectedClient)?.name || null;
+        update.department = null;
+        update.department_id = null;
+      } else if (transferTo === "department") {
+        update.department = departments.find(d => d.id === selectedDepartment)?.name || null;
+        update.department_id = selectedDepartment;
+      }
+      
+      const { error: updateError } = await supabase
+        .from("printers")
+        .update(update)
+        .eq("id", printer.id);
+      
+      if (updateError) throw updateError;
+      
+      toast({
+        title: "Transfer successful",
+        description: "Printer has been transferred successfully."
+      });
+      
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Transfer failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Transfer Printer</DialogTitle>
           <DialogDescription>
-            Transfer this printer to a new client, department, or user.
+            Transfer this printer to a different client, department, or user.
           </DialogDescription>
         </DialogHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="client" className="text-right">
-                  Client
-                </Label>
-                <div className="col-span-3">
-                  <Select
-                    value={form.watch('toClient')}
-                    onValueChange={handleClientChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="department" className="text-right">
-                  Department
-                </Label>
-                <div className="col-span-3">
-                  <Select
-                    value={form.watch('toDepartment')}
-                    onValueChange={form.setValue('toDepartment')}
-                    disabled={filteredDepartments.length === 0}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredDepartments.map((department) => (
-                        <SelectItem key={department.id} value={department.id}>
-                          {department.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="user" className="text-right">
-                  Assign To
-                </Label>
-                <div className="col-span-3">
-                  <Select value={form.watch('toUser')} onValueChange={form.setValue('toUser')}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select user" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users.map((user) => (
-                        <SelectItem key={user.id} value={user.id}>
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="notes" className="text-right">
-                  Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  className="col-span-3"
-                  placeholder="Add transfer notes..."
-                  value={form.watch('notes')}
-                  onChange={(e) => form.setValue('notes', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={!form.watch('toClient') && !form.watch('toDepartment') && !form.watch('toUser')}
+        
+        <div className="space-y-4">
+          <div>
+            <Label>Transfer To</Label>
+            <Select 
+              value={transferTo} 
+              onValueChange={(value: "client" | "department" | "user") => {
+                setTransferTo(value);
+                setSelectedClient("");
+                setSelectedDepartment("");
+                setSelectedUser("");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select transfer type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="department">Department</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {transferTo === "client" && (
+            <div>
+              <Label>Select Client</Label>
+              <Select 
+                value={selectedClient}
+                onValueChange={setSelectedClient}
               >
-                Transfer
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select client" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {transferTo === "department" && (
+            <div>
+              <Label>Select Department</Label>
+              <Select 
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {transferTo === "user" && (
+            <div>
+              <Label>Select User</Label>
+              <Select 
+                value={selectedUser}
+                onValueChange={setSelectedUser}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleTransfer}
+            disabled={submitting || (
+              (transferTo === "client" && !selectedClient) ||
+              (transferTo === "department" && !selectedDepartment) ||
+              (transferTo === "user" && !selectedUser)
+            )}
+          >
+            {submitting ? "Transferring..." : "Transfer"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

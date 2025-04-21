@@ -30,11 +30,13 @@ export interface Printer {
   assigned_to?: string;
   client_id?: string;
   department?: string;
+  department_id?: string;
   location?: string;
   is_for_rent?: boolean;
   created_at: string;
   updated_at: string;
   serialNumber?: string;
+  serial_number?: string;
   notes?: string;
 }
 
@@ -165,8 +167,8 @@ export interface TonerType {
   manufacturer?: string;
   image_url?: string;
   price?: number;
-  stock?: number;
-  threshold?: number;
+  stock: number; // Make this required to match WikiToner
+  threshold: number; // Make this required to match WikiToner
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;

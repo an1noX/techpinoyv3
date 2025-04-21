@@ -27,12 +27,18 @@ export function UserRoleManager() {
         throw error;
       }
       
+      // Ensure we have proper UserRole type
+      const validateUserRole = (role: string): UserRole => {
+        const validRoles: UserRole[] = ['admin', 'user', 'technician', 'client'];
+        return validRoles.includes(role as UserRole) ? (role as UserRole) : 'user';
+      };
+      
       const usersList: UserWithRole[] = data?.map(profile => ({
         id: profile.id,
         email: '', // This won't be available without accessing auth.users
         first_name: profile.first_name,
         last_name: profile.last_name,
-        role: profile.role || 'user',
+        role: validateUserRole(profile.role),
         // Add frontend compatibility fields
         firstName: profile.first_name,
         lastName: profile.last_name

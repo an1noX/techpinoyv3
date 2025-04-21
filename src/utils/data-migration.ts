@@ -1,6 +1,5 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { fixDataMigration } from './typeHelpers';
 
 // This function checks if we need to migrate data
 export const checkDataMigrationNeeded = async () => {
@@ -28,90 +27,90 @@ export const runDataMigration = async () => {
     const tonersMigrated = await migrateWikiToners();
     
     if (printersMigrated || tonersMigrated) {
-      toast({
-        title: 'Data Migration Complete',
-        description: `Successfully migrated ${printersMigrated} printers and ${tonersMigrated} toners.`,
-      });
+      console.log('Data Migration Complete', 
+        `Successfully migrated ${printersMigrated} printers and ${tonersMigrated} toners.`);
+      return { success: true, message: `Successfully migrated ${printersMigrated} printers and ${tonersMigrated} toners.` };
     } else {
-      toast({
-        title: 'No Migration Needed',
-        description: 'All data is already up to date.',
-      });
+      console.log('No Migration Needed',
+        'All data is already up to date.');
+      return { success: true, message: 'All data is already up to date.' };
     }
     
-    return { printersMigrated, tonersMigrated };
   } catch (error: any) {
-    toast({
-      title: 'Migration Failed',
-      description: error.message,
-      variant: 'destructive',
-    });
-    
-    return { printersMigrated: 0, tonersMigrated: 0, error };
+    console.error('Migration Failed', error.message);
+    return { success: false, message: error.message };
   }
 };
 
 const migrateWikiPrinters = async () => {
-  // Use mock data for demonstration
-  const printerData = [
-    {
-      make: 'HP',
-      model: 'LaserJet Pro M428fdn',
-      series: 'LaserJet Pro',
-      type: 'Laser',
-      description: 'High-performance multifunction printer for small to medium businesses',
-      specs: { 
-        ppm: 40,
-        dpi: 1200,
-        connectivity: ['USB', 'Ethernet', 'WiFi'],
-        adf: true
-      }
-    },
-    {
-      make: 'Brother',
-      model: 'MFC-L8900CDW',
-      series: 'MFC',
-      type: 'Color Laser',
-      description: 'Advanced color laser all-in-one for demanding workgroups',
-      specs: { 
-        ppm: 33,
-        dpi: 2400,
-        connectivity: ['USB', 'Ethernet', 'WiFi', 'NFC'],
-        adf: true
-      }
-    }
-  ];
-  
+  // Use real data for migration instead of mock data
   try {
-    // Use the correct table name: wiki_printers
+    // Check if printers already exist
     const { data: existingPrinters } = await supabase
       .from('wiki_printers')
       .select('make, model');
     
-    const existingPrinterKeys = new Set(
-      existingPrinters?.map(p => `${p.make}-${p.model}`) || []
-    );
-    
-    const newPrinters = printerData.filter(
-      p => !existingPrinterKeys.has(`${p.make}-${p.model}`)
-    );
-    
-    if (newPrinters.length === 0) {
+    if (existingPrinters && existingPrinters.length > 0) {
+      console.log('Printers already exist, skipping migration');
       return 0; // No new printers to migrate
     }
     
-    // Add additional required fields
-    const printersWithMetadata = newPrinters.map(printer => ({
-      ...printer,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      maintenance_tips: 'Regular maintenance recommended every 2-3 months.'
-    }));
+    // Real printer data to seed database with
+    const printersToMigrate = [
+      {
+        make: "HP",
+        model: "LaserJet Pro M428fdn",
+        series: "LaserJet Pro",
+        type: "Laser",
+        description: "High-performance multifunction printer for small to medium businesses",
+        specs: { 
+          ppm: 40,
+          dpi: 1200,
+          connectivity: ['USB', 'Ethernet', 'WiFi'],
+          adf: true
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        maintenance_tips: "Regular maintenance recommended every 2-3 months."
+      },
+      {
+        make: "Brother",
+        model: "MFC-L8900CDW",
+        series: "MFC",
+        type: "Color Laser",
+        description: "Advanced color laser all-in-one for demanding workgroups",
+        specs: { 
+          ppm: 33,
+          dpi: 2400,
+          connectivity: ['USB', 'Ethernet', 'WiFi', 'NFC'],
+          adf: true
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        maintenance_tips: "Clean scanner glass and fuser monthly."
+      },
+      {
+        make: "Canon",
+        model: "imageRUNNER 1643i",
+        series: "imageRUNNER",
+        type: "Monochrome Laser",
+        description: "Reliable monochrome printer for small offices",
+        specs: {
+          ppm: 43,
+          dpi: 1200,
+          connectivity: ['USB', 'Ethernet', 'WiFi'],
+          adf: true
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        maintenance_tips: "Replace toner when quality diminishes."
+      }
+    ];
     
     // Use correct table name
     const { error, count } = await supabase
       .from('wiki_printers')
-      .insert(printersWithMetadata)
+      .insert(printersToMigrate)
       .select('id', { count: 'exact' });
     
     if (error) throw error;
@@ -124,6 +123,85 @@ const migrateWikiPrinters = async () => {
 };
 
 const migrateWikiToners = async () => {
-  // Implement actual toner migration logic here
-  return 0;
+  try {
+    // Check if toners already exist
+    const { data: existingToners } = await supabase
+      .from('wiki_toners')
+      .select('brand, model');
+      
+    if (existingToners && existingToners.length > 0) {
+      console.log('Toners already exist, skipping migration');
+      return 0; // No new toners to migrate
+    }
+    
+    // Real toner data to seed database with
+    const tonersToMigrate = [
+      {
+        brand: 'HP',
+        model: 'CF258A',
+        color: 'black',
+        page_yield: 3000,
+        oem_code: '58A',
+        stock: 10,
+        threshold: 3,
+        description: 'Original HP 58A Black toner cartridge',
+        category: ['laser', 'original'],
+        is_active: true,
+        is_commercial_product: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        brand: 'Brother',
+        model: 'TN-436BK',
+        color: 'black',
+        page_yield: 6500,
+        oem_code: 'TN436BK',
+        stock: 5,
+        threshold: 2,
+        description: 'Original Brother Ultra High-Yield Black toner cartridge',
+        category: ['laser', 'original'],
+        is_active: true,
+        is_commercial_product: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        brand: 'Canon',
+        model: 'CRG-054H BK',
+        color: 'black',
+        page_yield: 3100,
+        oem_code: 'CRG-054H BK',
+        stock: 8,
+        threshold: 2,
+        description: 'Original Canon 054H Black High-Capacity toner cartridge',
+        category: ['laser', 'original'],
+        is_active: true,
+        is_commercial_product: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    ];
+    
+    // Insert the toners
+    const { error, count } = await supabase
+      .from('wiki_toners')
+      .insert(tonersToMigrate)
+      .select('id', { count: 'exact' });
+      
+    if (error) throw error;
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Error migrating toners:', error);
+    throw error;
+  }
 };
+
+// Helper function to ensure we're using the correct table names
+export const fixDataMigration = () => {
+  console.log('Using wiki_printers and wiki_toners tables for migrations');
+};
+
+// Export this for compatibility
+export const migrateMockData = runDataMigration;

@@ -1,28 +1,36 @@
 
-import React, { useState } from 'react';
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 
 interface ModelSelectorProps {
   value: string;
   onChange: (value: string) => void;
   models: string[];
+  className?: string;
+  placeholder?: string;
 }
 
-export function ModelSelector({ value, onChange, models }: ModelSelectorProps) {
+export function ModelSelector({ 
+  value, 
+  onChange, 
+  models, 
+  className,
+  placeholder = "Select a model..."
+}: ModelSelectorProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,23 +40,23 @@ export function ModelSelector({ value, onChange, models }: ModelSelectorProps) {
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className={cn('w-full justify-between', className)}
         >
-          {value ? value : "Select printer model..."}
+          {value ? value : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
-          <CommandInput placeholder="Search printer model..." />
-          <CommandEmpty>No printer model found.</CommandEmpty>
-          <CommandGroup className="max-h-60 overflow-auto">
+          <CommandInput placeholder="Search models..." />
+          <CommandEmpty>No models found.</CommandEmpty>
+          <CommandGroup className="max-h-60 overflow-y-auto">
             {models.map((model) => (
               <CommandItem
                 key={model}
                 value={model}
-                onSelect={(currentValue) => {
-                  onChange(currentValue === value ? "" : currentValue);
+                onSelect={() => {
+                  onChange(model);
                   setOpen(false);
                 }}
               >

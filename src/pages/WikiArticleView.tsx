@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { WikiArticle, ArticleStatus } from '@/types/types';
-import { toast } from 'sonner';
+import { WikiArticle, ArticleStatus, UserRole } from '@/types/types';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Edit, Trash2, Clock, Check, X } from 'lucide-react';
@@ -45,6 +46,7 @@ export default function WikiArticleView() {
   const { user, hasRole } = useAuth();
   const [article, setArticle] = useState<WikiArticle | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     fetchArticle();
@@ -65,8 +67,7 @@ export default function WikiArticleView() {
       setArticle(data as WikiArticle);
     } catch (error: any) {
       toast({
-        title: "Error fetching article",
-        description: error.message,
+        description: `Error fetching article: ${error.message}`,
         variant: "destructive"
       });
     } finally {
@@ -89,19 +90,18 @@ export default function WikiArticleView() {
       setArticle(prev => prev ? { ...prev, status } : null);
       
       toast({
-        title: "Status updated",
         description: `Article has been ${status}.`
       });
     } catch (error: any) {
       toast({
-        title: "Error updating status",
-        description: error.message,
+        description: `Error updating status: ${error.message}`,
         variant: "destructive"
       });
     }
   };
   
-  const canEdit = hasRole('admin') || hasRole('editor');
+  // Check user has admin or editor role
+  const canEdit = hasRole('admin') || (hasRole as any)('editor');
   const canDelete = hasRole('admin');
   
   const handleDelete = async () => {
@@ -120,15 +120,13 @@ export default function WikiArticleView() {
       if (error) throw error;
       
       toast({
-        title: "Article deleted",
         description: "Article has been successfully deleted."
       });
       
       navigate('/wiki');
     } catch (error: any) {
       toast({
-        title: "Error deleting article",
-        description: error.message,
+        description: `Error deleting article: ${error.message}`,
         variant: "destructive"
       });
     }

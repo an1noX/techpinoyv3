@@ -1,33 +1,11 @@
 
-import { migrateMockData } from './data-migration';
-import { useToast } from '@/hooks/use-toast';
+import { runDataMigration, migrateMockData } from "./data-migration";
 
-export const runDataMigration = async () => {
-  const { toast } = useToast();
-  
-  try {
-    const result = await migrateMockData();
-    
-    if (result.success) {
-      toast({
-        title: "Data migration successful",
-        description: "Mock data has been successfully migrated to Supabase",
-      });
-      return true;
-    } else {
-      toast({
-        title: "Data migration failed",
-        description: result.error?.message || "An unknown error occurred",
-        variant: "destructive"
-      });
-      return false;
-    }
-  } catch (error: any) {
-    toast({
-      title: "Data migration failed",
-      description: error.message || "An unknown error occurred",
-      variant: "destructive"
-    });
-    return false;
-  }
+export const initializeSystem = async () => {
+  // Check if migration is needed and run it
+  const result = await runDataMigration();
+  return result;
 };
+
+// Export migrateMockData for backward compatibility
+export { migrateMockData };

@@ -2,16 +2,39 @@
 import { UseFormReturn } from "react-hook-form";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TonerType } from "@/types/types";
+import { WikiToner, TonerType } from "@/types/types";
 import { PrinterFormValues } from "@/components/printers/forms/printer-form-schema";
-import { TonerSelector } from "@/components/toners/TonerSelector";
+import { wikiTonerToTonerType } from "@/utils/typeHelpers";
+
+interface TonerSelectorProps {
+  value: string;
+  onChange: (value: string) => void;
+  toners: TonerType[];
+}
+
+export const TonerSelector = ({ value, onChange, toners }: TonerSelectorProps) => {
+  return (
+    <select 
+      className="w-full rounded-md border border-input bg-background px-3 py-2"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="">Select primary toner</option>
+      {toners.map((toner) => (
+        <option key={toner.id} value={toner.id}>
+          {toner.name || `${toner.brand} ${toner.model} (${toner.color})`}
+        </option>
+      ))}
+    </select>
+  );
+};
 
 interface TonerSectionProps {
   form: UseFormReturn<PrinterFormValues>;
-  toners: TonerType[];
+  toners: WikiToner[];
   selectedToners: string[];
   onTonerChange: (tonerId: string) => void;
-  onAddToner?: (toner: TonerType) => void;
+  onAddToner?: (toner: WikiToner) => void;
 }
 
 export function TonerSection({ 
@@ -29,6 +52,9 @@ export function TonerSection({
     }
   };
 
+  // Convert WikiToner to TonerType for type compatibility
+  const convertedToners = toners.map(wikiTonerToTonerType);
+
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Compatible Toners</h3>
@@ -38,7 +64,7 @@ export function TonerSection({
           <TonerSelector
             value={selectedToners[0] || ""}
             onChange={handleTonerSelectorChange}
-            toners={toners}
+            toners={convertedToners}
           />
         </div>
       )}

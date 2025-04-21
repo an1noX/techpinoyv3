@@ -16,6 +16,7 @@ export function ShopByBrandSection() {
   const fetchBrands = async () => {
     setIsLoading(true);
     try {
+      // Using wiki_printers table which has make information
       const { data, error } = await supabase
         .from('wiki_printers')
         .select('make')
@@ -25,10 +26,17 @@ export function ShopByBrandSection() {
       
       // Extract unique makes
       const uniqueMakes = Array.from(new Set(data.map(item => item.make)));
-      setBrands(uniqueMakes.map(make => ({ name: make })));
+      
+      // Format as Brand objects
+      const brandObjects = uniqueMakes.map(make => ({ 
+        name: make,
+        // You could later add logo URLs from storage
+        logo: undefined 
+      }));
+      
+      setBrands(brandObjects);
     } catch (error) {
       console.error('Error fetching brands:', error);
-      // You might want to handle this error in the UI
     } finally {
       setIsLoading(false);
     }
