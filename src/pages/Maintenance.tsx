@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Printer, MaintenanceStatus } from "@/types/printers";
+import { Printer, MaintenanceStatus, PrinterStatus } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,13 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   "not_tracked": { label: "No Record", color: "bg-muted text-muted-foreground" },
 };
 
+// Define the type for the form state to fix the type error
+type MaintenanceFormState = {
+  printerId: string;
+  status: PrinterStatus;
+  notes: string;
+};
+
 export default function Maintenance() {
   const { printers, loading, refetch } = usePrintersWithStatus();
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
@@ -35,9 +42,9 @@ export default function Maintenance() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [addMaintOpen, setAddMaintOpen] = useState(false);
-  const [addMaintForm, setAddMaintForm] = useState({
+  const [addMaintForm, setAddMaintForm] = useState<MaintenanceFormState>({
     printerId: "",
-    status: "maintenance" as const,
+    status: "maintenance",
     notes: "",
   });
 
@@ -244,7 +251,7 @@ export default function Maintenance() {
                 className="w-full border rounded p-2"
                 value={addMaintForm.printerId}
                 onChange={e =>
-                  setAddMaintForm(form => ({ ...form, printerId: e.target.value }))
+                  setAddMaintForm({ ...addMaintForm, printerId: e.target.value })
                 }
                 required
               >
@@ -262,7 +269,7 @@ export default function Maintenance() {
                 className="w-full border rounded p-2"
                 value={addMaintForm.status}
                 onChange={e =>
-                  setAddMaintForm(form => ({ ...form, status: e.target.value }))
+                  setAddMaintForm({ ...addMaintForm, status: e.target.value as PrinterStatus })
                 }
                 required
               >
@@ -275,7 +282,7 @@ export default function Maintenance() {
               <Input
                 value={addMaintForm.notes}
                 onChange={e =>
-                  setAddMaintForm(form => ({ ...form, notes: e.target.value }))
+                  setAddMaintForm({ ...addMaintForm, notes: e.target.value })
                 }
                 placeholder="Add remarks, issues, etc."
               />
