@@ -4,10 +4,9 @@ import { MobileLayout } from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Pencil, ArrowLeft, Trash2 } from 'lucide-react';
+import { Pencil, ArrowLeft, Trash2, Tag } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { TonerCompatibilityManager } from '@/components/TonerCompatibilityManager';
 
 interface WikiPrinter {
   id: string;
@@ -16,8 +15,19 @@ interface WikiPrinter {
   model: string;
   maintenance_tips?: string;
   specs?: any;
+  description?: string;
+  oem_toner?: string | null;
+  type?: string;
   created_at: string;
   updated_at: string;
+}
+
+interface Toner {
+  id: string;
+  model: string;
+  brand: string;
+  color: string;
+  oem_code?: string;
 }
 
 export default function WikiDetail() {
@@ -27,27 +37,31 @@ export default function WikiDetail() {
   const [printer, setPrinter] = useState<WikiPrinter | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('specs');
-  
+  const [oemToner, setOemToner] = useState<Toner | null>(null);
+  const [compatibleToners, setCompatibleToners] = useState<Toner[]>([]);
+
   useEffect(() => {
-    if (id) {
-      fetchPrinterDetails(id);
-    }
+    if (id) fetchPrinterDetails(id);
   }, [id]);
-  
+
+  useEffect(() => {
+    if (printer && printer.oem_toner) {
+      fetchOemTonerAndCompatibles(printer.oem_toner);
+    } else {
+      setOemToner(null);
+      setCompatibleToners([]);
+    }
+  }, [printer]);
+
   const fetchPrinterDetails = async (printerId: string) => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('printer_wiki')
         .select('*')
         .eq('id', printerId)
-        .single();
-      
-      if (error) {
-        throw error;
-      }
-      
+        .maybeSingle();
+      if (error) throw error;
       setPrinter(data);
     } catch (error: any) {
       toast({
@@ -55,54 +69,52 @@ export default function WikiDetail() {
         description: error.message,
         variant: "destructive"
       });
-      
-      // If we can't fetch the printer, create mock data for development
-      const mockPrinter: WikiPrinter = {
-        id: '1',
-        make: 'HP',
-        series: 'LaserJet',
-        model: 'Pro MFP M428fdn',
-        maintenance_tips: 'Regular maintenance includes cleaning the print heads every 3 months and replacing the drum after 30,000 pages.',
-        specs: {
-          resolution: '1200 x 1200 dpi',
-          paperSize: 'A4, A5, Letter',
-          connectivity: 'USB, Ethernet, Wi-Fi',
-          printSpeed: '38 ppm',
-          dimensions: '420 x 390 x 323 mm',
-          weight: '12.9 kg'
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      setPrinter(mockPrinter);
+      setPrinter(null);
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const fetchOemTonerAndCompatibles = async (oemTonerId: string) => {
+    setOemToner(null);
+    setCompatibleToners([]);
+    const { data: toner, error: tonerError } = await supabase
+      .from('toners')
+      .select('id, model, brand, oem_code, color')
+      .eq('id', oemTonerId)
+      .maybeSingle();
+    if (!toner || tonerError) return;
+
+    setOemToner(toner as Toner);
+
+    const { data: compatibles, error: compatiblesErr } = await supabase
+      .from('toners')
+      .select('id, model, brand, oem_code, color')
+      .eq('base_model_reference', oemTonerId);
+
+    if (!compatibles || compatiblesErr) {
+      setCompatibleToners([]);
+      return;
+    }
+    setCompatibleToners(compatibles as Toner[]);
+  };
+
   const handleEditPrinter = () => {
     navigate(`/wiki/edit/${id}`);
   };
-  
+
   const handleDeletePrinter = async () => {
     if (!printer) return;
-    
     try {
       const { error } = await supabase
         .from('printer_wiki')
         .delete()
         .eq('id', printer.id);
-      
-      if (error) {
-        throw error;
-      }
-      
+      if (error) throw error;
       toast({
         title: "Printer deleted",
         description: "The printer has been successfully removed from the wiki."
       });
-      
       navigate('/wiki');
     } catch (error: any) {
       toast({
@@ -112,7 +124,7 @@ export default function WikiDetail() {
       });
     }
   };
-  
+
   return (
     <MobileLayout>
       <div className="container px-4 py-4">
@@ -126,7 +138,7 @@ export default function WikiDetail() {
             <ArrowLeft size={20} />
           </Button>
           <h1 className="text-2xl font-bold flex-1">
-            {loading ? 'Loading...' : `${printer?.make} ${printer?.model}`}
+            {loading ? 'Loading...' : `${printer?.make || ""} ${printer?.model || ""}`}
           </h1>
           <Button 
             variant="ghost" 
@@ -169,20 +181,29 @@ export default function WikiDetail() {
                     <span className="text-muted-foreground">Model:</span>
                     <span className="font-medium">{printer.model}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="font-medium">{printer.type || "N/A"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Description:</span>
+                    <span className="font-medium">{printer.description || "—"}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Tabs 
               defaultValue="specs" 
               value={activeTab}
               onValueChange={setActiveTab}
               className="mb-6"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="specs">Specifications</TabsTrigger>
-                <TabsTrigger value="toners">Toners</TabsTrigger>
+                <TabsTrigger value="toners">OEM Toner</TabsTrigger>
+                <TabsTrigger value="compatibles">Compatible Toners</TabsTrigger>
               </TabsList>
               
               <TabsContent value="details" className="mt-4">
@@ -234,12 +255,50 @@ export default function WikiDetail() {
               </TabsContent>
               
               <TabsContent value="toners" className="mt-4">
-                {printer ? (
-                  <TonerCompatibilityManager printerId={printer.id} />
-                ) : null}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>OEM Toner</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {oemToner ? (
+                      <div>
+                        <Tag className="inline mb-1 text-blue-500" />
+                        <span className="ml-1 font-semibold">{oemToner.brand} {oemToner.model}</span>
+                        <span className="ml-3 text-xs text-muted-foreground">(OEM Code: {oemToner.oem_code || "N/A"})</span>
+                        <span className="ml-3 text-xs text-muted-foreground">Color: {oemToner.color}</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No OEM Toner assigned.</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="compatibles" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Compatible Toners</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {compatibleToners.length > 0 ? (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {compatibleToners.map(t => (
+                          <span
+                            key={t.id}
+                            className="inline-block text-xs px-3 py-1 bg-blue-100 text-blue-900 rounded"
+                            title={`OEM: ${t.oem_code || ""} (${t.model})`}
+                          >
+                            {t.brand} {t.model} {t.color && <>({t.color})</>}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No compatible toners found.</p>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
-            
           </>
         ) : (
           <div className="text-center py-8">

@@ -21,6 +21,24 @@ import { UpdatePrinterStatusDialog } from '@/components/printers/UpdatePrinterSt
 import { AssignPrinterDialog } from '@/components/printers/AssignPrinterDialog';
 import { TransferPrinterDialog } from '@/components/printers/TransferPrinterDialog';
 
+type WikiPrinter = {
+  id: string;
+  make: string;
+  model: string;
+  series?: string;
+  type?: string;
+  oem_toner?: string | null;
+  description?: string;
+};
+
+type Toner = {
+  id: string;
+  model: string;
+  brand: string;
+  color: string;
+  oem_code?: string;
+};
+
 const toOwnershipType = (val: any): OwnershipType =>
   val === 'system' ? 'system' : 'client';
 
@@ -48,31 +66,13 @@ export default function Printers() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
-  const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('printers')
-        .update({ is_for_rent: value, updated_at: new Date().toISOString() })
-        .eq('id', printer.id);
-
-      if (error) throw error;
-
-      toast({
-        title: value ? "Marked as For Rent" : "Removed from Rental List",
-        description: `${printer.make} ${printer.model} is now ${value ? "available for rent" : "not for rent"}.`
-      });
-      fetchPrinters();
-    } catch (error: any) {
-      toast({
-        title: "Error updating For Rent status",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
+  const [wikiPrinters, setWikiPrinters] = useState<WikiPrinter[]>([]);
+  const [toners, setToners] = useState<Toner[]>([]);
 
   useEffect(() => {
     fetchPrinters();
+    fetchWikiPrinters();
+    fetchToners();
   }, []);
 
   const fetchPrinters = async () => {
@@ -152,55 +152,60 @@ export default function Printers() {
     }
   };
 
+  const fetchWikiPrinters = async () => {
+    const { data, error } = await supabase.from('printer_wiki').select('id, make, model, oem_toner, type, description, series');
+    if (!error && data) setWikiPrinters(data);
+    else setWikiPrinters([]);
+  };
+
+  const fetchToners = async () => {
+    const { data, error } = await supabase.from('toners').select('id, model, brand, color, oem_code, base_model_reference');
+    if (!error && data) setToners(data);
+    else setToners([]);
+  };
+
+  const handleToggleForRent = async (printer: PrinterType, value: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('printers')
+        .update({ is_for_rent: value, updated_at: new Date().toISOString() })
+        .eq('id', printer.id);
+
+      if (error) throw error;
+
+      toast({
+        title: value ? "Marked as For Rent" : "Removed from Rental List",
+        description: `${printer.make} ${printer.model} is now ${value ? "available for rent" : "not for rent"}.`
+      });
+      fetchPrinters();
+    } catch (error: any) {
+      toast({
+        title: "Error updating For Rent status",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredPrinters = printers.filter(printer => 
-    printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredPrinters = printers.filter(
+    printer =>
+      printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      printer.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      printer.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleOpenImportDialog = () => {
-    setImportDialogOpen(true);
-  };
-
-  const handleOpenTransferDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setTransferDialogOpen(true);
-  };
-
-  const openPrinterStatusDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setPrinterStatusDialogOpen(true);
-  };
-
-  const openServiceReportDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setServiceReportDialogOpen(true);
-  };
-
-  const openMarkRepairedDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setMarkRepairedDialogOpen(true);
-  };
-
-  const openDetailsDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setDetailsDialogOpen(true);
-  };
-
-  const openHistoryDialog = (printer: PrinterType) => {
-    setSelectedPrinter(printer);
-    setHistoryDialogOpen(true);
-  };
-
-  const getAssignTransferLabel = (printer: PrinterType) => {
-    if (!printer.assigned_to && !printer.client_id && printer.owned_by === "system")
-      return "Assign";
-    return "Transfer";
+  const getCompatibleTonersForPrinter = (printer: PrinterType): Toner[] => {
+    const wikiPrinter = wikiPrinters.find(w =>
+      w.make === printer.make && w.model === printer.model
+    );
+    if (!wikiPrinter || !wikiPrinter.oem_toner) return [];
+    const oemTonerId = wikiPrinter.oem_toner;
+    return toners.filter(t => t.base_model_reference === oemTonerId);
   };
 
   const forRentToggleEnabled = (printer: PrinterType) =>
@@ -266,134 +271,158 @@ export default function Printers() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredPrinters.map((printer) => (
-              <Card key={printer.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg flex flex-wrap gap-1 items-center">
-                      <span className="font-semibold text-[#004165]">{printer.model}</span>
-                      {printer.make && (
-                        <span className="ml-1 text-xs bg-blue-50 text-blue-800 px-2 rounded font-normal">
-                          {printer.make}
+            {filteredPrinters.map((printer) => {
+              const compatibleToners = getCompatibleTonersForPrinter(printer);
+              return (
+                <Card key={printer.id} className="overflow-hidden">
+                  <CardHeader className="p-4 pb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg flex flex-wrap gap-1 items-center">
+                        <span className="font-semibold text-[#004165]">{printer.model}</span>
+                        {printer.make && (
+                          <span className="ml-1 text-xs bg-blue-50 text-blue-800 px-2 rounded font-normal">
+                            {printer.make}
+                          </span>
+                        )}
+                        {getClientDisplay(printer) && (
+                          <span className="ml-2 text-xs bg-green-50 text-green-800 px-2 rounded font-normal">
+                            {getClientDisplay(printer)}
+                          </span>
+                        )}
+                        <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
+                          {getOwnershipLabel(printer)}
                         </span>
-                      )}
-                      {getClientDisplay(printer) && (
-                        <span className="ml-2 text-xs bg-green-50 text-green-800 px-2 rounded font-normal">
-                          {getClientDisplay(printer)}
-                        </span>
-                      )}
-                      <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 font-normal">
-                        {getOwnershipLabel(printer)}
-                      </span>
-                    </CardTitle>
-                    <div className="mt-2 flex gap-4 items-center flex-wrap">
-                      <span className="text-xs text-muted-foreground font-semibold">{getTonerName(printer)}</span>
-                      {printer.department && (
-                        <span className="text-xs font-medium capitalize text-gray-800">{printer.department}</span>
-                      )}
-                    </div>
-                    {printer.location && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        <span>Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
+                      </CardTitle>
+                      <div className="mt-2 flex gap-4 items-center flex-wrap">
+                        <span className="text-xs text-muted-foreground font-semibold">{getTonerName(printer)}</span>
+                        {printer.department && (
+                          <span className="text-xs font-medium capitalize text-gray-800">
+                            <b>Department:</b> {printer.department}
+                          </span>
+                        )}
+                        {compatibleToners.length > 0 && (
+                          <span className="text-xs font-medium text-gray-800 flex flex-wrap gap-1 items-center">
+                            <b>Compatible Toners:</b>
+                            {compatibleToners.map(t =>
+                              <span
+                                key={t.id}
+                                className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-900 rounded"
+                                title={`OEM: ${t.oem_code || ""} (${t.model})`}
+                              >
+                                {t.brand} {t.model} {t.color && <>({t.color})</>}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        {compatibleToners.length === 0 && (
+                          <span className="text-xs font-medium text-gray-500">
+                            <b>Compatible Toners:</b> None
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
-
-                  <div className="px-4 pt-2 pb-2 flex items-center gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                      <span className="text-xs font-medium">For Rent</span>
-                      <button
-                        className={`relative w-9 h-5 focus:outline-none rounded-full border transition-colors duration-200
-                         ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? "bg-green-500 border-green-500" : "bg-gray-200 border-gray-200") : "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"}`}
-                        disabled={!forRentToggleEnabled(printer)}
-                        aria-pressed={printer.is_for_rent}
-                        onClick={() => {
-                          if (forRentToggleEnabled(printer)) {
-                            handleToggleForRent(printer, !printer.is_for_rent);
-                          }
-                        }}
-                        tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? "translate-x-4" : ""}`}
-                          style={{
-                            boxShadow: printer.is_for_rent
-                              ? "0 2px 4px 0 rgba(34,197,94,0.15)"
-                              : "0 1px 3px 0 rgba(0,0,0,0.04)",
-                          }}
-                        />
-                      </button>
-                      <span className={`ml-2 text-xs font-semibold transition-colors duration-200 ${printer.is_for_rent ? "text-green-600" : "text-gray-400"}`}>
-                        {printer.is_for_rent ? "Active" : "Inactive"}
-                      </span>
-                    </label>
-                    <div className="flex-1 flex justify-end pr-2">
-                      <PrinterStatusBadge status={printer.status} />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-4 pt-2">
-                  <div className="flex flex-col sm:flex-row flex-wrap sm:justify-between gap-2 mt-2">
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => openDetailsDialog(printer)}
-                      >
-                        <Info className="h-4 w-4" />
-                        Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => openPrinterStatusDialog(printer)}
-                      >
-                        <Wrench className="h-4 w-4" />
-                        Update Status
-                      </Button>
-                      {!printer.client_id ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex items-center gap-1"
-                          onClick={() => {
-                            setSelectedPrinter(printer);
-                            setAssignDialogOpen(true);
-                          }}
-                        >
-                          <ArrowUpDown className="h-4 w-4" />
-                          Assign
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex items-center gap-1"
-                          onClick={() => {
-                            setSelectedPrinter(printer);
-                            setTransferDialogOpen(true);
-                          }}
-                        >
-                          <ArrowUpDown className="h-4 w-4" />
-                          Transfer
-                        </Button>
+                      {printer.location && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <span>Location: <span className="font-medium text-gray-900">{printer.location}</span></span>
+                        </div>
                       )}
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        className="flex items-center gap-1"
-                        onClick={() => openHistoryDialog(printer)}
-                      >
-                        <History className="h-4 w-4" />
-                        History
-                      </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    <div className="px-4 pt-2 pb-2 flex items-center gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <span className="text-xs font-medium">For Rent</span>
+                        <button
+                          className={`relative w-9 h-5 focus:outline-none rounded-full border transition-colors duration-200
+                         ${forRentToggleEnabled(printer) ? (printer.is_for_rent ? "bg-green-500 border-green-500" : "bg-gray-200 border-gray-200") : "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"}`}
+                          disabled={!forRentToggleEnabled(printer)}
+                          aria-pressed={printer.is_for_rent}
+                          onClick={() => {
+                            if (forRentToggleEnabled(printer)) {
+                              handleToggleForRent(printer, !printer.is_for_rent);
+                            }
+                          }}
+                          tabIndex={forRentToggleEnabled(printer) ? 0 : -1}
+                        >
+                          <span
+                            className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full shadow transition-transform bg-white ${printer.is_for_rent ? "translate-x-4" : ""}`}
+                            style={{
+                              boxShadow: printer.is_for_rent
+                                ? "0 2px 4px 0 rgba(34,197,94,0.15)"
+                                : "0 1px 3px 0 rgba(0,0,0,0.04)",
+                            }}
+                          />
+                        </button>
+                        <span className={`ml-2 text-xs font-semibold transition-colors duration-200 ${printer.is_for_rent ? "text-green-600" : "text-gray-400"}`}>
+                          {printer.is_for_rent ? "Active" : "Inactive"}
+                        </span>
+                      </label>
+                      <div className="flex-1 flex justify-end pr-2">
+                        <PrinterStatusBadge status={printer.status} />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4 pt-2">
+                    <div className="flex flex-col sm:flex-row flex-wrap sm:justify-between gap-2 mt-2">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openDetailsDialog(printer)}
+                        >
+                          <Info className="h-4 w-4" />
+                          Details
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openPrinterStatusDialog(printer)}
+                        >
+                          <Wrench className="h-4 w-4" />
+                          Update Status
+                        </Button>
+                        {!printer.client_id ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                            onClick={() => {
+                              setSelectedPrinter(printer);
+                              setAssignDialogOpen(true);
+                            }}
+                          >
+                            <ArrowUpDown className="h-4 w-4" />
+                            Assign
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center gap-1"
+                            onClick={() => {
+                              setSelectedPrinter(printer);
+                              setTransferDialogOpen(true);
+                            }}
+                          >
+                            <ArrowUpDown className="h-4 w-4" />
+                            Transfer
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1"
+                          onClick={() => openHistoryDialog(printer)}
+                        >
+                          <History className="h-4 w-4" />
+                          History
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
