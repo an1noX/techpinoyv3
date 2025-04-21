@@ -51,7 +51,23 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
             color,
             oem_code,
             page_yield,
-            aliases
+            aliases,
+            base_model_reference,
+            category,
+            compatible_printers,
+            created_at,
+            description,
+            image_url,
+            is_active,
+            is_base_model,
+            is_commercial_product,
+            sku,
+            stock,
+            threshold,
+            updated_at,
+            variant_details,
+            variant_group_id,
+            variant_name
           )
         `)
         .eq('printer_wiki_id', printerId);
@@ -62,14 +78,25 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
         .filter(item => item.wiki_toners !== null)
         .map(item => {
           const toner = item.wiki_toners as any;
-          // Ensure aliases is always an array of strings
-          const aliases = Array.isArray(toner.aliases) 
-            ? toner.aliases.map((alias: any) => String(alias))
-            : [];
-          
           return {
             ...toner,
-            aliases
+            // Enforce nullables to match WikiToner type
+            aliases: Array.isArray(toner.aliases) ? toner.aliases.map((alias: any) => String(alias)) : [],
+            compatible_printers: toner.compatible_printers ?? {},
+            base_model_reference: toner.base_model_reference ?? null,
+            category: toner.category ?? [],
+            description: toner.description ?? '',
+            image_url: toner.image_url ?? '',
+            is_active: toner.is_active ?? false,
+            is_base_model: toner.is_base_model ?? false,
+            is_commercial_product: toner.is_commercial_product ?? false,
+            oem_code: toner.oem_code ?? '',
+            sku: toner.sku ?? '',
+            stock: toner.stock ?? 0,
+            threshold: toner.threshold ?? 0,
+            variant_details: toner.variant_details ?? {},
+            variant_group_id: toner.variant_group_id ?? '',
+            variant_name: toner.variant_name ?? '',
           };
         });
 
@@ -93,20 +120,28 @@ export function TonerCompatibilityManager({ printerId }: TonerCompatibilityManag
 
       if (error) throw error;
 
-      // Filter out toners that are already in the compatible list
       const compatibleTonerIds = compatibleToners.map(t => t.id);
-      const filteredData = data.filter(toner => !compatibleTonerIds.includes(toner.id));
+      const filteredData = data.filter((toner: any) => !compatibleTonerIds.includes(toner.id));
 
-      // Ensure all toner aliases are properly processed to be string arrays
-      const processedData = filteredData.map(toner => {
-        // Ensure aliases is always an array of strings
-        const aliases = Array.isArray(toner.aliases) 
-          ? toner.aliases.map((alias: any) => String(alias))
-          : [];
-        
+      const processedData = filteredData.map((toner: any) => {
         return {
           ...toner,
-          aliases
+          aliases: Array.isArray(toner.aliases) ? toner.aliases.map((alias: any) => String(alias)) : [],
+          compatible_printers: toner.compatible_printers ?? {},
+          base_model_reference: toner.base_model_reference ?? null,
+          category: toner.category ?? [],
+          description: toner.description ?? '',
+          image_url: toner.image_url ?? '',
+          is_active: toner.is_active ?? false,
+          is_base_model: toner.is_base_model ?? false,
+          is_commercial_product: toner.is_commercial_product ?? false,
+          oem_code: toner.oem_code ?? '',
+          sku: toner.sku ?? '',
+          stock: toner.stock ?? 0,
+          threshold: toner.threshold ?? 0,
+          variant_details: toner.variant_details ?? {},
+          variant_group_id: toner.variant_group_id ?? '',
+          variant_name: toner.variant_name ?? '',
         };
       });
 
