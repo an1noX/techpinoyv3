@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DatabaseIcon, PrinterIcon, CalendarIcon, UserIcon, Users, Package, Settings, SlidersHorizontal } from 'lucide-react';
@@ -29,8 +30,8 @@ export function BottomNavigation() {
       icon: SlidersHorizontal
     },
     { 
-      name: 'Store', 
-      path: '/store-settings', 
+      name: 'Settings', 
+      path: '/settings', 
       icon: Settings 
     },
     { 

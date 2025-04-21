@@ -23,6 +23,7 @@ import TonerProducts from "./pages/TonerProducts";
 import Store from "./pages/Store";
 import Products from "./pages/Products";
 import Maintenance from "./pages/Maintenance";
+import Settings from "./pages/Settings";
 import React from "react";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
             <Route path="/toner-products" element={<ProtectedLayout><TonerProducts /></ProtectedLayout>} />
             <Route path="/maintenance" element={<ProtectedLayout><Maintenance /></ProtectedLayout>} />
+            <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
