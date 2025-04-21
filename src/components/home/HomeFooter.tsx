@@ -1,8 +1,11 @@
 
 import { Link } from "react-router-dom";
 import { Phone, Mail, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { useSettings } from "@/context/SettingsContext";
 
 export const HomeFooter = () => {
+  const { settings } = useSettings();
+  
   // Default footer sections
   const footerSections = [
     {
@@ -34,17 +37,23 @@ export const HomeFooter = () => {
     }
   ];
 
-  // Social media icons
+  // Social media icons with links from settings
   const socialIcons = [
-    { Icon: Facebook, url: '#' },
-    { Icon: Twitter, url: '#' },
-    { Icon: Instagram, url: '#' },
-    { Icon: Youtube, url: '#' }
+    { Icon: Facebook, url: settings?.social_media?.facebook || '#' },
+    { Icon: Twitter, url: settings?.social_media?.twitter || '#' },
+    { Icon: Instagram, url: settings?.social_media?.instagram || '#' },
+    { Icon: Youtube, url: settings?.social_media?.youtube || '#' }
   ];
 
-  // Contact information
-  const contactPhone = "(877) 518-1272";
-  const contactEmail = "support@techpinoy.com";
+  // Contact information from settings
+  const contactPhone = settings?.phone_number || "(877) 518-1272";
+  const contactEmail = settings?.email || "support@techpinoy.com";
+  const officeHours = settings?.office_hours || "Mon - Fri 9am - 5pm PST\nCLOSED SAT. & SUN.";
+
+  // Format office hours for display (handle line breaks)
+  const formattedOfficeHours = officeHours.split("\n").map((line, index) => (
+    <div key={index}>{line}</div>
+  ));
 
   return (
     <footer className="bg-teal-700 text-white">
@@ -94,8 +103,7 @@ export const HomeFooter = () => {
                 </a>
               </li>
               <li className="text-sm mt-2 text-teal-200">
-                <div>Office Hours: Mon - Fri 9am - 5pm PST</div>
-                <div>CLOSED SAT. & SUN.</div>
+                {formattedOfficeHours}
               </li>
               
               <li>
@@ -122,7 +130,7 @@ export const HomeFooter = () => {
       <div className="bg-teal-800 py-4">
         <div className="container mx-auto px-4 text-center text-teal-100">
           <p className="text-sm">
-            © 2025 TechPinoy. All Rights Reserved | 
+            © {new Date().getFullYear()} {settings?.store_name || 'TechPinoy'}. All Rights Reserved | 
             <Link to="/privacy" className="hover:text-yellow-300 ml-1 mr-1">Privacy Policy</Link> | 
             <Link to="/terms" className="hover:text-yellow-300 ml-1">Terms of Use</Link>
           </p>

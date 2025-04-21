@@ -1,15 +1,18 @@
 
 import { Link } from "react-router-dom";
 import { Phone } from "lucide-react";
+import { useSettings } from "@/context/SettingsContext";
 
 export function HeaderTopBar() {
-  // Static phone number
-  const phone = "(844) 539-3319";
+  const { settings } = useSettings();
+  
+  // Get phone from settings or use a default as fallback
+  const phone = settings?.phone_number || "(844) 539-3319";
 
   // Helper function to display the phone with proper click-to-call functionality
   const renderPhone = () => {
     return (
-      <a href={`tel:${phone}`} className="hover:underline">
+      <a href={`tel:${phone.replace(/\D/g, '')}`} className="hover:underline">
         {phone}
       </a>
     );

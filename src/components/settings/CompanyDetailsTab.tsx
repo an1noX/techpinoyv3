@@ -1,35 +1,67 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSettings } from "@/context/SettingsContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 export function CompanyDetailsTab() {
-  const { settings, saveSettings, isLoading } = useSettings();
+  const { settings, updateStoreInfo, isLoading } = useSettings();
+  const { toast } = useToast();
   const [form, setForm] = useState(() => ({
-    store_name: settings?.store_name || "",
+    storeName: settings?.store_name || "",
     email: settings?.email || "",
-    phone_number: settings?.phone_number || "",
-    office_hours: settings?.office_hours || "",
+    phoneNumber: settings?.phone_number || "",
+    officeHours: settings?.office_hours || "",
     address: settings?.address || "",
     tagline: settings?.tagline || "",
-    social_media: {
-      facebook: settings?.social_media.facebook || "",
-      instagram: settings?.social_media.instagram || "",
-      youtube: settings?.social_media.youtube || "",
-      twitter: settings?.social_media.twitter || "",
+    socialMedia: {
+      facebook: settings?.social_media?.facebook || "",
+      instagram: settings?.social_media?.instagram || "",
+      youtube: settings?.social_media?.youtube || "",
+      twitter: settings?.social_media?.twitter || "",
     },
+    liveChat: settings?.live_chat || {
+      enabled: false,
+      type: "messenger",
+      value: ""
+    }
   }));
   const [saving, setSaving] = useState(false);
+
+  // Update form when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      setForm({
+        storeName: settings.store_name || "",
+        email: settings.email || "",
+        phoneNumber: settings.phone_number || "",
+        officeHours: settings.office_hours || "",
+        address: settings.address || "",
+        tagline: settings.tagline || "",
+        socialMedia: {
+          facebook: settings.social_media?.facebook || "",
+          instagram: settings.social_media?.instagram || "",
+          youtube: settings.social_media?.youtube || "",
+          twitter: settings.social_media?.twitter || "",
+        },
+        liveChat: settings.live_chat || {
+          enabled: false,
+          type: "messenger",
+          value: ""
+        }
+      });
+    }
+  }, [settings]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (["facebook", "instagram", "youtube", "twitter"].includes(name)) {
       setForm((prev) => ({
         ...prev,
-        social_media: { ...prev.social_media, [name]: value },
+        socialMedia: { ...prev.socialMedia, [name]: value },
       }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -38,45 +70,50 @@ export function CompanyDetailsTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!settings) return;
+    if (!updateStoreInfo) return;
     setSaving(true);
-    await saveSettings({
-      ...settings,
-      store_name: form.store_name,
-      email: form.email,
-      phone_number: form.phone_number,
-      office_hours: form.office_hours,
-      address: form.address,
-      tagline: form.tagline,
-      social_media: {
-        facebook: form.social_media.facebook,
-        instagram: form.social_media.instagram,
-        youtube: form.social_media.youtube,
-        twitter: form.social_media.twitter,
-      },
-      updated_at: new Date().toISOString(),
-    });
-    setSaving(false);
+    
+    try {
+      await updateStoreInfo(form);
+      toast({
+        title: "Success",
+        description: "Company details saved successfully",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save company details",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-xl space-y-4 py-4">
       <h2 className="text-xl font-semibold mb-2">Company Details</h2>
       <div>
-        <Label htmlFor="store_name">Name</Label>
-        <Input id="store_name" name="store_name" value={form.store_name} onChange={handleChange} />
+        <Label htmlFor="storeName">Name</Label>
+        <Input id="storeName" name="storeName" value={form.storeName} onChange={handleChange} />
+      </div>
+      <div>
+        <Label htmlFor="tagline">Tagline</Label>
+        <Input id="tagline" name="tagline" value={form.tagline} onChange={handleChange} />
       </div>
       <div>
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" value={form.email} onChange={handleChange} type="email" />
       </div>
       <div>
-        <Label htmlFor="phone_number">Phone</Label>
-        <Input id="phone_number" name="phone_number" value={form.phone_number} onChange={handleChange} />
+        <Label htmlFor="phoneNumber">Phone</Label>
+        <Input id="phoneNumber" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} />
       </div>
       <div>
-        <Label htmlFor="office_hours">Office Hours</Label>
-        <Input id="office_hours" name="office_hours" value={form.office_hours} onChange={handleChange} />
+        <Label htmlFor="officeHours">Office Hours</Label>
+        <Input id="officeHours" name="officeHours" value={form.officeHours} onChange={handleChange} />
       </div>
       <div>
         <Label htmlFor="address">Address</Label>
@@ -88,25 +125,25 @@ export function CompanyDetailsTab() {
           <Input
             placeholder="Facebook"
             name="facebook"
-            value={form.social_media.facebook}
+            value={form.socialMedia.facebook}
             onChange={handleChange}
           />
           <Input
             placeholder="Instagram"
             name="instagram"
-            value={form.social_media.instagram}
+            value={form.socialMedia.instagram}
             onChange={handleChange}
           />
           <Input
             placeholder="YouTube"
             name="youtube"
-            value={form.social_media.youtube}
+            value={form.socialMedia.youtube}
             onChange={handleChange}
           />
           <Input
             placeholder="Twitter"
             name="twitter"
-            value={form.social_media.twitter}
+            value={form.socialMedia.twitter}
             onChange={handleChange}
           />
         </div>

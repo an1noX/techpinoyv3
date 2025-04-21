@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings, StoreInfo, Json } from '@/types/settings';
@@ -191,6 +192,8 @@ export const useSettingsState = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log("Updating store info:", storeInfo);
+      
       const updatedSettings: Settings = {
         ...settings,
         store_name: storeInfo.storeName,
@@ -206,6 +209,7 @@ export const useSettingsState = () => {
       };
 
       await saveSettings(updatedSettings);
+      console.log("Settings updated successfully");
     } catch (err: any) {
       console.error('Error updating store info:', err);
       setError(err.message || 'Failed to update store info');
