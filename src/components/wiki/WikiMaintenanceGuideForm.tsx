@@ -183,9 +183,10 @@ export function WikiMaintenanceGuideForm({ open, onOpenChange, onSuccess }: Wiki
                   <FormLabel>Associated Printer Model (Optional)</FormLabel>
                   <FormControl>
                     <ModelSelector 
-                      value={field.value} 
+                      value={field.value || ""} 
                       onChange={(value) => field.onChange(value)}
-                      models={printerModels}
+                      models={printerModels || []}
+                      placeholder="Select a printer model..."
                     />
                   </FormControl>
                   <FormMessage />
