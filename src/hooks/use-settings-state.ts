@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings, StoreInfo, Json, VideoAds1 } from '@/types/settings';
@@ -251,23 +250,46 @@ export const useSettingsState = () => {
     }
   };
 
-  // Add a function to update video ads
+  // Correct updateVideoAds function ensuring video_ads1 is saved as JSON and settings updated properly
   const updateVideoAds = async (videoAds: VideoAds1) => {
     if (!settings) return;
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       console.log("Updating video ads:", videoAds);
-      
+
+      // Create updatedSettings object with updated video_ads1 field
       const updatedSettings: Settings = {
         ...settings,
         video_ads1: videoAds,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
-      await saveSettings(updatedSettings);
+      // Save settings with upsert, ensure video_ads1 is serialized correctly
+      const saveResult = await supabase
+        .from('system_settings')
+        .upsert({
+          id: updatedSettings.id,
+          store_name: updatedSettings.store_name,
+          tagline: updatedSettings.tagline,
+          phone_number: updatedSettings.phone_number,
+          email: updatedSettings.email,
+          office_hours: updatedSettings.office_hours,
+          address: updatedSettings.address,
+          live_chat: updatedSettings.live_chat as unknown as Json,
+          social_media: updatedSettings.social_media as unknown as Json,
+          video_ads1: updatedSettings.video_ads1 as unknown as Json,
+          updated_at: updatedSettings.updated_at,
+        });
+
+      if (saveResult.error) {
+        console.error("Error saving video ads in DB:", saveResult.error);
+        throw saveResult.error;
+      }
+
+      setSettings(updatedSettings);
       console.log("Video ads updated successfully");
     } catch (err: any) {
       console.error('Error updating video ads:', err);

@@ -765,6 +765,7 @@ export type Database = {
           store_name: string
           tagline: string | null
           updated_at: string | null
+          video_ads1: Json | null
         }
         Insert: {
           address?: string | null
@@ -778,6 +779,7 @@ export type Database = {
           store_name: string
           tagline?: string | null
           updated_at?: string | null
+          video_ads1?: Json | null
         }
         Update: {
           address?: string | null
@@ -791,6 +793,7 @@ export type Database = {
           store_name?: string
           tagline?: string | null
           updated_at?: string | null
+          video_ads1?: Json | null
         }
         Relationships: []
       }
