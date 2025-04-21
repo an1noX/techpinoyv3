@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader, Plus, Save, Trash } from "lucide-react";
+import { VideoAds1 } from "@/types/settings";
 
 // Define the validation schema for the form
 const videoAds1Schema = z.object({
@@ -44,13 +45,16 @@ const videoAds1Schema = z.object({
   }),
 });
 
+// Define the form type based on the schema
+type VideoAds1FormValues = z.infer<typeof videoAds1Schema>;
+
 export function VideoAds1Tab() {
-  const { settings, isLoading, updateStoreInfo, saveSettings } = useSettings();
+  const { settings, isLoading, saveSettings } = useSettings();
   const [newFeature, setNewFeature] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form with default values from settings
-  const defaultVideo = {
+  const defaultVideo: VideoAds1 = {
     videoType: "placeholder",
     videoUrl: "",
     title: "TechPinoy - Your Best Toner Cartridge Supplier",
@@ -65,7 +69,7 @@ export function VideoAds1Tab() {
     buttonLink: "#"
   };
 
-  const form = useForm<z.infer<typeof videoAds1Schema>>({
+  const form = useForm<VideoAds1FormValues>({
     resolver: zodResolver(videoAds1Schema),
     defaultValues: settings?.video_ads1 || defaultVideo,
   });
@@ -75,7 +79,7 @@ export function VideoAds1Tab() {
   const watchFeatures = watch("features");
 
   // Handle form submission
-  const onSubmit = async (data: z.infer<typeof videoAds1Schema>) => {
+  const onSubmit = async (data: VideoAds1FormValues) => {
     setIsSubmitting(true);
     try {
       if (!settings) {
@@ -86,7 +90,7 @@ export function VideoAds1Tab() {
       // Create updated settings with video_ads1 data
       const updatedSettings = {
         ...settings,
-        video_ads1: data
+        video_ads1: data as VideoAds1
       };
 
       await saveSettings(updatedSettings);
