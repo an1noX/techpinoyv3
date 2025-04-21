@@ -285,6 +285,35 @@ export default function Wiki() {
     }
   };
 
+  const handleDeleteArticle = async () => {
+    if (!deleteArticleId) return;
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from("wiki_articles")
+        .delete()
+        .eq("id", deleteArticleId);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Article deleted",
+        description: "The article has been successfully deleted."
+      });
+      
+      setDeleteArticleId(null);
+      fetchArticles();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting article",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     fetchPrinters();
     fetchArticles();

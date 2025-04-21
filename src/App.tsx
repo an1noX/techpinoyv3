@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import Wiki from "./pages/Wiki";
 import WikiDetail from "./pages/WikiDetail";
 import WikiCreateEdit from "./pages/WikiCreateEdit";
+import WikiArticleView from "./pages/WikiArticleView";
 import Printers from "./pages/Printers";
 import PrinterDetail from "./pages/PrinterDetail";
 import Rentals from "./pages/Rentals";
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/categories/:category" element={<Products />} />
               <Route path="/" element={<ProtectedLayout><Index /></ProtectedLayout>} />
               <Route path="/wiki" element={<ProtectedLayout><Wiki /></ProtectedLayout>} />
+              <Route path="/wiki/article/:id" element={<ProtectedLayout><WikiArticleView /></ProtectedLayout>} />
               <Route path="/wiki/:id" element={<ProtectedLayout><WikiDetail /></ProtectedLayout>} />
               <Route path="/wiki/new" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />
               <Route path="/wiki/edit/:id" element={<ProtectedLayout><WikiCreateEdit /></ProtectedLayout>} />

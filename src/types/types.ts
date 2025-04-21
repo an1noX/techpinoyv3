@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export type { Json };
@@ -227,4 +226,7 @@ export interface WikiArticle {
   content: string;
   associatedWith: string;
   category: string;
+  videoUrl?: string;
+  created_at?: string;
+  updated_at?: string;
 }
