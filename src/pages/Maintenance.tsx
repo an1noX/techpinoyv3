@@ -1,10 +1,9 @@
-
 import React, { useState } from "react";
 import { Printer } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Printer as PrinterIcon, FileText, Check, Info, History } from "lucide-react";
+import { Wrench, Printer as PrinterIcon, FileText, Check, Info, History, Plus } from "lucide-react";
 import { BottomNavigation } from "@/components/navigation/BottomNavigation";
 import { MaintenanceQuickUpdateDialog } from "@/components/printers/MaintenanceQuickUpdateDialog";
 import { usePrintersWithStatus } from "@/hooks/usePrintersWithStatus";
@@ -12,6 +11,10 @@ import { GenerateServiceReportDialog } from "@/components/printers/GenerateServi
 import { MarkRepairedDialog } from "@/components/printers/MarkRepairedDialog";
 import { PrinterDetailsDialog } from "@/components/printers/PrinterDetailsDialog";
 import { PrinterHistoryDialog } from "@/components/printers/PrinterHistoryDialog";
+import { Fab } from "@/components/ui/fab";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useToast } from '@/hooks/use-toast';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   "pending": { label: "Pending", color: "bg-amber-100 text-amber-800" },
@@ -24,40 +27,50 @@ export default function Maintenance() {
   const { printers, loading, refetch } = usePrintersWithStatus();
   const [selectedPrinter, setSelectedPrinter] = useState<Printer | null>(null);
   
-  // Dialog state management
   const [quickUpdateDialogOpen, setQuickUpdateDialogOpen] = useState(false);
   const [serviceReportDialogOpen, setServiceReportDialogOpen] = useState(false);
   const [markRepairedDialogOpen, setMarkRepairedDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [addMaintOpen, setAddMaintOpen] = useState(false);
+  const [addMaintForm, setAddMaintForm] = useState({
+    printerId: "",
+    status: "maintenance",
+    notes: "",
+  });
 
-  // Open dialog functions
-  const openQuickUpdateDialog = (printer: Printer) => {
-    setSelectedPrinter(printer);
-    setQuickUpdateDialogOpen(true);
+  const { toast } = useToast();
+
+  const handleOpenAddMaint = () => {
+    setAddMaintOpen(true);
+    setAddMaintForm({ printerId: "", status: "maintenance", notes: "" });
   };
 
-  const openServiceReportDialog = (printer: Printer) => {
-    setSelectedPrinter(printer);
-    setServiceReportDialogOpen(true);
+  const handleAddMaintenance = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addMaintForm.printerId) {
+      toast({ title: "Select a printer" });
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("maintenance_records")
+        .insert([{
+          printer_id: addMaintForm.printerId,
+          status: addMaintForm.status,
+          notes: addMaintForm.notes,
+          created_at: new Date().toISOString(),
+        }]);
+      if (error) throw error;
+      toast({ title: "Maintenance record added" });
+      setAddMaintOpen(false);
+      setAddMaintForm({ printerId: "", status: "maintenance", notes: "" });
+      refetch();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
   };
 
-  const openMarkRepairedDialog = (printer: Printer) => {
-    setSelectedPrinter(printer);
-    setMarkRepairedDialogOpen(true);
-  };
-
-  const openDetailsDialog = (printer: Printer) => {
-    setSelectedPrinter(printer);
-    setDetailsDialogOpen(true);
-  };
-
-  const openHistoryDialog = (printer: Printer) => {
-    setSelectedPrinter(printer);
-    setHistoryDialogOpen(true);
-  };
-
-  // Filter printers to only show those with maintenance or for_repair status
   const maintenancePrinters = printers.filter(
     printer => printer.status === "maintenance" || printer.status === "for_repair"
   );
@@ -170,7 +183,69 @@ export default function Maintenance() {
         </div>
       )}
 
-      {/* Dialogs for Maintenance Management */}
+      <Fab
+        icon={<Plus size={24} />}
+        aria-label="Add Maintenance"
+        onClick={handleOpenAddMaint}
+        className="fixed bottom-6 right-6 z-50"
+      />
+
+      <Dialog open={addMaintOpen} onOpenChange={setAddMaintOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Maintenance/Repair Log</DialogTitle>
+          </DialogHeader>
+          <form className="space-y-2 py-2" onSubmit={handleAddMaintenance}>
+            <div>
+              <label className="text-sm">Printer*</label>
+              <select
+                className="w-full border rounded p-2"
+                value={addMaintForm.printerId}
+                onChange={e =>
+                  setAddMaintForm(form => ({ ...form, printerId: e.target.value }))
+                }
+                required
+              >
+                <option value="">Select a printer...</option>
+                {printers.map(printer => (
+                  <option key={printer.id} value={printer.id}>
+                    {printer.make} {printer.model}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm">Status*</label>
+              <select
+                className="w-full border rounded p-2"
+                value={addMaintForm.status}
+                onChange={e =>
+                  setAddMaintForm(form => ({ ...form, status: e.target.value }))
+                }
+                required
+              >
+                <option value="maintenance">Maintenance</option>
+                <option value="for_repair">For Repair</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm">Notes</label>
+              <Input
+                value={addMaintForm.notes}
+                onChange={e =>
+                  setAddMaintForm(form => ({ ...form, notes: e.target.value }))
+                }
+                placeholder="Add remarks, issues, etc."
+              />
+            </div>
+            <DialogFooter className="gap-2 pt-4">
+              <Button type="submit" variant="default">Save</Button>
+              <Button variant="ghost" type="button" onClick={() => setAddMaintOpen(false)}>Cancel</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {selectedPrinter && (
         <>
           <MaintenanceQuickUpdateDialog

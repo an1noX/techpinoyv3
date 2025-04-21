@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
-import { Fab } from '@/components/ui/fab';
 import { Plus, FileText, Printer, HelpCircle, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +11,9 @@ import { WikiPrinter, Toner, WikiArticle } from '@/types/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TonerCompatibilityManager } from '@/components/TonerCompatibilityManager';
+import { Fab } from '@/components/ui/fab';
+import { WikiAddArticleDialog } from "@/components/wiki/WikiAddArticleDialog";
+import { WikiAddTonerDialog } from "@/components/wiki/WikiAddTonerDialog";
 
 // Article type for sample usage removed as we now have a proper type
 
@@ -334,11 +335,19 @@ export default function Wiki() {
     toast({ title: "Article deleted" });
   };
 
+  // Add state for floating dialogs
+  const [showAddToner, setShowAddToner] = useState(false);
+  const [showAddArticle, setShowAddArticle] = useState(false);
+
   return (
     <MobileLayout
       fab={
-        tab === 'printerkb' ? (
+        tab === "printerkb" ? (
           <Fab icon={<Plus size={24} />} aria-label="Add printer to wiki" onClick={() => navigate('/wiki/new')} />
+        ) : tab === "tonerkb" ? (
+          <Fab icon={<Plus size={24} />} aria-label="Add Toner Reference" onClick={() => setShowAddToner(true)} />
+        ) : tab === "article" ? (
+          <Fab icon={<Plus size={24} />} aria-label="Add Article" onClick={() => setShowAddArticle(true)} />
         ) : null
       }
     >
@@ -356,532 +365,412 @@ export default function Wiki() {
             <TabsTrigger value="tonerkb">TonerKB</TabsTrigger>
             <TabsTrigger value="article">Article</TabsTrigger>
           </TabsList>
-
-          {/* PRINTERKB TAB */}
-          <TabsContent value="printerkb">
-            <div className="mb-4 flex items-center space-x-2">
-              <Input
-                type="search"
-                placeholder="Search printers..."
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
-                <FileText className="h-4 w-4" />
-              </Button>
+        
+        {/* PRINTERKB TAB */}
+        <TabsContent value="printerkb">
+          <div className="mb-4 flex items-center space-x-2">
+            <Input
+              type="search"
+              placeholder="Search printers..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Button variant="outline" size="icon" onClick={() => setSearchTerm('')}>
+              <FileText className="h-4 w-4" />
+            </Button>
+          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
-            {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : printers.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No printers found</p>
-                <Button className="mt-4" onClick={() => navigate('/wiki/new')}>Add Printer</Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {printers
-                  .filter(printer =>
-                    printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    printer.series.toLowerCase().includes(searchTerm.toLowerCase())
-                  )
-                  .map((printer) => (
-                    <Card key={printer.id} className="overflow-hidden">
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => handleOpenModal(printer, 'details')}
-                            >
-                              <FileText size={16} /> Details
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => handleOpenModal(printer, 'specs')}
-                            >
-                              <FileText size={16} /> Specification
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => handleOpenModal(printer, 'toners')}
-                            >
-                              <Printer size={16} /> Toners
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1"
-                              onClick={() => handleOpenModal(printer, 'help')}
-                            >
-                              <HelpCircle size={16} /> Help
-                            </Button>
-                          </div>
+          ) : printers.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No printers found</p>
+              <Button className="mt-4" onClick={() => navigate('/wiki/new')}>Add Printer</Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {printers
+                .filter(printer =>
+                  printer.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  printer.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  printer.series.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((printer) => (
+                  <Card key={printer.id} className="overflow-hidden">
+                    <CardHeader className="p-4 pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{printer.make} {printer.model}</CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleOpenModal(printer, 'details')}
+                          >
+                            <FileText size={16} /> Details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleOpenModal(printer, 'specs')}
+                          >
+                            <FileText size={16} /> Specification
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleOpenModal(printer, 'toners')}
+                          >
+                            <Printer size={16} /> Toners
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-1"
+                            onClick={() => handleOpenModal(printer, 'help')}
+                          >
+                            <HelpCircle size={16} /> Help
+                          </Button>
                         </div>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-sm text-muted-foreground">Series: {printer.series}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground">Series: {printer.series}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          )}
 
-            {/* Details Modal */}
-            <Dialog open={detailsModal} onOpenChange={setDetailsModal}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Printer Details</DialogTitle>
-                </DialogHeader>
-                {selectedPrinter &&
-                  (editDetails ? (
-                    <form className="space-y-2 py-2" onSubmit={(e) => { e.preventDefault(); handleSaveDetails(); }}>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Make:</span>
-                        <Input
-                          value={editableDetails.make}
-                          onChange={e => setEditableDetails(d => ({ ...d, make: e.target.value }))}
-                          className="w-40"
-                        />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Series:</span>
-                        <Input
-                          value={editableDetails.series}
-                          onChange={e => setEditableDetails(d => ({ ...d, series: e.target.value }))}
-                          className="w-40"
-                        />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Model:</span>
-                        <Input
-                          value={editableDetails.model}
-                          onChange={e => setEditableDetails(d => ({ ...d, model: e.target.value }))}
-                          className="w-40"
-                        />
-                      </div>
-                      <DialogFooter className="gap-2 pt-4">
-                        <Button type="submit" variant="default">Save</Button>
-                        <Button variant="ghost" onClick={() => setEditDetails(false)}>Cancel</Button>
-                      </DialogFooter>
-                    </form>
-                  ) : (
-                    <div className="space-y-2 py-2">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Make:</span>
-                        <span className="font-medium">{selectedPrinter.make}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Series:</span>
-                        <span className="font-medium">{selectedPrinter.series}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Model:</span>
-                        <span className="font-medium">{selectedPrinter.model}</span>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setDetailsModal(false)}>Close</Button>
-                        <Button variant="default" onClick={handleEditDetails}>
-                          <Edit size={16} className="mr-1" /> Edit
-                        </Button>
-                      </DialogFooter>
+          {/* Details Modal */}
+          <Dialog open={detailsModal} onOpenChange={setDetailsModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Printer Details</DialogTitle>
+              </DialogHeader>
+              {selectedPrinter &&
+                (editDetails ? (
+                  <form className="space-y-2 py-2" onSubmit={(e) => { e.preventDefault(); handleSaveDetails(); }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Make:</span>
+                      <Input
+                        value={editableDetails.make}
+                        onChange={e => setEditableDetails(d => ({ ...d, make: e.target.value }))}
+                        className="w-40"
+                      />
                     </div>
-                  ))}
-              </DialogContent>
-            </Dialog>
-
-            {/* Specification Modal */}
-            <Dialog open={specsModal} onOpenChange={setSpecsModal}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Technical Specifications</DialogTitle>
-                </DialogHeader>
-                {selectedPrinter && (editSpecs ? (
-                  <form className="space-y-2 py-2" onSubmit={e => { e.preventDefault(); handleSaveSpecs(); }}>
-                    {Object.entries(editableSpecs).map(([k, v], i) => (
-                      <div key={i} className="flex justify-between items-center">
-                        <Input
-                          className="w-32"
-                          value={k}
-                          onChange={e => handleSpecFieldChange(k, e.target.value)}
-                          placeholder="Spec Key"
-                        />
-                        <Input
-                          className="w-40"
-                          value={v}
-                          onChange={e => handleSpecChange(k, e.target.value)}
-                          placeholder="Spec Value"
-                        />
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={handleAddSpec} type="button">
-                      Add Spec Field
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Series:</span>
+                      <Input
+                        value={editableDetails.series}
+                        onChange={e => setEditableDetails(d => ({ ...d, series: e.target.value }))}
+                        className="w-40"
+                      />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Model:</span>
+                      <Input
+                        value={editableDetails.model}
+                        onChange={e => setEditableDetails(d => ({ ...d, model: e.target.value }))}
+                        className="w-40"
+                      />
+                    </div>
                     <DialogFooter className="gap-2 pt-4">
                       <Button type="submit" variant="default">Save</Button>
-                      <Button variant="ghost" onClick={() => setEditSpecs(false)}>Cancel</Button>
+                      <Button variant="ghost" onClick={() => setEditDetails(false)}>Cancel</Button>
                     </DialogFooter>
                   </form>
                 ) : (
                   <div className="space-y-2 py-2">
-                    {selectedPrinter.specs && Object.keys(selectedPrinter.specs).length > 0 ? (
-                      Object.entries(selectedPrinter.specs).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-muted-foreground capitalize">{key}:</span>
-                          <span className="font-medium">{String(value)}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        No specifications available for this printer.
-                      </p>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Make:</span>
+                      <span className="font-medium">{selectedPrinter.make}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Series:</span>
+                      <span className="font-medium">{selectedPrinter.series}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Model:</span>
+                      <span className="font-medium">{selectedPrinter.model}</span>
+                    </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setSpecsModal(false)}>Close</Button>
-                      <Button variant="default" onClick={handleEditSpecs}>
-                        <Edit size={16} className="mr-1" /> Add / Edit
+                      <Button variant="outline" onClick={() => setDetailsModal(false)}>Close</Button>
+                      <Button variant="default" onClick={handleEditDetails}>
+                        <Edit size={16} className="mr-1" /> Edit
                       </Button>
                     </DialogFooter>
                   </div>
                 ))}
-              </DialogContent>
-            </Dialog>
+            </DialogContent>
+          </Dialog>
 
-            {/* Toners Modal */}
-            <Dialog open={tonersModal} onOpenChange={setTonersModal}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Toners & Compatibility</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  {selectedPrinter && (
-                    <TonerCompatibilityManager printerId={selectedPrinter.id} />
+          {/* Specification Modal */}
+          <Dialog open={specsModal} onOpenChange={setSpecsModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Technical Specifications</DialogTitle>
+              </DialogHeader>
+              {selectedPrinter && (editSpecs ? (
+                <form className="space-y-2 py-2" onSubmit={e => { e.preventDefault(); handleSaveSpecs(); }}>
+                  {Object.entries(editableSpecs).map(([k, v], i) => (
+                    <div key={i} className="flex justify-between items-center">
+                      <Input
+                        className="w-32"
+                        value={k}
+                        onChange={e => handleSpecFieldChange(k, e.target.value)}
+                        placeholder="Spec Key"
+                      />
+                      <Input
+                        className="w-40"
+                        value={v}
+                        onChange={e => handleSpecChange(k, e.target.value)}
+                        placeholder="Spec Value"
+                      />
+                    </div>
+                  ))}
+                  <Button variant="outline" size="sm" onClick={handleAddSpec} type="button">
+                    Add Spec Field
+                  </Button>
+                  <DialogFooter className="gap-2 pt-4">
+                    <Button type="submit" variant="default">Save</Button>
+                    <Button variant="ghost" onClick={() => setEditSpecs(false)}>Cancel</Button>
+                  </DialogFooter>
+                </form>
+              ) : (
+                <div className="space-y-2 py-2">
+                  {selectedPrinter.specs && Object.keys(selectedPrinter.specs).length > 0 ? (
+                    Object.entries(selectedPrinter.specs).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-muted-foreground capitalize">{key}:</span>
+                        <span className="font-medium">{String(value)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      No specifications available for this printer.
+                    </p>
                   )}
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setSpecsModal(false)}>Close</Button>
+                    <Button variant="default" onClick={handleEditSpecs}>
+                      <Edit size={16} className="mr-1" /> Add / Edit
+                    </Button>
+                  </DialogFooter>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setTonersModal(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              ))}
+            </DialogContent>
+          </Dialog>
 
-            {/* Help Modal (Article Filtered by Tag) */}
-            <Dialog open={helpModal} onOpenChange={setHelpModal}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Help & Instructions</DialogTitle>
-                </DialogHeader>
-                {selectedPrinter ? (
-                  <div>
-                    {SAMPLE_ARTICLES
-                      .filter(article =>
-                        article.tags
-                          .map(tag => tag.toLowerCase()).includes(
-                            `${selectedPrinter.make} ${selectedPrinter.model}`.toLowerCase().trim()
-                          )
-                      )
-                      .map(article => (
-                        <div key={article.id} className="mb-4">
-                          <h3 className="font-semibold">{article.title}</h3>
-                          <p className="text-muted-foreground mb-2 text-xs">
-                            Tags: {article.tags.join(', ')}
-                          </p>
-                          <p>{article.content}</p>
-                        </div>
-                      ))
-                    }
-                    {!SAMPLE_ARTICLES.some(article =>
+          {/* Toners Modal */}
+          <Dialog open={tonersModal} onOpenChange={setTonersModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Toners & Compatibility</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                {selectedPrinter && (
+                  <TonerCompatibilityManager printerId={selectedPrinter.id} />
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setTonersModal(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Help Modal (Article Filtered by Tag) */}
+          <Dialog open={helpModal} onOpenChange={setHelpModal}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Help & Instructions</DialogTitle>
+              </DialogHeader>
+              {selectedPrinter ? (
+                <div>
+                  {SAMPLE_ARTICLES
+                    .filter(article =>
                       article.tags
                         .map(tag => tag.toLowerCase()).includes(
                           `${selectedPrinter.make} ${selectedPrinter.model}`.toLowerCase().trim()
                         )
-                    ) && (
-                        <p className="text-muted-foreground text-center py-4">
-                          No instructions/guides found for this printer.
+                    )
+                    .map(article => (
+                      <div key={article.id} className="mb-4">
+                        <h3 className="font-semibold">{article.title}</h3>
+                        <p className="text-muted-foreground mb-2 text-xs">
+                          Tags: {article.tags.join(', ')}
                         </p>
-                      )}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-4">Select a printer to see help articles.</p>
-                )}
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setHelpModal(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
+                        <p>{article.content}</p>
+                      </div>
+                    ))
+                  }
+                  {!SAMPLE_ARTICLES.some(article =>
+                    article.tags
+                      .map(tag => tag.toLowerCase()).includes(
+                        `${selectedPrinter.make} ${selectedPrinter.model}`.toLowerCase().trim()
+                      )
+                  ) && (
+                      <p className="text-muted-foreground text-center py-4">
+                        No instructions/guides found for this printer.
+                      </p>
+                    )}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">Select a printer to see help articles.</p>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setHelpModal(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
 
-          {/* TONERKB TAB */}
-          <TabsContent value="tonerkb">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">TonerKB</h2>
-              <Button variant="default" size="sm" onClick={openAddToner}>Add Toner</Button>
+        {/* TONERKB TAB */}
+        <TabsContent value="tonerkb">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-bold">TonerKB</h2>
+          </div>
+          {tonersLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
-            {tonersLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-              </div>
-            ) : toners.length === 0 ? (
+          ) : toners.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No toners found</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {toners.map(toner => (
+                <Card key={toner.id}>
+                  <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{toner.brand} {toner.model}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Color: <span className="capitalize">{toner.color}</span> • Page Yield: {toner.page_yield}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => openEditToner(toner)}>
+                        Edit
+                      </Button>
+                      <Button variant="destructive" size="sm" onClick={() => setDeleteTonerId(toner.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="flex items-center gap-8">
+                      <span className="text-sm">Stock: {toner.stock}</span>
+                      <span className="text-sm">Alert at: {toner.threshold}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+          {/* Toner Dialogs */}
+          <WikiAddTonerDialog
+            open={showAddToner}
+            onOpenChange={setShowAddToner}
+            onSave={() => {
+              setShowAddToner(false);
+              fetchToners();
+            }}
+          />
+          {/* Confirm Delete Dialog */}
+          <Dialog open={!!deleteTonerId} onOpenChange={v => !v && setDeleteTonerId(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Delete</DialogTitle>
+              </DialogHeader>
+              <p>Are you sure you want to delete this toner?</p>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setDeleteTonerId(null)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleDeleteToner}>Delete</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        {/* ARTICLE TAB */}
+        <TabsContent value="article">
+          <div className="max-w-xl mx-auto space-y-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Articles</h2>
+            </div>
+            {articles.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No toners found</p>
-                <Button className="mt-4" onClick={openAddToner}>Add Toner</Button>
+                <p className="text-muted-foreground">No articles found</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {toners.map(toner => (
-                  <Card key={toner.id}>
-                    <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg">{toner.brand} {toner.model}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Color: <span className="capitalize">{toner.color}</span> • Page Yield: {toner.page_yield}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditToner(toner)}>
-                          Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => setDeleteTonerId(toner.id)}>
-                          Delete
-                        </Button>
+                {articles.map(article => (
+                  <Card key={article.id}>
+                    <CardHeader>
+                      <div className="flex justify-between">
+                        <CardTitle>{article.title}</CardTitle>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openEditArticle(article)}
+                          >Edit</Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setDeleteArticleId(article.id)}
+                          >Delete</Button>
+                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="flex items-center gap-8">
-                        <span className="text-sm">Stock: {toner.stock}</span>
-                        <span className="text-sm">Alert at: {toner.threshold}</span>
+                    <CardContent>
+                      <div className="mb-1 text-muted-foreground text-xs">
+                        Tags: {article.tags.join(', ')}
+                      </div>
+                      <div className="mb-1 text-muted-foreground text-xs">
+                        Category: {article.category}
+                      </div>
+                      <p>{article.content}</p>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Associated with: {article.associatedWith}
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             )}
-            {/* Toner Form Dialog */}
-            <Dialog open={tonerDialogOpen} onOpenChange={setTonerDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>
-                    {tonerToEdit ? "Edit Toner" : "Add Toner"}
-                  </DialogTitle>
-                </DialogHeader>
-                <form className="space-y-2 py-2" onSubmit={handleSaveToner}>
-                  <div>
-                    <label className="text-sm">Brand*</label>
-                    <Input
-                      value={tonerForm.brand}
-                      onChange={e => setTonerForm(f => ({ ...f, brand: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Model*</label>
-                    <Input
-                      value={tonerForm.model}
-                      onChange={e => setTonerForm(f => ({ ...f, model: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Color*</label>
-                    <Input
-                      value={tonerForm.color}
-                      onChange={e => setTonerForm(f => ({ ...f, color: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Page Yield*</label>
-                    <Input
-                      type="number"
-                      value={tonerForm.page_yield}
-                      onChange={e => setTonerForm(f => ({ ...f, page_yield: Number(e.target.value) }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Stock*</label>
-                    <Input
-                      type="number"
-                      value={tonerForm.stock}
-                      onChange={e => setTonerForm(f => ({ ...f, stock: Number(e.target.value) }))}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm">Alert Threshold*</label>
-                    <Input
-                      type="number"
-                      value={tonerForm.threshold}
-                      onChange={e => setTonerForm(f => ({ ...f, threshold: Number(e.target.value) }))}
-                      required
-                    />
-                  </div>
-                  <DialogFooter className="gap-2 pt-4">
-                    <Button type="submit" variant="default">Save</Button>
-                    <Button variant="ghost" type="button" onClick={() => setTonerDialogOpen(false)}>Cancel</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
+            {/* Article Dialogs */}
+            <WikiAddArticleDialog
+              open={showAddArticle}
+              onOpenChange={setShowAddArticle}
+              onSave={article => {
+                setShowAddArticle(false);
+                setArticles([article, ...articles]);
+              }}
+              printers={printers}
+              categories={ARTICLE_CATEGORIES}
+            />
             {/* Confirm Delete Dialog */}
-            <Dialog open={!!deleteTonerId} onOpenChange={v => !v && setDeleteTonerId(null)}>
+            <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Confirm Delete</DialogTitle>
                 </DialogHeader>
-                <p>Are you sure you want to delete this toner?</p>
+                <p>Are you sure you want to delete this article?</p>
                 <DialogFooter>
-                  <Button variant="ghost" onClick={() => setDeleteTonerId(null)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleDeleteToner}>Delete</Button>
+                  <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
+                  <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </TabsContent>
-
-          {/* ARTICLE TAB */}
-          <TabsContent value="article">
-            <div className="max-w-xl mx-auto space-y-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Articles</h2>
-                <Button size="sm" variant="default" onClick={openAddArticle}>Add Article</Button>
-              </div>
-              {articles.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No articles found</p>
-                  <Button className="mt-4" onClick={openAddArticle}>
-                    Add Article
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {articles.map(article => (
-                    <Card key={article.id}>
-                      <CardHeader>
-                        <div className="flex justify-between">
-                          <CardTitle>{article.title}</CardTitle>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openEditArticle(article)}
-                            >Edit</Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => setDeleteArticleId(article.id)}
-                            >Delete</Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="mb-1 text-muted-foreground text-xs">
-                          Tags: {article.tags.join(', ')}
-                        </div>
-                        <div className="mb-1 text-muted-foreground text-xs">
-                          Category: {article.category}
-                        </div>
-                        <p>{article.content}</p>
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          Associated with: {article.associatedWith}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-              {/* Article Form Dialog */}
-              <Dialog open={articleDialogOpen} onOpenChange={setArticleDialogOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {articleToEdit ? "Edit Article" : "Add Article"}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <form
-                    className="space-y-2 py-2"
-                    onSubmit={handleSaveArticle}
-                  >
-                    <div>
-                      <label className="text-sm">Title*</label>
-                      <Input
-                        value={articleForm.title}
-                        onChange={e => setArticleForm(f => ({ ...f, title: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm">Tags (comma separated)</label>
-                      <Input
-                        value={articleForm.tags.join(',')}
-                        onChange={e => setArticleForm(f => ({ ...f, tags: e.target.value.split(',').map(t => t.trim()).filter(t => !!t) }))}
-                        placeholder="e.g. HP M402dn, PrinterKB"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm">Associated With</label>
-                      <Input
-                        value={articleForm.associatedWith}
-                        onChange={e => setArticleForm(f => ({ ...f, associatedWith: e.target.value }))}
-                        placeholder="(optional) Printer model"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm">Category*</label>
-                      <select
-                        className="w-full border rounded p-2"
-                        value={articleForm.category}
-                        onChange={e => setArticleForm(f => ({ ...f, category: e.target.value }))}
-                        required
-                      >
-                        <option value="">Select...</option>
-                        {ARTICLE_CATEGORIES.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-sm">Content*</label>
-                      <textarea
-                        className="w-full rounded border p-2 min-h-[90px]"
-                        value={articleForm.content}
-                        onChange={e => setArticleForm(f => ({ ...f, content: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <DialogFooter className="gap-2 pt-4">
-                      <Button type="submit" variant="default">Save</Button>
-                      <Button variant="ghost" type="button" onClick={() => setArticleDialogOpen(false)}>Cancel</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-              {/* Confirm Delete Dialog */}
-              <Dialog open={!!deleteArticleId} onOpenChange={v => !v && setDeleteArticleId(null)}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Confirm Delete</DialogTitle>
-                  </DialogHeader>
-                  <p>Are you sure you want to delete this article?</p>
-                  <DialogFooter>
-                    <Button variant="ghost" onClick={() => setDeleteArticleId(null)}>Cancel</Button>
-                    <Button variant="destructive" onClick={handleDeleteArticle}>Delete</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </TabsContent>
-
-        </Tabs>
-      </div>
-    </MobileLayout>
-  );
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  </MobileLayout>
+);
 }
