@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { MobileLayout } from '@/components/layout/MobileLayout';
@@ -33,7 +32,6 @@ export default function Wiki() {
   const [maintenanceFormOpen, setMaintenanceFormOpen] = useState(false);
   const [articleFormOpen, setArticleFormOpen] = useState(false);
 
-  // Add permissions checks
   const canCreate = hasPermission('create:wiki');
   const canEdit = hasPermission('update:wiki');
   const canDelete = hasPermission('delete:wiki');
@@ -46,9 +44,7 @@ export default function Wiki() {
     filterArticles();
   }, [searchTerm, activeTab, articles]);
 
-  // Helper function to map a printer to an article format
   const mapPrinterToArticle = (printer: WikiPrinter): WikiArticleType => {
-    // Format specs as a string for content display
     const specsFormatted = printer.specs 
       ? Object.entries(printer.specs)
           .map(([key, value]) => {
@@ -60,7 +56,6 @@ export default function Wiki() {
           .join('\n') 
       : '';
 
-    // Combine description and specs for content
     const content = `${printer.description || ''}\n\n${specsFormatted}\n\n${printer.maintenance_tips || ''}`;
 
     return {
@@ -76,9 +71,7 @@ export default function Wiki() {
     };
   };
 
-  // Helper function to map a toner to an article format
   const mapTonerToArticle = (toner: WikiToner): WikiArticleType => {
-    // Create a readable content description from toner properties
     const contentParts = [
       toner.description || `${toner.brand} ${toner.model} ${toner.color} toner cartridge`,
       toner.page_yield ? `Page Yield: Approximately ${toner.page_yield} pages` : '',
@@ -104,7 +97,6 @@ export default function Wiki() {
     try {
       setLoading(true);
       
-      // Insert wiki printers
       const samplePrinters = [
         {
           make: "HP",
@@ -151,7 +143,6 @@ export default function Wiki() {
       
       if (printersError) throw printersError;
 
-      // Insert wiki toners with conflict handling
       const sampleToners = [
         {
           brand: 'HP',
@@ -181,7 +172,6 @@ export default function Wiki() {
         }
       ];
 
-      // Use upsert with onConflict handling for toners
       const { data: toners, error: tonersError } = await supabase
         .from('wiki_toners')
         .upsert(sampleToners, {
@@ -192,7 +182,6 @@ export default function Wiki() {
       
       if (tonersError) throw tonersError;
 
-      // Create compatibility relationships with conflict handling
       if (printers && printers.length > 0 && toners && toners.length > 0) {
         const mockCompatibilities = [
           {
@@ -220,7 +209,6 @@ export default function Wiki() {
         description: 'Sample data seeded successfully'
       });
 
-      // Refresh the articles list
       fetchArticles();
     } catch (error: any) {
       console.error('Error seeding data:', error);
@@ -238,7 +226,6 @@ export default function Wiki() {
     try {
       setLoading(true);
       
-      // Fetch and transform data
       const printersResult = await supabase
         .from('wiki_printers')
         .select('*');
@@ -264,7 +251,6 @@ export default function Wiki() {
       if (printersResult.error) throw printersResult.error;
       if (tonersResult.error) throw tonersResult.error;
 
-      // Map the data with type safety
       const printerArticles = (printersResult.data || []).map(printer => mapPrinterToArticle({
         ...printer,
         specs: typeof printer.specs === 'string' ? JSON.parse(printer.specs) : printer.specs
@@ -295,7 +281,6 @@ export default function Wiki() {
   const filterArticles = () => {
     let filtered = [...articles];
 
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(article =>
         article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -304,7 +289,6 @@ export default function Wiki() {
       );
     }
 
-    // Filter by category
     if (activeTab !== 'all') {
       filtered = filtered.filter(article => article.category.toLowerCase() === activeTab.toLowerCase());
     }
@@ -312,42 +296,80 @@ export default function Wiki() {
     setFilteredArticles(filtered);
   };
 
-  const handleDeleteArticle = async (articleId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent triggering the card click
+  const handleDeleteArticle = async (articleId: string, category: string, event: React.MouseEvent) => {
+    event.stopPropagation();
     
     try {
-      const { error } = await supabase
-        .from('wiki_articles')
-        .delete()
-        .eq('id', articleId);
+      if (!window.confirm("Are you sure you want to delete this entry?")) {
+        return;
+      }
+      
+      let error;
+      
+      if (category === 'printer') {
+        const result = await supabase
+          .from('wiki_printers')
+          .delete()
+          .eq('id', articleId);
+        error = result.error;
+      } else if (category === 'toner') {
+        const result = await supabase
+          .from('wiki_toners')
+          .delete()
+          .eq('id', articleId);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('wiki_articles')
+          .delete()
+          .eq('id', articleId);
+        error = result.error;
+      }
 
       if (error) throw error;
 
       toast({
-        title: "Article deleted",
-        description: "The article has been successfully removed."
+        title: "Entry deleted",
+        description: "The entry has been successfully removed."
       });
 
-      // Refresh articles list
       fetchArticles();
     } catch (error: any) {
       toast({
-        title: "Error deleting article",
+        title: "Error deleting entry",
         description: error.message,
         variant: "destructive"
       });
     }
   };
 
-  const handleEditArticle = (articleId: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent triggering the card click
-    navigate(`/wiki/edit/${articleId}`);
+  const handleEditArticle = (articleId: string, category: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    if (category === 'printer') {
+      navigate(`/wiki/edit/${articleId}`);
+    } else if (category === 'toner') {
+      toast({
+        description: "Edit toner functionality is not yet implemented",
+        variant: "default"
+      });
+    } else {
+      navigate(`/wiki/edit/${articleId}`);
+    }
   };
 
   const canCreateArticle = hasPermission('create:wiki');
 
   const handleArticleClick = (article: WikiArticleType) => {
-    navigate(`/wiki/article/${article.id}`, { state: { article } });
+    if (article.category === 'printer') {
+      navigate(`/wiki/${article.id}`);
+    } else if (article.category === 'maintenance' || article.category === 'article') {
+      navigate(`/wiki/article/${article.id}`);
+    } else if (article.category === 'toner') {
+      navigate(`/wiki/article/${article.id}`);
+    } else {
+      navigate(`/wiki/article/${article.id}`);
+    }
   };
 
   const handleTypeSelect = (type: 'printer' | 'toner' | 'article' | 'maintenance') => {
@@ -368,7 +390,6 @@ export default function Wiki() {
   };
 
   const handleRefresh = () => {
-    // Update the refresh function to actually fetch articles
     fetchArticles();
   };
 
@@ -442,7 +463,7 @@ export default function Wiki() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => handleEditArticle(article.id, e)}
+                              onClick={(e) => handleEditArticle(article.id, article.category, e)}
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
@@ -451,7 +472,7 @@ export default function Wiki() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={(e) => handleDeleteArticle(article.id, e)}
+                              onClick={(e) => handleDeleteArticle(article.id, article.category, e)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

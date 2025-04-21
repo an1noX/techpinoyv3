@@ -57,13 +57,63 @@ export default function WikiArticleView() {
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // First try to get from wiki_articles
+      let { data, error } = await supabase
         .from('wiki_articles')
         .select('*')
         .eq('id', id)
         .single();
       
-      if (error) throw error;
+      if (error || !data) {
+        // If not found in wiki_articles, try other tables
+        const { data: printerData, error: printerError } = await supabase
+          .from('wiki_printers')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (!printerError && printerData) {
+          // Convert printer data to article format
+          const specsStr = printerData.specs ? 
+            Object.entries(printerData.specs).map(([k, v]) => `${k}: ${v}`).join('\n') : '';
+          
+          data = {
+            id: printerData.id,
+            title: `${printerData.make} ${printerData.model}`,
+            content: printerData.description || '' + '\n\n' + specsStr + '\n\n' + (printerData.maintenance_tips || ''),
+            category: 'printer',
+            tags: [printerData.series, printerData.type].filter(Boolean) as string[],
+            created_at: printerData.created_at,
+            updated_at: printerData.updated_at,
+            status: 'published',
+            associated_with: printerData.model
+          };
+        } else {
+          // Check if it's a toner
+          const { data: tonerData, error: tonerError } = await supabase
+            .from('wiki_toners')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+          if (!tonerError && tonerData) {
+            // Convert toner data to article format
+            data = {
+              id: tonerData.id,
+              title: `${tonerData.brand} ${tonerData.model} (${tonerData.color})`,
+              content: tonerData.description || `${tonerData.brand} ${tonerData.model} ${tonerData.color} toner cartridge\n\nPage Yield: ${tonerData.page_yield || 'Unknown'}\nStock: ${tonerData.stock || 0}`,
+              category: 'toner',
+              tags: tonerData.category || ['toner'],
+              created_at: tonerData.created_at,
+              updated_at: tonerData.updated_at,
+              status: 'published'
+            };
+          } else {
+            throw new Error("Article not found");
+          }
+        }
+      }
+      
       setArticle(data as WikiArticle);
     } catch (error: any) {
       toast({
@@ -112,10 +162,28 @@ export default function WikiArticleView() {
         return;
       }
       
-      const { error } = await supabase
-        .from('wiki_articles')
-        .delete()
-        .eq('id', article.id);
+      // Delete from the appropriate table based on category
+      let error;
+      
+      if (article.category === 'printer') {
+        const result = await supabase
+          .from('wiki_printers')
+          .delete()
+          .eq('id', article.id);
+        error = result.error;
+      } else if (article.category === 'toner') {
+        const result = await supabase
+          .from('wiki_toners')
+          .delete()
+          .eq('id', article.id);
+        error = result.error;
+      } else {
+        const result = await supabase
+          .from('wiki_articles')
+          .delete()
+          .eq('id', article.id);
+        error = result.error;
+      }
       
       if (error) throw error;
       
@@ -159,7 +227,7 @@ export default function WikiArticleView() {
         <CardContent className="py-4">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">Content</h3>
-            <p>{article.content}</p>
+            <p className="whitespace-pre-line">{article.content}</p>
           </div>
           
           <div className="mb-4">
@@ -204,19 +272,33 @@ export default function WikiArticleView() {
         
         {canEdit && (
           <div className="flex justify-end space-x-2 p-4">
-            {article.status === 'pending' && (
+            {article.category === 'article' && article.status === 'pending' && (
               <Button variant="ghost" size="sm" onClick={() => updateArticleStatus('published')}>
                 <Check className="h-4 w-4 mr-2" />
                 Publish
               </Button>
             )}
-            {article.status === 'pending' && (
+            {article.category === 'article' && article.status === 'pending' && (
               <Button variant="ghost" size="sm" onClick={() => updateArticleStatus('rejected')}>
                 <X className="h-4 w-4 mr-2" />
                 Reject
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => navigate(`/wiki/edit/${article.id}`)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (article.category === 'printer') {
+                  navigate(`/wiki/edit/${article.id}`);
+                } else if (article.category === 'article' || article.category === 'maintenance') {
+                  navigate(`/wiki/edit/${article.id}`);
+                } else {
+                  toast({
+                    description: "Editing this type of entry is not yet supported",
+                  });
+                }
+              }}
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
