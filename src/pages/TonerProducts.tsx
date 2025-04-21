@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CommercialTonerProduct } from '@/types';
 import { EditButton, DeleteButton } from '@/components/common/ActionButtons';
+import { Button } from '@/components/ui/button';
 
 export default function TonerProducts() {
   const { toast } = useToast();
