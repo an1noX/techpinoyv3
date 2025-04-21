@@ -1,5 +1,5 @@
 
-import { PrinterType, TonerType } from "@/components/printers/types";
+import { PrinterType, TonerType } from "@/types/types";
 import { AddPrinterForm } from "./forms/AddPrinterForm";
 import { BaseDialog } from "@/components/common/BaseDialog";
 

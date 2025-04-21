@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types/types';
+import { UserRole } from '@/context/AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import { 
   Card, 
@@ -52,17 +53,18 @@ export function UserRoleManager() {
 
       if (error) throw error;
 
-      // In a real environment with Supabase Auth Admin, we'd get emails
-      // For now, we're mocking this or using a workaround
+      // Fetch emails from auth.users (will need auth admin access)
+      const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
       
-      // Since we can't use admin.listUsers without admin access, we'll just set email based on user ID
-      const usersWithRoles = data?.map(profile => {
+      if (userError) throw userError;
+
+      const usersWithRoles = data.map(profile => {
+        const authUser = userData.users.find(u => u.id === profile.id);
         return {
           ...profile,
-          email: `user-${profile.id}@example.com`, // Mock email or fetch separately
-          role: profile.role as UserRole
-        } as UserWithRole;
-      }) || [];
+          email: authUser?.email || 'Unknown email'
+        };
+      });
 
       setUsers(usersWithRoles);
     } catch (error: any) {

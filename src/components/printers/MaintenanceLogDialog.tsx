@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { MaintenanceLogType } from "@/components/printers/types";
+import { MaintenanceLogType } from "@/types/types";
 import { BaseDialog } from "@/components/common/BaseDialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
