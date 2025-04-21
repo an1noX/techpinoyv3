@@ -27,7 +27,7 @@ const videoAds1Schema = z.object({
   videoType: z.enum(["placeholder", "youtube", "mp4", "file"], {
     required_error: "Please select a video source type",
   }),
-  videoUrl: z.string().optional(),
+  videoUrl: z.string().default(""),
   title: z.string().min(2, {
     message: "Title must be at least 2 characters.",
   }),
@@ -97,8 +97,19 @@ export function VideoAds1Tab() {
         return;
       }
 
+      // Ensure all required properties are present and handle defaults
+      const completeData: VideoAds1 = {
+        videoType: data.videoType,
+        videoUrl: data.videoUrl || "",
+        title: data.title,
+        description: data.description,
+        features: data.features || [],
+        buttonText: data.buttonText,
+        buttonLink: data.buttonLink
+      };
+
       // Update the video_ads1 data
-      await updateVideoAds(data);
+      await updateVideoAds(completeData);
       
       // Refresh settings to get the latest data
       await fetchSettings();
