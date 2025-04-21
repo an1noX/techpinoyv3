@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Printer } from "@/types/printers";
+import { Printer, MaintenanceStatus } from "@/types/printers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +37,7 @@ export default function Maintenance() {
   const [addMaintOpen, setAddMaintOpen] = useState(false);
   const [addMaintForm, setAddMaintForm] = useState({
     printerId: "",
-    status: "maintenance",
+    status: "maintenance" as const,
     notes: "",
   });
 
@@ -57,13 +57,27 @@ export default function Maintenance() {
     try {
       const { error } = await supabase
         .from("maintenance_records")
-        .insert([{
+        .insert({
           printer_id: addMaintForm.printerId,
-          status: addMaintForm.status,
-          notes: addMaintForm.notes,
+          status: "pending" as MaintenanceStatus, // Use typed MaintenanceStatus
+          issue_description: addMaintForm.notes,
           created_at: new Date().toISOString(),
-        }]);
+          activity_type: addMaintForm.status === "maintenance" ? "maintenance" : "repair"
+        });
+      
       if (error) throw error;
+      
+      // After creating the maintenance record, update the printer status
+      const { error: printerUpdateError } = await supabase
+        .from("printers")
+        .update({ 
+          status: addMaintForm.status,
+          updated_at: new Date().toISOString() 
+        })
+        .eq("id", addMaintForm.printerId);
+        
+      if (printerUpdateError) throw printerUpdateError;
+      
       toast({ title: "Maintenance record added" });
       setAddMaintOpen(false);
       setAddMaintForm({ printerId: "", status: "maintenance", notes: "" });
